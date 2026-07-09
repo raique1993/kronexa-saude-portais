@@ -3,9 +3,13 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Portal Médico — Kronexa Saúde</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com https://tcjynyfusqkqtdohnyzq.supabase.co; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; connect-src 'self' https://tcjynyfusqkqtdohnyzq.supabase.co https://generativelanguage.googleapis.com https://api.groq.com https://api.anthropic.com; frame-ancestors 'none';">
+<meta http-equiv="X-Frame-Options" content="DENY">
+<meta name="referrer" content="same-origin">
 <script>if(location.protocol!=="https:"&&location.hostname!=="localhost")location.replace("https://"+location.host+location.pathname+location.search);</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="/shared/kronexa-auth.js"></script>
 <style>
 :root{--p:#0D9488;--c:#0284C7;--g:#059669;--r:#DC2626;--o:#D97706;--bg:#F2F4F7;--bg2:#FFFFFF;--bg3:#F1F5F9;--t1:#111827;--t2:#4B5563;--t3:#9CA3AF;--border:#D1D5DB}
 *{margin:0;padding:0;box-sizing:border-box}

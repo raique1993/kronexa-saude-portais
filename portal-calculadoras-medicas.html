@@ -339,7 +339,7 @@ async function triagemIA(){
   document.getElementById('tri-result').innerHTML='<div style="color:var(--c)">🤖 IA analisando...</div>';
 
   try{
-    const geminiKey=localStorage.getItem('KRONEXA_GEMINI_KEY')||'';
+    const IA_PROXY='https://tcjynyfusqkqtdohnyzq.supabase.co/functions/v1/kronexa-ia-proxy';
     const prompt=`Você é um assistente de triagem médica. Resuma o caso abaixo para o médico em Português (Brasil), em formato JSON:
 {
   "resumo_para_medico": "2-3 frases resumindo o quadro",
@@ -352,9 +352,8 @@ async function triagemIA(){
 
 Dados: Queixa: ${queixa} | Intensidade: ${intensidade}/10 | Início: ${inicio} | Sintomas: ${sintomas} | Medicações: ${meds} | Alergias: ${alergias} | Doenças: ${doencas}`;
 
-    const resp=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.1,maxOutputTokens:1500}})
+    const resp=await fetch(IA_PROXY,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({prompt,tenant_id:CID,action:'triage'})
     });
     const d=await resp.json();
     const tri=JSON.parse((d.candidates?.[0]?.content?.parts?.[0]?.text||'{}').replace(/```json|```/g,'').trim());

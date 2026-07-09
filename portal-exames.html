@@ -3,9 +3,13 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Visualizador de Exames Médicos — Kronexa</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com https://tcjynyfusqkqtdohnyzq.supabase.co; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; connect-src 'self' https://tcjynyfusqkqtdohnyzq.supabase.co https://generativelanguage.googleapis.com; frame-ancestors 'none';">
+<meta http-equiv="X-Frame-Options" content="DENY">
+<meta name="referrer" content="same-origin">
 <script>if(location.protocol!=="https:"&&location.hostname!=="localhost")location.replace("https://"+location.host+location.pathname+location.search);</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
+<script src="/shared/kronexa-auth.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.149.0/examples/js/controls/OrbitControls.js"></script>
 <style>
 :root{--p:#0D9488;--c:#0284C7;--g:#059669;--r:#DC2626;--o:#D97706;--y:#eab308;--bg:#F8FAFC;--bg2:#FFFFFF;--bg3:#F1F5F9;--t1:#0F172A;--t2:#475569;--t3:#94A3B8;--border:#E2E8F0}
@@ -1118,12 +1122,12 @@ async function segmentarIA(){
   toast('🤖 Analisando com IA...');
   document.getElementById('seg-legend').style.display='block';
   try{
-    const geminiKey=localStorage.getItem('KRONEXA_GEMINI_KEY')||localStorage.getItem('KRONEXA_GROQ_KEY')||'';
+    const IA_PROXY='https://tcjynyfusqkqtdohnyzq.supabase.co/functions/v1/kronexa-ia-proxy';
     const prompt=`Medical image analysis. Identify structures and return ONLY JSON: {"ossos":[{"nome":"...","bbox":{"x":0,"y":0,"w":0,"h":0}}],"vasos":[{"nome":"...","bbox":{"x":0,"y":0,"w":0,"h":0}}],"orgaos":[{"nome":"...","bbox":{"x":0,"y":0,"w":0,"h":0}}],"anomalias":[{"nome":"...","bbox":{"x":0,"y":0,"w":0,"h":0},"severidade":"..."}],"trajetoria_sugerida":{"ponto_entrada":{"x":0,"y":0,"z":-0.5},"ponto_alvo":{"x":0,"y":0,"z":0.3},"profundidade_mm":0,"angulo_graus":0,"estruturas_evitar":[]}}`;
     const imgResp=await fetch(cur.url); const blob=await imgResp.blob();
     const reader=new FileReader(); reader.readAsDataURL(blob);
     const base64img=await new Promise(r=>{reader.onload=()=>r(reader.result.split(',')[1])});
-    const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{inline_data:{mime_type:blob.type||'image/jpeg',data:base64img}},{text:prompt}]}],generationConfig:{temperature:0.1,maxOutputTokens:2000}})});
+    const r=await fetch(IA_PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt,imageBase64:base64img,tenant_id:CID,action:'segmentation'})});
     const d=await r.json();
     if(d.error){toast('Erro IA: '+d.error.message,true);return;}
     const txt=d.candidates?.[0]?.content?.parts?.[0]?.text||'{}';

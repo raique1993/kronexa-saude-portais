@@ -325,7 +325,7 @@ async function analisarAnatomiaIA(){
   if(!currentExam?.url){toast('Carregue um exame primeiro');return;}
   toast('🤖 IA analisando anatomia...');
   try{
-    const geminiKey=localStorage.getItem('KRONEXA_GEMINI_KEY')||localStorage.getItem('KRONEXA_GROQ_KEY')||'';
+    const IA_PROXY='https://tcjynyfusqkqtdohnyzq.supabase.co/functions/v1/kronexa-ia-proxy';
     const prompt=`You are a surgical planning AI. Analyze this medical image and provide a detailed anatomical report in Portuguese (Brazil). Return JSON:
 {
   "modalidade": "CT/MRI/X-Ray/etc",
@@ -339,7 +339,7 @@ async function analisarAnatomiaIA(){
 }`;
     const blob=await (await fetch(currentExam.url)).blob();
     const b64=await new Promise(r=>{const rd=new FileReader();rd.onload=()=>r(rd.result.split(',')[1]);rd.readAsDataURL(blob)});
-    const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{inline_data:{mime_type:blob.type||'image/jpeg',data:b64}},{text:prompt}]}],generationConfig:{temperature:0.1,maxOutputTokens:3000}})});
+    const r=await fetch(IA_PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt,imageBase64:b64,tenant_id:CID,action:'cirurgia'})});
     const d=await r.json(); if(d.error){toast('Erro IA: '+d.error.message);return;}
     const anat=JSON.parse((d.candidates?.[0]?.content?.parts?.[0]?.text||'{}').replace(/```json|```/g,'').trim());
     renderAnatomiaReport(anat);
@@ -365,7 +365,7 @@ async function gerarPlanoCirurgico(){
   if(!currentExam){toast('Carregue um exame primeiro');return;}
   toast('📋 IA gerando plano cirúrgico...');
   try{
-    const geminiKey=localStorage.getItem('KRONEXA_GEMINI_KEY')||localStorage.getItem('KRONEXA_GROQ_KEY')||'';
+    const IA_PROXY='https://tcjynyfusqkqtdohnyzq.supabase.co/functions/v1/kronexa-ia-proxy';
     const prompt=`You are a senior surgeon creating a preoperative plan. Based on this medical image, create a detailed surgical plan in Portuguese (Brazil). Return JSON:
 {
   "diagnostico": "clinical diagnosis",
@@ -408,7 +408,7 @@ async function simularAbordagem(){
   if(!currentExam){toast('Carregue um exame primeiro');return;}
   toast('🎬 Gerando simulação...');
   try{
-    const geminiKey=localStorage.getItem('KRONEXA_GEMINI_KEY')||localStorage.getItem('KRONEXA_GROQ_KEY')||'';
+    const IA_PROXY='https://tcjynyfusqkqtdohnyzq.supabase.co/functions/v1/kronexa-ia-proxy';
     const prompt=`You are a surgical simulator AI. For this medical image, create a step-by-step surgical walkthrough in Portuguese. Focus on WHAT THE SURGEON SEES at each step. Return JSON:
 {
   "titulo": "Surgical Walkthrough",
