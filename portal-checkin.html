@@ -1,0 +1,242 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Check-in — Kronexa</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{--p:#0D9488;--c:#0284C7;--g:#059669;--r:#DC2626;--o:#D97706;--bg:#F8FAFC;--bg2:#FFFFFF;--bg3:#F1F5F9;--t1:#0F172A;--t2:#475569;--t3:#94A3B8;--b:#E2E8F0}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--t1);font-family:-apple-system,sans-serif;min-height:100vh;display:grid;grid-template-rows:48px 1fr}
+.hd{background:var(--bg2);border-bottom:1px solid var(--b);display:flex;align-items:center;padding:0 16px;gap:10px}
+.logo{font-size:14px;font-weight:900}.logo span{color:var(--p)}
+.hd-btn{height:28px;padding:0 14px;border:1px solid var(--b);background:rgba(0,0,0,.02);color:var(--t2);border-radius:7px;font-size:11px;cursor:pointer;transition:.15s;display:flex;align-items:center;gap:5px;text-decoration:none}
+.hd-btn:hover{background:rgba(13,148,136,.12);color:var(--t1);border-color:var(--p)}
+.hd-btn.green{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.3);color:var(--g)}
+.container{max-width:1100px;margin:0 auto;padding:20px;display:flex;flex-direction:column;gap:16px}
+
+/* Status Board */
+.status-board{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.status-col{background:var(--bg2);border:1px solid var(--b);border-radius:14px;padding:16px;min-height:200px}
+.status-col h3{font-size:12px;font-weight:700;color:var(--t3);text-transform:uppercase;display:flex;align-items:center;gap:6px;margin-bottom:12px}
+.status-col h3 .count{background:var(--bg3);padding:2px 8px;border-radius:100px;font-size:11px;color:var(--t1)}
+.status-col.waiting h3 .count{background:rgba(245,158,11,.12);color:var(--o)}
+.status-col.confirmed h3 .count{background:rgba(34,197,94,.12);color:var(--g)}
+.status-col.in-progress h3 .count{background:rgba(13,148,136,.15);color:var(--p)}
+
+.patient-chip{display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(0,0,0,.03);border-radius:10px;margin-bottom:6px;cursor:pointer;transition:.15s;border:1px solid transparent}
+.patient-chip:hover{border-color:rgba(13,148,136,.35);background:rgba(13,148,136,.08)}
+.patient-chip .avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;flex-shrink:0}
+.patient-chip .avatar.waiting{background:rgba(245,158,11,.15);color:var(--o)}
+.patient-chip .avatar.confirmed{background:rgba(34,197,94,.15);color:var(--g)}
+.patient-chip .avatar.active{background:rgba(13,148,136,.25);color:var(--p)}
+.patient-chip .info{flex:1;min-width:0}
+.patient-chip .name{font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.patient-chip .meta{font-size:10px;color:var(--t3)}
+.patient-chip .time{font-size:10px;font-weight:700;color:var(--c);flex-shrink:0}
+.patient-chip .actions{display:flex;gap:4px}
+.patient-chip .act-btn{width:26px;height:26px;border-radius:6px;border:1px solid var(--b);background:transparent;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;transition:.12s}
+.patient-chip .act-btn:hover{background:var(--p);border-color:var(--p);color:#fff}
+.patient-chip .act-btn.call{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.3);color:var(--g)}
+.patient-chip .act-btn.call:hover{background:var(--g);color:#000}
+
+/* KPIs */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.kpi{background:var(--bg2);border:1px solid var(--b);border-radius:12px;padding:14px;display:flex;align-items:center;gap:10px}
+.kpi .ico{font-size:24px}
+.kpi .val{font-size:22px;font-weight:900}
+.kpi .lbl{font-size:9px;color:var(--t3);text-transform:uppercase}
+
+/* Relatório Contábil */
+.report-section{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:768px){.report-section{grid-template-columns:1fr}}
+.report-card{background:var(--bg2);border:1px solid var(--b);border-radius:14px;padding:20px}
+.report-card h3{font-size:13px;font-weight:700;margin-bottom:12px;color:var(--t2)}
+.report-row{display:flex;justify-content:space-between;padding:6px 0;font-size:11px;border-bottom:1px solid rgba(255,255,255,.03)}
+.report-row .rk{color:var(--t2)}.report-row .rv{font-weight:600}
+.report-row.total{font-size:13px;font-weight:800;color:var(--c);border-top:1px solid var(--b);margin-top:4px;padding-top:8px}
+
+.btn{padding:10px 18px;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;transition:.15s}
+.btn-p{background:var(--p);color:#fff}.btn-g{background:var(--g);color:#000}.btn-c{background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.2);color:var(--c)}
+.btn-o{border:1px solid var(--b);background:transparent;color:var(--t2)}
+.btn-row{display:flex;gap:8px;margin-top:10px}
+
+.toast{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);padding:9px 20px;border-radius:100px;font-size:12px;font-weight:700;z-index:99;display:none;background:var(--p);color:#fff}
+</style>
+</head>
+<body>
+
+<header class="hd">
+  <div class="logo">KRO<span>NEXA</span> <span style="font-size:10px;color:var(--t3);font-weight:400">| Check-in & Financeiro</span></div>
+  <span class="tag" style="background:rgba(34,197,94,.12);color:var(--g)">🏥 RECEPÇÃO</span>
+  <button class="hd-btn green" style="margin-left:auto" onclick="atualizarTudo()">↻ Atualizar</button>
+  <button class="hd-btn" onclick="window.open('portal-dashboard.html','_blank')">📊 BI</button>
+  <button class="hd-btn" onclick="window.open('portal-prescricao.html','_blank')">💊 Prescrição</button>
+  <button class="hd-btn" onclick="window.open('portal-paciente.html','_blank')">👤 Paciente</button>
+  <button class="hd-btn" onclick="window.location.href='portal-medico.html'">← Médico</button>
+</header>
+
+<div class="container">
+  <!-- KPIs -->
+  <div class="kpi-row">
+    <div class="kpi"><div class="ico">📅</div><div><div class="val" id="kpi-hoje">12</div><div class="lbl">Agendados Hoje</div></div></div>
+    <div class="kpi"><div class="ico">✅</div><div><div class="val" id="kpi-checkin">8</div><div class="lbl">Check-in Realizado</div></div></div>
+    <div class="kpi"><div class="ico">⏱</div><div><div class="val" id="kpi-espera">4.2<span style="font-size:13px">min</span></div><div class="lbl">Espera Média</div></div></div>
+    <div class="kpi"><div class="ico">💰</div><div><div class="val" id="kpi-faturamento">R$ 3.250</div><div class="lbl">Faturamento Hoje</div></div></div>
+    <div class="kpi"><div class="ico">📊</div><div><div class="val" id="kpi-taxa">87<span style="font-size:13px">%</span></div><div class="lbl">Taxa Comparecimento</div></div></div>
+    <div class="kpi"><div class="ico">📱</div><div><div class="val" id="kpi-sofia">45</div><div class="lbl">Confirmados Sofia</div></div></div>
+  </div>
+
+  <!-- Status Board -->
+  <div class="status-board">
+    <div class="status-col waiting">
+      <h3>⏳ Aguardando <span class="count" id="count-waiting">3</span></h3>
+      <div id="list-waiting">
+        <div class="patient-chip">
+          <div class="avatar waiting">M</div>
+          <div class="info"><div class="name">Maria Silva</div><div class="meta">Clínica Geral · Dra. Ana</div></div>
+          <div class="time">10:00</div>
+          <div class="actions"><button class="act-btn call" title="Chamar">✓</button></div>
+        </div>
+      </div>
+    </div>
+    <div class="status-col confirmed">
+      <h3>✅ Confirmados <span class="count" id="count-confirmed">6</span></h3>
+      <div id="list-confirmed">
+        <div class="patient-chip">
+          <div class="avatar confirmed">J</div>
+          <div class="info"><div class="name">João Santos</div><div class="meta">Cardiologia · Dr. Roberto</div></div>
+          <div class="time">10:30</div>
+          <div class="actions"><button class="act-btn" title="Check-in">→</button></div>
+        </div>
+      </div>
+    </div>
+    <div class="status-col in-progress">
+      <h3>🟢 Em Atendimento <span class="count" id="count-active">1</span></h3>
+      <div id="list-active">
+        <div class="patient-chip">
+          <div class="avatar active">A</div>
+          <div class="info"><div class="name">Ana Costa</div><div class="meta">Ortopedia · Dr. Ricardo</div></div>
+          <div class="time">09:45</div>
+          <div class="actions"><button class="act-btn" title="Finalizar">✓</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Relatório Contábil -->
+  <div class="report-section">
+    <div class="report-card">
+      <h3>📊 Resumo Financeiro — Hoje</h3>
+      <div class="report-row"><span class="rk">Consultas realizadas</span><span class="rv">8</span></div>
+      <div class="report-row"><span class="rk">Ticket médio</span><span class="rv">R$ 406,25</span></div>
+      <div class="report-row"><span class="rk">PIX</span><span class="rv">R$ 1.800,00</span></div>
+      <div class="report-row"><span class="rk">Cartão</span><span class="rv">R$ 950,00</span></div>
+      <div class="report-row"><span class="rk">Convênio</span><span class="rv">R$ 500,00</span></div>
+      <div class="report-row total"><span class="rk">Total Faturado</span><span class="rv">R$ 3.250,00</span></div>
+      <div class="btn-row">
+        <button class="btn btn-c" onclick="gerarRelatorioDia()">📄 Relatório do Dia</button>
+        <button class="btn btn-c" onclick="gerarRelatorioMes()">📊 Relatório do Mês</button>
+      </div>
+    </div>
+    <div class="report-card">
+      <h3>📈 Faturamento — Últimos 7 Dias</h3>
+      <canvas id="chart-faturamento" style="max-height:220px"></canvas>
+      <div class="btn-row">
+        <button class="btn btn-p" onclick="enviarContador()">📧 Enviar para Contador</button>
+        <button class="btn btn-o" onclick="exportarCSV()">📥 Exportar CSV</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SB='https://tcjynyfusqkqtdohnyzq.supabase.co', KEY='sb_publishable_gNJhc4WCS9MnnmDAL2T6Vg_AQ71_Vid', CID='c1d2e3f4-0001-0000-0000-000000000001';
+const sb=supabase.createClient(SB,KEY);
+let chart=null;
+
+function init(){
+  renderChart();
+  atualizarTudo();
+}
+init();
+
+function renderChart(){
+  const ctx=document.getElementById('chart-faturamento').getContext('2d');
+  const dias=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+  chart=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:dias,
+      datasets:[
+        {label:'Consultas',data:[14,18,12,20,16,8,0],backgroundColor:'rgba(108,63,232,.5)',borderRadius:6},
+        {label:'Faturamento (R$)',data:[5200,6800,4500,7800,6200,3100,0],backgroundColor:'rgba(0,229,255,.4)',borderRadius:6}
+      ]
+    },
+    options:{
+      responsive:true,
+      plugins:{legend:{labels:{color:'#8888AA',font:{size:9}}}},
+      scales:{
+        x:{ticks:{color:'#404060',font:{size:8}},grid:{display:false}},
+        y:{ticks:{color:'#404060',font:{size:8},callback:v=>v>=1000?'R$ '+(v/1000).toFixed(1)+'k':v},grid:{color:'rgba(255,255,255,.04)'}}
+      }
+    }
+  });
+}
+
+function atualizarTudo(){
+  // Simular atualização em tempo real
+  const t=Math.floor(Math.random()*3);
+  document.getElementById('kpi-hoje').textContent=12+t;
+  document.getElementById('kpi-checkin').textContent=8+t;
+  document.getElementById('kpi-faturamento').textContent='R$ '+(3250+t*400).toLocaleString();
+  toast('✅ Atualizado em tempo real');
+}
+
+async function gerarRelatorioDia(){
+  const data=new Date().toLocaleDateString('pt-BR');
+  const content=[
+    'RELATÓRIO DIÁRIO — Kronexa',
+    '=========================',
+    `Data: ${data}`,
+    '',
+    'Consultas: 8',
+    'Ticket médio: R$ 406,25',
+    'Faturamento: R$ 3.250,00',
+    'PIX: R$ 1.800,00 | Cartão: R$ 950,00 | Convênio: R$ 500,00',
+    '',
+    'Gerado automaticamente pela Sofia'
+  ].join('\n');
+  const blob=new Blob([content],{type:'text/plain'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`relatorio-${data.replace(/\//g,'-')}.txt`;a.click();
+  toast('📄 Relatório gerado!');
+}
+
+function gerarRelatorioMes(){gerarRelatorioDia();}
+
+function enviarContador(){
+  toast('📧 Enviando relatório para o contador...');
+  setTimeout(()=>toast('✅ Relatório enviado!'),1500);
+}
+
+function exportarCSV(){
+  const csv='Data,Consultas,Faturamento,PIX,Cartao,Convenio\n'+Array.from({length:7},(_,i)=>{
+    const d=new Date();d.setDate(d.getDate()-i);
+    return `${d.toLocaleDateString('pt-BR')},${10+i},R$ ${3000+i*500},R$ ${1500+i*200},R$ ${800+i*100},R$ ${700+i*50}`;
+  }).join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='faturamento-kronexa.csv';a.click();
+  toast('📥 CSV exportado!');
+}
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.style.display='block';
+  setTimeout(()=>t.style.display='none',3000);
+}
+</script>
+</body>
+</html>

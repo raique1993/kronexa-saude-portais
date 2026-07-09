@@ -1,0 +1,1744 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Portal Médico — Kronexa Saúde</title>
+<script>if(location.protocol!=="https:"&&location.hostname!=="localhost")location.replace("https://"+location.host+location.pathname+location.search);</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{--p:#0D9488;--c:#0284C7;--g:#059669;--r:#DC2626;--o:#D97706;--bg:#F2F4F7;--bg2:#FFFFFF;--bg3:#F1F5F9;--t1:#111827;--t2:#4B5563;--t3:#9CA3AF;--border:#D1D5DB}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--t1);font-family:-apple-system,'Segoe UI',sans-serif;display:grid;grid-template-columns:240px 1fr;grid-template-rows:54px 1fr;height:100vh;overflow:hidden;font-size:14px}
+.hd{grid-column:1/-1;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:10px}
+.logo{font-size:13px;font-weight:900}.logo span{color:var(--p)}
+.tag{font-size:9px;font-weight:700;padding:2px 7px;border-radius:100px;background:rgba(13,148,136,.12);color:var(--p)}
+.time{margin-left:auto;font-size:11px;color:var(--t3)}
+.hb{height:28px;padding:0 12px;border:1px solid var(--border);background:rgba(0,0,0,.02);color:var(--t2);border-radius:7px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;transition:.15s}
+.hb:hover{background:rgba(13,148,136,.12);color:var(--t1)}
+.hb.gre{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.3);color:var(--g)}
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:10px 0;overflow-y:auto;display:flex;flex-direction:column}
+.ns{font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;padding:10px 14px 3px;letter-spacing:1px}
+.nav-item{display:flex;align-items:center;gap:8px;padding:9px 14px;font-size:12px;cursor:pointer;color:var(--t2);transition:.12s;margin:1px 6px;border-radius:8px}
+.nav-item.on,.nav-item:hover{background:#CCFBF1;color:var(--p);font-weight:600}
+.n-sep{height:1px;background:rgba(255,255,255,.05);margin:7px 12px}
+.main{overflow-y:auto;padding:18px}
+.panel{display:none}.panel.on{display:block}
+
+/* PACIENTE ATIVO */
+.pac-banner{background:linear-gradient(135deg,#CCFBF1,#E0F2FE);border:1px solid #99F6E4;border-radius:12px;padding:14px 16px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
+.pac-banner-info h3{font-size:15px;font-weight:800;margin-bottom:2px}
+.pac-banner-info .meta{font-size:11px;color:var(--t2);display:flex;gap:12px;flex-wrap:wrap}
+.pac-banner-acts{display:flex;gap:8px}
+
+/* TIMELINE */
+.timeline-steps{display:flex;background:var(--bg2);border-radius:10px;overflow:hidden;border:1px solid var(--border);margin-bottom:14px}
+.tl{flex:1;padding:10px 8px;text-align:center;cursor:pointer;transition:.15s;border-right:1px solid var(--border);font-size:10px;font-weight:700}
+.tl:last-child{border-right:none}
+.tl.done{color:var(--g);background:rgba(34,197,94,.05)}
+.tl.on{background:rgba(13,148,136,.12);color:var(--t1)}
+.tl .tl-ico{font-size:16px;display:block;margin-bottom:2px}
+
+/* AGENDA */
+.agenda-item{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:.2s}
+.agenda-item:hover{border-color:rgba(13,148,136,.35)}
+.agenda-item.ativo{border-color:var(--g);background:rgba(34,197,94,.04)}
+.agenda-item.concluido{opacity:.55}
+.agenda-nome{font-size:13px;font-weight:700}
+.agenda-meta{font-size:11px;color:var(--t2);margin-top:2px}
+.status-pill{padding:3px 9px;border-radius:100px;font-size:9px;font-weight:700}
+.st-ag{background:#CCFBF1;color:#0D9488}
+.st-cf{background:#DCFCE7;color:var(--g)}
+.st-em{background:#FEF3C7;color:var(--o)}
+.st-co{background:#E0F2FE;color:var(--c)}
+
+/* FORMS */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.card h3{font-size:13px;font-weight:700;color:var(--t2);margin-bottom:12px;letter-spacing:.3px;display:flex;align-items:center;gap:8px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.grid-5{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.f-lbl{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:3px}
+.fi{width:100%;padding:10px 14px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--t1);font-size:13px;outline:none;transition:.15s;font-family:inherit}
+.fi:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(91,47,216,.1)}
+textarea.fi{resize:vertical;min-height:80px;line-height:1.6}
+.vital-card{background:var(--bg3);border-radius:9px;padding:10px;text-align:center;border:1px solid transparent;transition:.15s}
+.vital-card:focus-within{border-color:var(--p)}
+.vital-card label{font-size:9px;color:var(--t3);display:block;margin-bottom:4px;text-transform:uppercase}
+.vital-card input{width:100%;background:transparent;border:none;color:var(--t1);font-size:15px;font-weight:700;text-align:center;outline:none}
+
+/* BOTÕES */
+.btn{padding:9px 14px;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:6px}
+.btn-p{background:var(--p);color:#fff}.btn-p:hover{background:#5530c4}
+.btn-g{background:var(--g);color:#000}.btn-g:hover{background:#1aa34a}
+.btn-c{background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.2);color:var(--c)}
+.btn-o{background:rgba(0,0,0,.03);border:1px solid var(--border);color:var(--t2)}
+.btns-row{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}
+
+/* RECEITA */
+.med-item{background:var(--bg3);border-radius:9px;padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px;border:1px solid transparent;transition:.15s}
+.med-item:hover{border-color:rgba(255,255,255,.07)}
+.med-info{flex:1}
+.med-nome{font-size:13px;font-weight:700;margin-bottom:2px}
+.med-det{font-size:11px;color:var(--t2)}
+.med-del{background:none;border:none;color:var(--r);cursor:pointer;font-size:16px;padding:2px;flex-shrink:0;transition:.15s}
+.med-del:hover{transform:scale(1.2)}
+.med-add-form{background:var(--bg3);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:14px;margin-top:10px}
+.med-add-form h4{font-size:11px;font-weight:700;color:var(--t2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px}
+
+/* HISTORICO */
+.hist-card{background:var(--bg2);border-radius:10px;border:1px solid var(--border);margin-bottom:8px;overflow:hidden}
+.hist-hd{padding:12px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start}
+.hist-body{padding:12px;font-size:12px;color:var(--t2);line-height:1.7}
+.cid-pill{padding:2px 8px;border-radius:100px;font-size:9px;font-weight:700;background:rgba(13,148,136,.12);color:#0D9488}
+
+/* MODAL */
+.modal{position:fixed;inset:0;background:rgba(255,255,255,.95);z-index:50;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal-box{background:var(--bg2);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:20px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto}
+.modal-box h3{font-size:14px;font-weight:800;margin-bottom:14px}
+.check-item{display:flex;align-items:center;gap:9px;font-size:12px;padding:7px 10px;border-radius:7px;background:rgba(0,0,0,.02);margin-bottom:5px}
+.check-ok{color:var(--g)}.check-pend{color:var(--o)}
+
+/* TOAST */
+.toast{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);padding:9px 20px;border-radius:100px;font-size:12px;font-weight:700;z-index:99;display:none;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.toast.ok{background:rgba(34,197,94,.9);color:#000}
+.toast.err{background:rgba(244,63,94,.9);color:#fff}
+
+/* DOCUMENTOS */
+.doc-tabs{display:flex;gap:4px;margin-bottom:14px;background:var(--bg2);border-radius:10px;padding:4px}
+.doc-tab{flex:1;padding:8px 4px;text-align:center;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;color:var(--t2);transition:.12s;border:1px solid transparent}
+.doc-tab:hover{color:var(--t1)}
+.doc-tab.on{background:var(--p);color:#fff}
+.doc-form{display:none}.doc-form.on{display:block}
+.doc-preview{border:1px solid var(--border);border-radius:10px;background:#fff;color:#000;padding:16px;min-height:120px;font-size:11px;line-height:1.5;max-height:400px;overflow-y:auto;margin-top:12px}
+.doc-preview h2{font-size:16px;text-align:center;margin-bottom:4px}
+.doc-preview h4{font-size:10px;text-align:center;color:#555;margin-bottom:8px;font-weight:400;font-style:italic}
+.doc-preview .sig-block{text-align:center;margin-top:20px;border-top:1px solid #ddd;padding-top:10px}
+.doc-preview .sig-block img{max-height:50px;margin-bottom:4px}
+.doc-preview .sig-block .dr{font-weight:700;font-size:12px}
+.doc-preview .sig-block .crm{font-size:10px;color:#555}
+.sig-canvas-wrap{border:2px dashed var(--border);border-radius:10px;overflow:hidden;background:#fff;cursor:crosshair;touch-action:none}
+.sig-canvas-wrap canvas{display:block;width:100%;height:180px}
+.sig-actions{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+/* Chat Sofia */
+.sofia-chat{background:var(--bg);border:1px solid var(--border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;height:420px}
+.sofia-chat-msgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;background:url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%23080818" width="100" height="100"/></svg>')}
+.sofia-bubble{max-width:85%;padding:8px 12px;border-radius:8px;font-size:12px;line-height:1.5;word-break:break-word}
+.sofia-bubble.paciente{align-self:flex-end;background:#005C4B;color:var(--t1);border-radius:8px 8px 0 8px}
+.sofia-bubble.sofia{align-self:flex-start;background:var(--bg3);color:var(--t1);border-radius:8px 8px 8px 0;border:1px solid var(--border)}
+.sofia-bubble .sender{font-size:9px;font-weight:700;margin-bottom:3px;opacity:.7}
+.sofia-chat-input{display:flex;gap:6px;padding:10px;background:var(--bg2);border-top:1px solid var(--border)}
+.sofia-chat-input input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--t1);font-size:12px;outline:none}
+.sofia-chat-input input:focus{border-color:var(--p)}
+.sofia-config-bar{display:flex;gap:8px;align-items:center;padding:8px 12px;background:var(--bg2);border-bottom:1px solid var(--border);flex-wrap:wrap}
+.sofia-config-bar label{font-size:9px;color:var(--t3);white-space:nowrap}
+.sofia-config-bar input,.sofia-config-bar select{background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--t1);font-size:10px;padding:3px 6px;outline:none;width:90px}
+
+/* ═══ MOBILE ═══ */
+@media(max-width:768px){
+  body{grid-template-columns:1fr;grid-template-rows:48px 1fr}
+  .sidebar{display:none;position:fixed;z-index:60;top:48px;left:0;width:85vw;max-width:300px;height:calc(100vh - 48px);box-shadow:8px 0 30px rgba(0,0,0,.25)}
+  .sidebar.open{display:flex}
+  .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:55}
+  .sidebar-overlay.open{display:block}
+  .hd .menu-btn{display:flex!important}
+  .main{padding:8px}
+  .grid-2,.grid-3{grid-template-columns:1fr}
+  .grid-5{grid-template-columns:repeat(2,1fr)}
+  .pac-banner{flex-direction:column;gap:8px;text-align:center}
+  .pac-banner-acts{justify-content:center}
+  .timeline-steps{flex-wrap:wrap}
+  .tl{flex:1 1 33%;min-width:60px;font-size:9px}
+  .modal-box{max-width:95vw;max-height:85vh;padding:12px}
+  .card{padding:10px}
+  .btns-row{justify-content:stretch}
+  .btns-row .btn{flex:1;justify-content:center;font-size:11px}
+  table{font-size:10px}
+  th,td{padding:6px 4px}
+}
+</style>
+</head>
+<body>
+<header class="hd">
+  <button class="menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('open');document.querySelector('.sidebar-overlay').classList.toggle('open')" style="display:none;background:none;border:none;font-size:22px;cursor:pointer;padding:0 8px 0 0;color:var(--t2)" aria-label="Menu">☰</button>
+  <div class="logo">KRO<span>NEXA</span></div>
+  <span class="tag">MÉDICO</span>
+  <span id="prof-nome" style="font-size:12px;color:var(--t2)">Carregando...</span>
+  <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+    <div class="time" id="relogio"></div>
+    <button class="hb gre" id="btn-finalizar-hd" onclick="abrirModal('modal-finalizar')" style="display:none">✅ Finalizar consulta</button>
+    <button class="hb" onclick="window.location.href='portal-ia-clinica.html'" target="_blank">🤖 IA Clínica</button>
+    <button class="hb" onclick="window.location.href='portal-recepcao.html'">← Recepção</button>
+  </div>
+</header>
+
+<nav class="sidebar">
+  <div class="ns">Hoje</div>
+  <div class="nav-item on" onclick="navTo('agenda')">📅 Agenda</div>
+  <div class="nav-item" onclick="navTo('atendimento')">📋 Anamnese</div>
+  <div class="nav-item" onclick="navTo('prontuario')">📝 Prontuário</div>
+  <div class="nav-item" onclick="navTo('receita')">💊 Receita</div>
+  <div class="nav-item" onclick="navTo('documentos')">📄 Documentos</div>
+  <div class="nav-item" onclick="navTo('calendarios')">🔗 Calendários</div>
+  <div class="nav-item" onclick="navTo('teste-sofia')">🧪 Teste Sofia</div>
+  <div class="nav-item" onclick="navTo('kroney-brain')">🧠 Kroney Brain</div>
+  <div class="nav-item" onclick="navTo('exames-med')">🔬 Exames</div>
+  <div class="n-sep"></div>
+  <div class="ns">Ferramentas</div>
+  <div class="nav-item" onclick="window.open('portal-ia-clinica.html','_blank')">🤖 IA Diagnóstico</div>
+  <div class="nav-item" onclick="window.open('portal-cirurgia-3d.html','_blank')">🔪 Cirurgia 3D</div>
+  <div class="nav-item" onclick="window.open('portal-exames.html','_blank')">🖼️ Visualizador</div>
+  <div class="nav-item" onclick="window.open('portal-dicom-3d.html','_blank')">🧬 DICOM 3D</div>
+  <div class="nav-item" onclick="window.open('portal-telemedicina.html','_blank')">📹 Telemedicina</div>
+  <div class="nav-item" onclick="window.open('portal-agendamento.html','_blank')">📅 Agendamento</div>
+  <div class="nav-item" onclick="window.open('portal-prescricao.html','_blank')">💊 Prescrição IA</div>
+  <div class="nav-item" onclick="window.open('portal-calculadoras-medicas.html','_blank')">🧮 Calculadoras</div>
+  <div class="nav-item" onclick="window.open('portal-dashboard.html','_blank')">📊 Dashboard BI</div>
+  <div class="nav-item" onclick="window.open('portal-checkin.html','_blank')">🏥 Check-in</div>
+      <div class="nav-item" onclick="window.open('portal-marketing-saude.html','_blank')">📱 Marketing IA</div>
+  <div class="nav-item" onclick="window.open('portal-paciente.html','_blank')">👤 Portal Paciente</div>
+  <div class="n-sep"></div>
+  <div class="ns">Histórico</div>
+  <div class="nav-item" onclick="navTo('historico')">📂 Pacientes</div>
+</nav>
+
+<div class="sidebar-overlay" onclick="document.querySelector('.sidebar').classList.remove('open');this.classList.remove('open')"></div>
+
+<main class="main">
+
+  <!-- PACIENTE ATIVO (aparece quando tem atendimento em curso) -->
+  <div id="pac-banner" style="display:none">
+    <div class="pac-banner">
+      <div class="pac-banner-info">
+        <h3 id="banner-nome">—</h3>
+        <div class="meta" id="banner-meta"></div>
+      </div>
+      <div class="pac-banner-acts">
+        <button class="btn btn-c" onclick="window.open('portal-ia-clinica.html','_blank')">🤖 IA</button>
+        <button class="btn btn-g" onclick="abrirModal('modal-finalizar')">✅ Finalizar</button>
+      </div>
+    </div>
+    <!-- Timeline -->
+    <div class="timeline-steps">
+      <div class="tl done" id="tl-1" onclick="navTo('atendimento')"><span class="tl-ico">📋</span>Anamnese</div>
+      <div class="tl" id="tl-2" onclick="navTo('prontuario')"><span class="tl-ico">📝</span>Prontuário</div>
+      <div class="tl" id="tl-3" onclick="navTo('exames-med')"><span class="tl-ico">🔬</span>Exames</div>
+      <div class="tl" id="tl-4" onclick="navTo('receita')"><span class="tl-ico">💊</span>Receita</div>
+      <div class="tl" id="tl-5" onclick="abrirModal('modal-finalizar')"><span class="tl-ico">✅</span>Finalizar</div>
+    </div>
+  </div>
+
+  <!-- AGENDA -->
+  <div id="p-agenda" class="panel on">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h2 style="font-size:16px;font-weight:800">Agenda de hoje</h2>
+      <div style="display:flex;gap:8px">
+        <span id="data-hoje" style="font-size:12px;color:var(--t2)"></span>
+        <button class="hb" onclick="loadAgenda()">↺</button>
+      </div>
+    </div>
+    <div id="agenda-lista"><div style="color:var(--t3);font-size:12px">Carregando...</div></div>
+  </div>
+
+  <!-- ANAMNESE -->
+  <div id="p-atendimento" class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h2 style="font-size:16px;font-weight:800">Anamnese</h2>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-c" onclick="window.open('portal-ia-clinica.html','_blank')">🤖 IA</button>
+        <button class="btn btn-o" onclick="navTo('agenda')">← Agenda</button>
+      </div>
+    </div>
+
+    <!-- Sinais Vitais -->
+    <div class="card">
+      <h3>🩺 Sinais Vitais</h3>
+      <div class="grid-5">
+        <div class="vital-card"><label>PA (mmHg)</label><input id="v-pa" placeholder="120/80"></div>
+        <div class="vital-card"><label>FC (bpm)</label><input id="v-fc" type="number" placeholder="72"></div>
+        <div class="vital-card"><label>SpO2 (%)</label><input id="v-spo2" type="number" placeholder="98"></div>
+        <div class="vital-card"><label>Temp (°C)</label><input id="v-temp" placeholder="36.5"></div>
+        <div class="vital-card"><label>Peso (kg)</label><input id="v-peso" type="number" placeholder="70"></div>
+      </div>
+    </div>
+
+    <!-- Anamnese -->
+    <div class="card">
+      <h3>💬 Anamnese</h3>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div><label class="f-lbl">Queixa principal</label><input class="fi" id="a-queixa" placeholder="Motivo da consulta..."></div>
+        <div><label class="f-lbl">HDA — História da doença atual</label><textarea class="fi" id="a-hda" rows="3" placeholder="Início, evolução, características, fatores de melhora/piora..."></textarea></div>
+        <div class="grid-2">
+          <div><label class="f-lbl">Antecedentes pessoais</label><textarea class="fi" id="a-antec" rows="2" placeholder="Doenças, cirurgias, internações..."></textarea></div>
+          <div><label class="f-lbl">Histórico familiar</label><textarea class="fi" id="a-hf" rows="2" placeholder="Doenças relevantes na família..."></textarea></div>
+        </div>
+        <div class="grid-2">
+          <div><label class="f-lbl">Alergias</label><input class="fi" id="a-alergia" placeholder="Medicamentos, alimentos..."></div>
+          <div><label class="f-lbl">Medicações em uso</label><input class="fi" id="a-meds" placeholder="Nome, dose, frequência..."></div>
+        </div>
+        <div><label class="f-lbl">Exame físico</label><textarea class="fi" id="ef-geral" rows="3" placeholder="Aparência geral, ausculta cardíaca e pulmonar, abdome, achados relevantes..."></textarea></div>
+      </div>
+    </div>
+
+    <div class="btns-row">
+      <button class="btn btn-o" onclick="navTo('agenda')">← Voltar</button>
+      <button class="btn btn-c" onclick="window.open('portal-ia-clinica.html','_blank')">🤖 Consultar IA</button>
+      <button class="btn btn-p" onclick="salvarAnamnese()">💾 Salvar anamnese</button>
+      <button class="btn btn-g" onclick="irProntuario()">Prontuário →</button>
+    </div>
+  </div>
+
+  <!-- PRONTUÁRIO -->
+  <div id="p-prontuario" class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h2 style="font-size:16px;font-weight:800">Prontuário</h2>
+      <button class="btn btn-c" onclick="window.open('portal-ia-clinica.html','_blank')">🤖 IA — Diagnóstico e conduta</button>
+    </div>
+
+    <div class="card">
+      <h3>🎯 Diagnóstico</h3>
+      <div class="grid-2">
+        <div><label class="f-lbl">Diagnóstico principal</label><input class="fi" id="pr-diag" placeholder="Ex: Pneumonia adquirida na comunidade"></div>
+        <div><label class="f-lbl">CID-10</label><input class="fi" id="pr-cid" placeholder="Ex: J18.9"></div>
+      </div>
+      <div style="margin-top:10px"><label class="f-lbl">Diagnósticos secundários / comorbidades</label><input class="fi" id="pr-diag2" placeholder="Outras condições ativas..."></div>
+    </div>
+
+    <div class="card">
+      <h3>📝 Evolução clínica</h3>
+      <textarea class="fi" id="pr-evolucao" rows="4" placeholder="Evolução do quadro, resposta ao tratamento, conduta atual..."></textarea>
+    </div>
+
+    <div class="card">
+      <h3>🗺️ Plano de tratamento</h3>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div><label class="f-lbl">Conduta médica</label><textarea class="fi" id="pr-plano" rows="3" placeholder="Tratamento proposto, orientações..."></textarea></div>
+        <div class="grid-2">
+          <div><label class="f-lbl">Retorno recomendado</label><input class="fi" type="date" id="pr-retorno"></div>
+          <div><label class="f-lbl">Situação de alta</label><select class="fi" id="pr-alta"><option value="">— não se aplica —</option><option>Alta domiciliar com receita</option><option>Internação hospitalar</option><option>UPA / Pronto-socorro</option><option>Alta plena</option></select></div>
+        </div>
+        <div><label class="f-lbl">Orientações ao paciente</label><textarea class="fi" id="pr-obs" rows="2" placeholder="Cuidados em casa, quando retornar com urgência..."></textarea></div>
+      </div>
+    </div>
+
+    <div class="btns-row">
+      <button class="btn btn-o" onclick="navTo('atendimento')">← Anamnese</button>
+      <button class="btn btn-p" onclick="salvarProntuario()">💾 Salvar prontuário</button>
+      <button class="btn btn-g" onclick="irReceita()">Receita →</button>
+    </div>
+  </div>
+
+  <!-- RECEITA DIGITAL -->
+  <div id="p-receita" class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h2 style="font-size:16px;font-weight:800">💊 Receita Digital</h2>
+      <button class="btn btn-c" onclick="window.open('portal-ia-clinica.html','_blank')">🤖 IA — Sugerir medicamentos</button>
+    </div>
+
+    <!-- Lista de medicamentos adicionados -->
+    <div id="med-lista" style="margin-bottom:14px">
+      <div style="color:var(--t3);font-size:12px;text-align:center;padding:16px;background:var(--bg2);border-radius:10px;border:1px solid var(--border)">
+        💊 Nenhum medicamento adicionado ainda
+      </div>
+    </div>
+
+    <!-- Formulário para adicionar -->
+    <div class="med-add-form">
+      <h4>+ Adicionar medicamento</h4>
+      <div class="grid-2" style="margin-bottom:8px">
+        <div><label class="f-lbl">Medicamento (genérico)</label><input class="fi" id="med-nome" placeholder="Ex: Amoxicilina 500mg"></div>
+        <div><label class="f-lbl">Via de administração</label>
+          <select class="fi" id="med-via">
+            <option>Oral</option><option>Intravenosa</option><option>Intramuscular</option>
+            <option>Tópica</option><option>Sublingual</option><option>Inalatória</option><option>Retal</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid-2" style="margin-bottom:8px">
+        <div><label class="f-lbl">Posologia</label><input class="fi" id="med-dose" placeholder="Ex: 1 comprimido de 8 em 8 horas"></div>
+        <div><label class="f-lbl">Duração</label><input class="fi" id="med-duracao" placeholder="Ex: por 7 dias"></div>
+      </div>
+      <div style="margin-bottom:10px"><label class="f-lbl">Observações</label><input class="fi" id="med-obs" placeholder="Tomar após as refeições, evitar álcool..."></div>
+      <button class="btn btn-p" onclick="adicionarMedicamento()">+ Adicionar à receita</button>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <h3>📋 Orientações gerais</h3>
+      <textarea class="fi" id="receita-orientacoes" rows="3" placeholder="Orientações de estilo de vida, dieta, atividade física, quando retornar de urgência..."></textarea>
+    </div>
+
+    <div class="btns-row">
+      <button class="btn btn-o" onclick="navTo('prontuario')">← Prontuário</button>
+      <button class="btn btn-p" onclick="salvarReceita()">💾 Salvar receita</button>
+      <button class="btn btn-g" onclick="abrirModal('modal-finalizar')">✅ Finalizar consulta</button>
+    </div>
+  </div>
+
+  <!-- EXAMES -->
+  <div id="p-exames-med" class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h2 style="font-size:16px;font-weight:800">🔬 Exames</h2>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-c" onclick="window.open('portal-ia-clinica.html','_blank')">🤖 IA — Analisar</button>
+        <button class="btn btn-p" onclick="window.open('portal-exames.html','_blank')">🖼️ Visualizador</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>📎 Enviar exame para este prontuário</h3>
+      <div style="border:2px dashed rgba(255,255,255,.1);border-radius:10px;padding:14px;text-align:center;cursor:pointer" onclick="document.getElementById('exame-upload').click()">
+        <div style="font-size:22px;margin-bottom:4px">📎</div>
+        <div style="font-size:12px;font-weight:700">Clique para enviar</div>
+        <div style="font-size:10px;color:var(--t3)">PDF, JPG, PNG, MP4</div>
+      </div>
+      <input type="file" id="exame-upload" accept="image/*,.pdf,.mp4" multiple style="display:none" onchange="uploadExame(this)">
+      <div id="upload-status" style="font-size:11px;color:var(--g);margin-top:6px;display:none"></div>
+    </div>
+
+    <div class="card">
+      <h3>📁 Exames do paciente</h3>
+      <div id="exames-lista-med"><div style="color:var(--t3);font-size:11px">Selecione um paciente primeiro</div></div>
+    </div>
+  </div>
+
+  <!-- DOCUMENTOS -->
+  <div id="p-documentos" class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <h2 style="font-size:16px;font-weight:800">📄 Documentos Médicos</h2>
+      <button class="btn btn-c" id="btn-config-assinatura" onclick="abrirAssinatura()">✍️ Assinatura</button>
+    </div>
+
+    <!-- Abas de tipo -->
+    <div class="doc-tabs">
+      <div class="doc-tab on" onclick="setDocTab('atestado',this)">📄 Atestado</div>
+      <div class="doc-tab" onclick="setDocTab('receita',this)">💊 Receita</div>
+      <div class="doc-tab" onclick="setDocTab('pedido_exame',this)">🔬 Pedido Exame</div>
+      <div class="doc-tab" onclick="setDocTab('encaminhamento',this)">🏥 Encaminhamento</div>
+      <div class="doc-tab" onclick="setDocTab('danfe',this)">🧾 Recibo/DANFE</div>
+    </div>
+
+    <!-- ATESTADO -->
+    <div id="doc-atestado" class="doc-form on">
+      <div class="card"><h3>📋 Dados do Atestado</h3>
+        <div class="grid-2" style="margin-bottom:8px">
+          <div><label class="f-lbl">CID-10 (opcional — visível só se paciente autorizar)</label><input class="fi" id="at-cid" placeholder="Ex: J06.9"></div>
+          <div><label class="f-lbl">Dias de afastamento</label><input class="fi" id="at-dias" type="number" placeholder="Ex: 3" value="1"></div>
+        </div>
+        <div style="margin-bottom:8px"><label class="f-lbl">Justificativa / Observações</label><textarea class="fi" id="at-just" rows="2" placeholder="Paciente necessita de afastamento de suas atividades habituais por motivo de saúde..."></textarea></div>
+        <div style="margin-bottom:8px"><label class="f-lbl">Data de emissão</label><input class="fi" type="date" id="at-data"></div>
+      </div>
+    </div>
+
+    <!-- RECEITA (usa dados ja preenchidos na sessao) -->
+    <div id="doc-receita" class="doc-form">
+      <div class="card"><h3>💊 Medicamentos da receita</h3>
+        <div id="doc-med-lista"><div style="color:var(--t3);font-size:11px">Nenhum medicamento. Adicione na aba 💊 Receita primeiro.</div></div>
+      </div>
+      <div class="card"><h3>📋 Dados complementares</h3>
+        <div><label class="f-lbl">Orientações adicionais</label><textarea class="fi" id="doc-rec-orient" rows="2" placeholder="Tomar após as refeições. Evitar álcool durante o tratamento..."></textarea></div>
+        <div class="grid-2" style="margin-top:8px">
+          <div><label class="f-lbl">Tipo de receita</label><select class="fi" id="doc-rec-tipo"><option>Simples</option><option>Controle Especial (C1)</option><option>Antimicrobiano</option></select></div>
+          <div><label class="f-lbl">Validade</label><select class="fi" id="doc-rec-val"><option>30 dias</option><option>15 dias</option><option>90 dias</option><option>5 dias (Antimicrobiano)</option></select></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PEDIDO DE EXAMES -->
+    <div id="doc-pedido_exame" class="doc-form">
+      <div class="card"><h3>🔬 Exames Solicitados</h3>
+        <div id="doc-exames-lista" style="margin-bottom:10px"></div>
+        <div style="display:flex;gap:6px">
+          <input class="fi" id="doc-exame-novo" placeholder="Nome do exame...">
+          <button class="btn btn-p" onclick="addDocExame()">+ Adicionar</button>
+        </div>
+        <div style="margin-top:10px"><label class="f-lbl">Informações clínicas / CID</label><input class="fi" id="doc-exame-cid" placeholder="Ex: J18.9 — Pneumonia"></div>
+        <div style="margin-top:8px"><label class="f-lbl">Instruções de preparo</label><textarea class="fi" id="doc-exame-prep" rows="2" placeholder="Jejum de 8h, suspender medicamento X 48h antes..."></textarea></div>
+      </div>
+    </div>
+
+    <!-- ENCAMINHAMENTO -->
+    <div id="doc-encaminhamento" class="doc-form">
+      <div class="card"><h3>🏥 Dados do Encaminhamento</h3>
+        <div class="grid-2" style="margin-bottom:8px">
+          <div><label class="f-lbl">Especialidade de destino</label><input class="fi" id="enc-esp" placeholder="Ex: Cardiologia"></div>
+          <div><label class="f-lbl">Profissional (se específico)</label><input class="fi" id="enc-prof" placeholder="Ex: Dr. Carlos — CRM 54321"></div>
+        </div>
+        <div style="margin-bottom:8px"><label class="f-lbl">Motivo do encaminhamento / Resumo clínico</label><textarea class="fi" id="enc-motivo" rows="3" placeholder="Paciente com quadro de..."></textarea></div>
+        <div><label class="f-lbl">CID</label><input class="fi" id="enc-cid" placeholder="Ex: I10"></div>
+        <div style="margin-top:8px"><label class="f-lbl">Conduta sugerida</label><textarea class="fi" id="enc-conduta" rows="2" placeholder="Sugiro avaliação e conduta especializada..."></textarea></div>
+      </div>
+    </div>
+
+    <!-- DANFE / RECIBO -->
+    <div id="doc-danfe" class="doc-form">
+      <div class="card"><h3>🧾 Recibo / DANFE Simplificado</h3>
+        <div class="grid-3" style="margin-bottom:8px">
+          <div><label class="f-lbl">Nº do documento</label><input class="fi" id="danfe-num" placeholder="Auto-gerado" readonly></div>
+          <div><label class="f-lbl">Data</label><input class="fi" type="date" id="danfe-data"></div>
+          <div><label class="f-lbl">Tipo</label><select class="fi" id="danfe-tipo"><option>Recibo</option><option>DANFE Simplificado</option><option>Orçamento</option></select></div>
+        </div>
+        <div class="grid-2" style="margin-bottom:8px">
+          <div><label class="f-lbl">Cliente</label><input class="fi" id="danfe-cliente" placeholder="Nome do cliente"></div>
+          <div><label class="f-lbl">CPF/CNPJ</label><input class="fi" id="danfe-cpf" placeholder="000.000.000-00"></div>
+        </div>
+        <label class="f-lbl">Itens / Serviços</label>
+        <div id="danfe-itens-lista" style="margin-bottom:6px"></div>
+        <div style="display:flex;gap:6px">
+          <input class="fi" id="danfe-item-nome" placeholder="Item ou serviço..." style="flex:1">
+          <input class="fi" id="danfe-item-valor" type="number" step="0.01" placeholder="R$" style="width:100px">
+          <button class="btn btn-p" onclick="addDanfeItem()">+</button>
+        </div>
+        <div style="margin-top:8px;text-align:right;font-size:14px;font-weight:800" id="danfe-total">Total: R$ 0,00</div>
+        <div style="margin-top:8px"><label class="f-lbl">Observações</label><textarea class="fi" id="danfe-obs" rows="2" placeholder="Forma de pagamento, prazo de entrega, garantia..."></textarea></div>
+      </div>
+    </div>
+
+    <!-- Botões -->
+    <div class="btns-row">
+      <button class="btn btn-o" onclick="limparDocForm()">🗑 Limpar</button>
+      <button class="btn btn-c" id="btn-gerar-pdf" onclick="gerarPDF()">📥 Gerar PDF</button>
+      <button class="btn btn-g" id="btn-share-doc" onclick="compartilharDocWpp()" style="display:none">📱 WhatsApp</button>
+    </div>
+
+    <!-- Preview -->
+    <div class="doc-preview" id="doc-preview" style="display:none"></div>
+  </div>
+
+  <!-- TESTE SOFIA -->
+  <div id="p-teste-sofia" class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <h2 style="font-size:16px;font-weight:800">🧪 Teste da Secretária Sofia</h2>
+      <button class="btn btn-p" onclick="salvarConfigSofia()">💾 Salvar configuração</button>
+    </div>
+
+    <!-- Config bar -->
+    <div class="sofia-config-bar">
+      <label>Nome:</label><input id="sofia-nome" value="Sofia" placeholder="Sofia">
+      <label>Tom:</label><select id="sofia-tom"><option>Amigavel e profissional</option><option>Formal</option><option>Descontraido</option><option>Objetivo e direto</option></select>
+      <label>Especialidade:</label><input id="sofia-espec" value="Clinica Geral" placeholder="Ex: Odontologia">
+      <span style="font-size:9px;color:var(--t2);margin-left:auto" id="sofia-status">Pronto para testar</span>
+    </div>
+
+    <!-- Chat -->
+    <div class="sofia-chat">
+      <div class="sofia-chat-msgs" id="sofia-msgs">
+        <div class="sofia-bubble sofia">
+          <div class="sender">🤖 Sofia</div>
+          <div>Olá! Sou a Sofia, secretária virtual da clínica. Como posso ajudar? Digite uma mensagem como se fosse um paciente para me testar. 😊</div>
+        </div>
+      </div>
+      <div class="sofia-chat-input">
+        <input id="sofia-input" placeholder="Digite como paciente..." onkeydown="if(event.key==='Enter')enviarMsgSofia()">
+        <button class="btn btn-p" onclick="enviarMsgSofia()">Enviar</button>
+        <button class="btn btn-o" onclick="limparChatSofia()">🗑</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KRONEY BRAIN -->
+  <div id="p-kroney-brain" class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <h2 style="font-size:16px;font-weight:800">🧠 Kroney Brain</h2>
+      <span style="font-size:10px;color:var(--t3)">Cérebro de IA com memória</span>
+    </div>
+    <!-- Cards de status -->
+    <div class="grid-3" style="margin-bottom:12px">
+      <div class="card" style="text-align:center"><div style="font-size:28px" id="kb-memorias">—</div><div style="font-size:10px;color:var(--t2)">Memórias</div></div>
+      <div class="card" style="text-align:center"><div style="font-size:28px" id="kb-insights">—</div><div style="font-size:10px;color:var(--t2)">Insights</div></div>
+      <div class="card" style="text-align:center"><div style="font-size:28px" id="kb-workflows">—</div><div style="font-size:10px;color:var(--t2)">Workflows</div></div>
+    </div>
+    <!-- Insights -->
+    <div class="card"><h3>💡 Insights Recentes</h3><div id="kb-insights-lista" style="font-size:11px;color:var(--t3)">Carregando...</div></div>
+    <!-- Workflows -->
+    <div class="card"><h3>🔄 Workflows Ativos</h3><div id="kb-workflows-lista" style="font-size:11px;color:var(--t3)"></div></div>
+    <!-- Busca semântica -->
+    <div class="card"><h3>🔍 Buscar na Memória</h3>
+      <div style="display:flex;gap:6px"><input class="fi" id="kb-query" placeholder="Ex: paciente reclamou de dor de cabeca..." onkeydown="if(event.key==='Enter')buscarMemoria()"><button class="btn btn-p" onclick="buscarMemoria()">Buscar</button></div>
+      <div id="kb-resultados" style="margin-top:8px;font-size:11px"></div>
+    </div>
+  </div>
+
+  <!-- CALENDÁRIOS -->
+  <div id="p-calendarios" class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h2 style="font-size:16px;font-weight:800">🔗 Calendários Conectados</h2>
+      <button class="btn btn-p" onclick="abrirModalCalendario()">+ Conectar</button>
+    </div>
+    <div id="calendarios-lista"><div style="color:var(--t3);font-size:12px">Carregando...</div></div>
+  </div>
+
+  <!-- HISTÓRICO -->
+  <div id="p-historico" class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h2 style="font-size:16px;font-weight:800">📂 Histórico de Pacientes</h2>
+      <input class="fi" id="busca-hist" style="width:200px" placeholder="Buscar nome..." oninput="loadHistorico()">
+    </div>
+    <div id="hist-lista"></div>
+    <!-- Resumo IA do paciente selecionado -->
+    <div id="hist-resumo" class="card" style="display:none;margin-top:16px">
+      <h3>🤖 Resumo IA do Paciente</h3>
+      <div id="hist-resumo-content" style="font-size:13px;line-height:1.8"></div>
+    </div>
+  </div>
+
+</main>
+
+<!-- MODAL ASSINATURA -->
+<div id="modal-assinatura" class="modal" style="display:none">
+  <div class="modal-box" style="max-width:560px">
+    <h3>✍️ Assinatura Digital</h3>
+    <p style="font-size:11px;color:var(--t2);margin-bottom:12px">Desenhe sua assinatura abaixo ou faça upload de uma imagem (PNG com fundo transparente recomendado)</p>
+    <div id="sig-draw-area">
+      <div class="sig-canvas-wrap">
+        <canvas id="sig-canvas" width="500" height="180"
+          onmousedown="sigStart(event)" onmousemove="sigMove(event)" onmouseup="sigEnd(event)"
+          ontouchstart="sigTouch(event)" ontouchmove="sigTouchMove(event)" ontouchend="sigEnd(event)"></canvas>
+      </div>
+      <div class="sig-actions">
+        <button class="btn btn-o" onclick="limparCanvasSig()">🗑 Limpar</button>
+        <button class="btn btn-o" onclick="document.getElementById('sig-file').click()">📁 Upload</button>
+        <input type="file" id="sig-file" accept="image/*" style="display:none" onchange="uploadSigFile(this)">
+        <button class="btn btn-p" onclick="salvarAssinatura()">✅ Salvar assinatura</button>
+      </div>
+    </div>
+    <div id="sig-img-preview" style="display:none;text-align:center;margin-top:8px">
+      <img id="sig-preview-img" style="max-height:120px;background:#fff;border-radius:8px;padding:4px">
+      <p style="font-size:11px;color:var(--g);margin-top:6px">✅ Assinatura carregada</p>
+      <div class="sig-actions" style="justify-content:center">
+        <button class="btn btn-o" onclick="limparCanvasSig()">✏️ Redesenhar</button>
+        <button class="btn btn-p" onclick="salvarAssinatura()">💾 Salvar no perfil</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+      <button class="btn btn-o" onclick="fecharModal('modal-assinatura')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CALENDÁRIO -->
+<div id="modal-calendario" class="modal" style="display:none">
+  <div class="modal-box">
+    <h3>🔗 Conectar Calendário</h3>
+    <div style="margin-bottom:10px"><label class="f-lbl">Nome do calendário</label><input class="fi" id="cal-nome" placeholder="Ex: Google Dr. João, iCal Clínica"></div>
+    <div class="grid-2" style="margin-bottom:10px">
+      <div><label class="f-lbl">Tipo</label><select class="fi" id="cal-tipo" onchange="toggleCalTipo()"><option value="ical_feed">📅 iCal Feed (Universal)</option></select></div>
+      <div><label class="f-lbl">Escopo</label><select class="fi" id="cal-escopo" onchange="document.getElementById('cal-prof-sel').style.display=this.value==='profissional'?'block':'none'"><option value="clinica">🏥 Clínica (todos profissionais)</option><option value="profissional">👨‍⚕️ Profissional específico</option></select></div>
+    </div>
+    <div id="cal-prof-sel" style="display:none;margin-bottom:10px"><label class="f-lbl">Profissional</label><select class="fi" id="cal-prof-id"></select></div>
+    <div style="margin-bottom:10px"><label class="f-lbl">Direção</label><select class="fi" id="cal-dir"><option value="both">↔️ Mão dupla</option><option value="export">→ Exportar (Kronexa → Calendário)</option><option value="import">← Importar (Calendário → Kronexa)</option></select></div>
+    <div id="cal-ical-info" style="background:rgba(34,197,94,.05);border:1px solid rgba(34,197,94,.15);border-radius:9px;padding:10px;font-size:11px;color:var(--t2);margin-bottom:10px;line-height:1.6">
+      📅 <b>iCal Feed</b>: funciona com Google Calendar, Apple Calendar, Outlook, etc.<br>
+      Após criar, copie a URL e cole no seu app de calendário como "Assinar calendário".
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-o" onclick="fecharModal('modal-calendario')">Cancelar</button>
+      <button class="btn btn-p" onclick="conectarCalendario()">✅ Conectar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL FINALIZAR -->
+<div id="modal-finalizar" class="modal" style="display:none">
+  <div class="modal-box">
+    <h3>✅ Finalizar consulta</h3>
+    <div id="finalizar-checks" style="margin-bottom:14px"></div>
+    <div style="margin-bottom:12px">
+      <label class="f-lbl">Exames — ação</label>
+      <select class="fi" id="exame-acao">
+        <option value="salvar">Salvar no prontuário (sem compartilhar)</option>
+        <option value="compartilhar">Salvar E compartilhar com paciente</option>
+        <option value="nenhum">Sem exame nesta consulta</option>
+      </select>
+    </div>
+    <div style="background:rgba(34,197,94,.05);border:1px solid rgba(34,197,94,.15);border-radius:9px;padding:10px;font-size:11px;color:var(--t2);margin-bottom:14px;line-height:1.8">
+      ✓ Prontuário e receita salvos<br>
+      ✓ Agendamento → CONCLUÍDO<br>
+      ✓ NPS enviado ao paciente<br>
+      ✓ Sessão zerada para próximo paciente
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-o" onclick="fecharModal('modal-finalizar')">Cancelar</button>
+      <button class="btn btn-g" onclick="finalizarConsulta()">✅ Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SB='https://tcjynyfusqkqtdohnyzq.supabase.co', KEY='sb_publishable_gNJhc4WCS9MnnmDAL2T6Vg_AQ71_Vid';
+const sb=supabase.createClient(SB,KEY);
+// CID dinâmico — carrega do localStorage ou usa demo como fallback
+function getCID(){return localStorage.getItem('KRONEXA_CID')||'c1d2e3f4-0001-0000-0000-000000000001';}
+let CID=getCID();
+// Se não tiver sessão, redireciona pro login
+async function checkAuth(){const{data:{session}}=await sb.auth.getSession();if(!session?.user){window.location.href='login.html'}}
+checkAuth();
+
+// ─── ESTADO DA SESSÃO ────────────────────────────────────────
+let sessao = {
+  agendamento_id: null, paciente_id: null, prontuario_id: null,
+  pac_nome: '', pac_tel: '', pac_idade: '',
+  medicamentos: [], exames_ids: [], documentos_gerados: [],
+  anamnese_salva: false, prontuario_salvo: false
+};
+
+// ─── UTILS ───────────────────────────────────────────────────
+function toast(msg, err=false) {
+  const t=document.getElementById('toast'); t.textContent=msg;
+  t.className='toast '+(err?'err':'ok'); t.style.display='block';
+  setTimeout(()=>t.style.display='none',3000);
+}
+function navTo(id) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.getElementById('p-'+id).classList.add('on');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('on'));
+  if(id==='agenda')loadAgenda();
+  if(id==='historico')loadHistorico();
+  if(id==='calendarios')loadCalendarios();
+  if(id==='documentos'){renderDocMedLista();renderDocExamesLista();}
+  if(id==='teste-sofia'){document.getElementById('sofia-input').focus();}
+  if(id==='kroney-brain')loadKroneyBrain();
+}
+function abrirModal(id){
+  if(id==='modal-finalizar')montarChecklist();
+  document.getElementById(id).style.display='flex';
+}
+function fecharModal(id){document.getElementById(id).style.display='none';}
+
+setInterval(()=>{document.getElementById('relogio').textContent=new Date().toLocaleTimeString('pt-BR');}, 1000);
+
+// ─── INIT ─────────────────────────────────────────────────────
+async function init() {
+  document.getElementById('data-hoje').textContent = new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});
+
+  // Carregar dados da clínica customizada
+  try{
+    const{data:clin}=await sb.from('kh_clinicas').select('*').eq('id',CID).single();
+    if(clin){
+      profissionalData.clinica_nome=clin.nome; profissionalData.clinica_cnpj=clin.cnpj;
+      profissionalData.clinica_endereco=clin.endereco; profissionalData.clinica_telefone=clin.telefone;
+      profissionalData.clinica_logo=clin.logo_url; profissionalData.clinica_cor=clin.cor_primaria||'#0D9488';
+      if(clin.nome){document.querySelector('.logo').innerHTML='<span>'+clin.nome+'</span>';document.title=clin.nome+' — Kronexa'}
+      if(clin.cor_primaria){document.documentElement.style.setProperty('--p',clin.cor_primaria)}
+      if(clin.nome_secretaria){profissionalData.nome_secretaria=clin.nome_secretaria}
+    }
+  }catch(e){/* fallback demo */}
+
+  // Carregar profissional — fallback se colunas novas nao existirem
+  let prof=null;
+  try{
+    const r=await sb.from('kh_profissionais').select('id,nome,crm_numero,crm_uf,assinatura_url,especialidade').eq('clinica_id',CID).limit(1);
+    prof=r.data;
+  }catch(e){
+    try{const r=await sb.from('kh_profissionais').select('id,nome').eq('clinica_id',CID).limit(1);prof=r.data;}catch(e2){}
+  }
+  if(prof?.[0]){
+    document.getElementById('prof-nome').textContent=prof[0].nome;
+    profissionalData=prof[0];
+    if(prof[0].assinatura_url)assinaturaUploadUrl=prof[0].assinatura_url;
+  }
+
+  carregarConfigSofia();
+  await loadAgenda();
+}
+
+// ─── AGENDA ──────────────────────────────────────────────────
+async function loadAgenda() {
+  const hoje=new Date().toISOString().split('T')[0];
+  const{data}=await sb.from('kh_agendamentos')
+    .select('*,kh_servicos(nome),kh_pacientes(nome,data_nascimento,telefone)')
+    .eq('clinica_id',CID)
+    .gte('data_hora', hoje+'T00:00:00')
+    .lte('data_hora', hoje+'T23:59:59')
+    .order('data_hora');
+
+  const lista=document.getElementById('agenda-lista');
+  if(!data?.length){
+    lista.innerHTML='<div style="color:var(--t3);font-size:13px;text-align:center;padding:24px;background:var(--bg2);border-radius:10px;border:1px solid var(--border)">📅 Nenhuma consulta agendada para hoje</div>';
+    return;
+  }
+
+  const stCor={AGENDADO:'st-ag',CONFIRMADO:'st-cf',EM_ATENDIMENTO:'st-em',CONCLUIDO:'st-co'};
+  lista.innerHTML=data.map(a=>`
+    <div class="agenda-item ${a.status==='EM_ATENDIMENTO'?'ativo':''} ${a.status==='CONCLUIDO'?'concluido':''}"
+      onclick="iniciarAtendimento('${a.id}','${a.paciente_id||''}','${a.nome_paciente||a.kh_pacientes?.nome||'Paciente'}','${a.kh_pacientes?.telefone||a.telefone_paciente||''}','${a.kh_pacientes?.data_nascimento||''}')">
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+          <span style="font-size:12px;font-weight:800;color:var(--c)">${new Date(a.data_hora).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</span>
+          <span class="status-pill ${stCor[a.status]||'st-ag'}">${a.status}</span>
+          ${a.canal==='whatsapp'?'<span style="font-size:9px;background:rgba(34,197,94,.1);color:var(--g);padding:1px 6px;border-radius:100px;font-weight:700">📱 WPP</span>':''}
+        </div>
+        <div class="agenda-nome">${a.nome_paciente||a.kh_pacientes?.nome||'—'}</div>
+        <div class="agenda-meta">${a.kh_servicos?.nome||'Consulta'} · R$ ${(a.valor||0).toFixed(2)} · ${a.kh_pacientes?.telefone||a.telefone_paciente||''}</div>
+      </div>
+      ${a.status!=='CONCLUIDO'?`<button class="btn btn-p" style="padding:6px 12px;font-size:11px" onclick="event.stopPropagation();iniciarAtendimento('${a.id}','${a.paciente_id||''}','${a.nome_paciente||a.kh_pacientes?.nome||''}','${a.kh_pacientes?.telefone||a.telefone_paciente||''}','${a.kh_pacientes?.data_nascimento||''}')">Atender →</button>`:'<span style="font-size:10px;color:var(--c)">✓ Concluído</span>'}
+    </div>`).join('');
+}
+
+// ─── INICIAR ATENDIMENTO ──────────────────────────────────────
+async function iniciarAtendimento(agId, pacId, nome, tel, nasc) {
+  sessao.agendamento_id=agId; sessao.paciente_id=pacId||null;
+  sessao.pac_nome=nome; sessao.pac_tel=tel;
+  if(nasc) { const idade=Math.floor((new Date()-new Date(nasc))/31557600000); sessao.pac_idade=idade+' anos'; }
+
+  // Preencher alergias do paciente se tiver
+  if(pacId) {
+    const{data:p}=await sb.from('kh_pacientes').select('*').eq('id',pacId).single().catch(()=>({data:null}));
+    if(p?.historico_alergias) document.getElementById('a-alergia').value=p.historico_alergias;
+    await loadExamesPaciente(pacId);
+  }
+
+  // Atualizar status
+  await sb.from('kh_agendamentos').update({status:'EM_ATENDIMENTO',atualizado_em:new Date().toISOString()}).eq('id',agId).catch(()=>{});
+
+  // Mostrar banner
+  document.getElementById('pac-banner').style.display='block';
+  document.getElementById('banner-nome').textContent='👤 '+nome;
+  document.getElementById('banner-meta').innerHTML=`<span>${sessao.pac_idade||''}</span><span>📱 ${tel||'—'}</span>`;
+  document.getElementById('btn-finalizar-hd').style.display='inline-flex';
+
+  navTo('atendimento'); toast(`✓ Atendimento iniciado — ${nome}`);
+}
+
+// ─── ANAMNESE ─────────────────────────────────────────────────
+async function salvarAnamnese() {
+  if(!sessao.agendamento_id){toast('Selecione um paciente na agenda',true);return;}
+  const vitais=['v-pa','v-fc','v-spo2','v-temp','v-peso'].map(id=>document.getElementById(id)?.value).filter(Boolean);
+  const vStr = vitais.length ? `Sinais Vitais: PA ${document.getElementById('v-pa').value||'—'} mmHg | FC ${document.getElementById('v-fc').value||'—'} bpm | SpO2 ${document.getElementById('v-spo2').value||'—'}% | Temp ${document.getElementById('v-temp').value||'—'}°C | Peso ${document.getElementById('v-peso').value||'—'} kg\n\n` : '';
+
+  const campos = { queixa_principal:document.getElementById('a-queixa').value, anamnese: vStr + [document.getElementById('a-hda').value&&`HDA: ${document.getElementById('a-hda').value}`, document.getElementById('a-antec').value&&`Antecedentes: ${document.getElementById('a-antec').value}`, document.getElementById('a-hf').value&&`Familiar: ${document.getElementById('a-hf').value}`].filter(Boolean).join('\n'), exame_fisico:document.getElementById('ef-geral').value, data_atendimento:new Date().toISOString(), clinica_id:CID, agendamento_id:sessao.agendamento_id, paciente_id:sessao.paciente_id||null };
+
+  let r;
+  if(sessao.prontuario_id) { r=await sb.from('kh_prontuarios').update({...campos,atualizado_em:new Date().toISOString()}).eq('id',sessao.prontuario_id).select('id').single(); }
+  else { r=await sb.from('kh_prontuarios').insert(campos).select('id').single(); }
+
+  if(r.data?.id){sessao.prontuario_id=r.data.id;sessao.anamnese_salva=true;document.getElementById('tl-1').classList.add('done');toast('✅ Anamnese salva!');}
+  else toast('Erro: '+(r.error?.message||''),true);
+}
+
+async function irProntuario(){await salvarAnamnese();navTo('prontuario');document.getElementById('tl-2').classList.add('on');}
+
+// ─── PRONTUÁRIO ───────────────────────────────────────────────
+async function salvarProntuario() {
+  if(!sessao.agendamento_id){toast('Selecione um paciente primeiro',true);return;}
+  const dados = {diagnostico:document.getElementById('pr-diag').value,cid:document.getElementById('pr-cid').value,plano_tratamento:document.getElementById('pr-plano').value,anotacoes_profissional:document.getElementById('pr-evolucao').value,observacoes:document.getElementById('pr-obs').value,retorno_recomendado:document.getElementById('pr-retorno').value||null,atualizado_em:new Date().toISOString()};
+  let r;
+  if(sessao.prontuario_id){r=await sb.from('kh_prontuarios').update(dados).eq('id',sessao.prontuario_id).select('id').single();}
+  else{r=await sb.from('kh_prontuarios').insert({...dados,clinica_id:CID,agendamento_id:sessao.agendamento_id,paciente_id:sessao.paciente_id||null,data_atendimento:new Date().toISOString()}).select('id').single();if(r.data?.id)sessao.prontuario_id=r.data.id;}
+  if(!r.error){sessao.prontuario_salvo=true;document.getElementById('tl-2').classList.add('done');toast('✅ Prontuário salvo!');}
+  else toast('Erro: '+r.error.message,true);
+}
+
+// ─── RECEITA ─────────────────────────────────────────────────
+function adicionarMedicamento() {
+  const nome=(document.getElementById('med-nome')?.value||'').trim();
+  if(!nome){toast('Digite o nome do medicamento',true);return;}
+  const med={nome,via:document.getElementById('med-via')?.value||'Oral',dose:document.getElementById('med-dose')?.value||'',duracao:document.getElementById('med-duracao')?.value||'',obs:document.getElementById('med-obs')?.value||''};
+  sessao.medicamentos.push(med);
+  renderMedLista();
+  ['med-nome','med-dose','med-duracao','med-obs'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('tl-4').classList.add('done');
+  toast('💊 '+nome+' adicionado à receita');
+}
+
+function renderMedLista() {
+  const lista=document.getElementById('med-lista');
+  if(!lista)return;
+  if(!sessao.medicamentos.length){
+    lista.innerHTML='<div style="color:var(--t3);font-size:12px;text-align:center;padding:16px;background:var(--bg2);border-radius:10px;border:1px solid var(--border)">💊 Nenhum medicamento adicionado ainda</div>';
+    return;
+  }
+  lista.innerHTML=sessao.medicamentos.map((m,i)=>`
+    <div class="med-item">
+      <span style="font-size:18px">💊</span>
+      <div class="med-info">
+        <div class="med-nome">${m.nome}</div>
+        <div class="med-det">${m.dose||'—'} · Via ${m.via} · ${m.duracao||'—'}${m.obs?' · '+m.obs:''}</div>
+      </div>
+      <button class="med-del" onclick="removerMed(${i})" title="Remover">×</button>
+    </div>`).join('');
+}
+
+function removerMed(i){sessao.medicamentos.splice(i,1);renderMedLista();}
+
+async function salvarReceita() {
+  if(!sessao.medicamentos.length){toast('Adicione ao menos 1 medicamento',true);return;}
+  if(!sessao.prontuario_id)await salvarProntuario();
+  if(!sessao.prontuario_id){toast('Salve o prontuário primeiro',true);return;}
+  const prescricao=sessao.medicamentos.map(m=>`• ${m.nome} — ${m.dose} (via ${m.via}) por ${m.duracao}${m.obs?' · '+m.obs:''}`).join('\n');
+  const orient=document.getElementById('receita-orientacoes')?.value||'';
+  const{error}=await sb.from('kh_prontuarios').update({prescricao:prescricao+(orient?'\n\nOrientações:\n'+orient:''),atualizado_em:new Date().toISOString()}).eq('id',sessao.prontuario_id);
+  if(!error){document.getElementById('tl-4').classList.add('done');toast('✅ Receita salva!');}
+  else toast('Erro: '+error.message,true);
+}
+
+function irReceita(){navTo('receita');}
+
+// ─── EXAMES ───────────────────────────────────────────────────
+async function loadExamesPaciente(pacId) {
+  const{data}=await sb.from('kh_exames').select('*').eq('clinica_id',CID).eq('paciente_id',pacId).order('criado_em',{ascending:false}).limit(20).catch(()=>({data:[]}));
+  const lista=document.getElementById('exames-lista-med');
+  if(!lista)return;
+  if(!data?.length){lista.innerHTML='<div style="color:var(--t3);font-size:11px">Nenhum exame para este paciente</div>';return;}
+  lista.innerHTML=data.map(e=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04)">
+    <span style="font-size:16px">${e.tipo==='pdf'?'📄':'🖼️'}</span>
+    <div style="flex:1"><div style="font-size:12px;font-weight:600">${e.nome}</div><div style="font-size:10px;color:var(--t3)">${new Date(e.criado_em).toLocaleDateString('pt-BR')} · ${e.laudo?'✓ Laudado':'Pendente'}</div></div>
+    <div style="display:flex;gap:4px">
+      <button class="btn btn-o" style="padding:4px 8px;font-size:10px" onclick="window.open('portal-exames.html','_blank')">Ver</button>
+      ${!e.prontuario_id&&sessao.prontuario_id?`<button class="btn btn-p" style="padding:4px 8px;font-size:10px" onclick="vincularExame('${e.id}')">Vincular</button>`:''}
+      ${e.prontuario_id?'<span style="font-size:10px;color:var(--g)">✓</span>':''}
+    </div>
+  </div>`).join('');
+}
+
+async function vincularExame(exId) {
+  if(!sessao.prontuario_id){await salvarProntuario();}
+  if(!sessao.prontuario_id){toast('Salve o prontuário primeiro',true);return;}
+  await sb.from('kh_exames').update({prontuario_id:sessao.prontuario_id}).eq('id',exId);
+  sessao.exames_ids.push(exId); toast('✅ Exame vinculado!');
+  if(sessao.paciente_id)loadExamesPaciente(sessao.paciente_id);
+}
+
+async function uploadExame(input) {
+  if(!sessao.agendamento_id){toast('Inicie um atendimento primeiro',true);return;}
+  const files=Array.from(input.files||[]);
+  const status=document.getElementById('upload-status');
+  status.style.display='block';
+  for(const f of files){
+    status.textContent=`Enviando ${f.name}...`;
+    const path=`${CID}/${Date.now()}_${f.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;
+    const{data:up}=await sb.storage.from('exames').upload(path,f,{contentType:f.type,upsert:false});
+    const{data:ud}=up?sb.storage.from('exames').getPublicUrl(up.path):{data:{publicUrl:''}};
+    const{data:ex}=await sb.from('kh_exames').insert({clinica_id:CID,paciente_id:sessao.paciente_id||null,prontuario_id:sessao.prontuario_id||null,nome:f.name.replace(/\.[^.]+$/,''),tipo:f.type.startsWith('image')?'imagem':'pdf',url:ud?.publicUrl||'',tamanho_bytes:f.size,anotacoes:[],marcacoes:[],origem:'upload_recepcao'}).select('id').single();
+    if(ex?.id)sessao.exames_ids.push(ex.id);
+    toast(`✅ ${f.name}`);
+  }
+  status.textContent='✅ Enviado!';setTimeout(()=>status.style.display='none',3000);
+  if(sessao.paciente_id)loadExamesPaciente(sessao.paciente_id);
+  document.getElementById('tl-3').classList.add('done');
+}
+
+// ─── FINALIZAR ────────────────────────────────────────────────
+function montarChecklist() {
+  const itens=[
+    {l:'Anamnese preenchida',ok:sessao.anamnese_salva},
+    {l:'Prontuário com diagnóstico',ok:sessao.prontuario_salvo},
+    {l:'Medicamentos / Receita',ok:sessao.medicamentos.length>0},
+    {l:'Exames vinculados',ok:sessao.exames_ids.length>0},
+    {l:'Documentos gerados (atestado/receita/pedido/enc.)',ok:sessao.documentos_gerados.length>0},
+  ];
+  document.getElementById('finalizar-checks').innerHTML=itens.map(i=>`
+    <div class="check-item ${i.ok?'check-ok':'check-pend'}">${i.ok?'✅':'⚠️'} ${i.l} ${i.ok?'':' (não preenchido)'}</div>`).join('');
+}
+
+async function finalizarConsulta() {
+  fecharModal('modal-finalizar');
+
+  if(!sessao.prontuario_salvo && sessao.agendamento_id) await salvarProntuario();
+  if(sessao.medicamentos.length) await salvarReceita();
+
+  const acao=document.getElementById('exame-acao').value;
+  if(acao!=='nenhum' && sessao.exames_ids.length){
+    const upd={prontuario_id:sessao.prontuario_id||null};
+    if(acao==='compartilhar'){upd.compartilhado_paciente=true;upd.compartilhado_em=new Date().toISOString();}
+    for(const id of sessao.exames_ids)await sb.from('kh_exames').update(upd).eq('id',id);
+  }
+
+  if(sessao.agendamento_id)
+    await sb.from('kh_agendamentos').update({status:'CONCLUIDO',atualizado_em:new Date().toISOString()}).eq('id',sessao.agendamento_id);
+
+  toast('✅ Consulta finalizada! Sessão zerada.');
+  resetarSessao();
+  await loadAgenda();
+  navTo('agenda');
+}
+
+function resetarSessao() {
+  sessao={agendamento_id:null,paciente_id:null,prontuario_id:null,pac_nome:'',pac_tel:'',pac_idade:'',medicamentos:[],exames_ids:[],documentos_gerados:[],anamnese_salva:false,prontuario_salvo:false};
+  const campos=['a-queixa','a-hda','a-antec','a-hf','a-alergia','a-meds','ef-geral','pr-diag','pr-cid','pr-diag2','pr-plano','pr-evolucao','pr-obs','pr-retorno','med-nome','med-dose','med-duracao','med-obs','receita-orientacoes','v-pa','v-fc','v-spo2','v-temp','v-peso'];
+  campos.forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  // Limpar docs tambem
+  limparDocForm();
+  renderMedLista();
+  ['tl-1','tl-2','tl-3','tl-4','tl-5'].forEach(id=>{const el=document.getElementById(id);if(el)el.className='tl';});
+  document.getElementById('pac-banner').style.display='none';
+  document.getElementById('btn-finalizar-hd').style.display='none';
+}
+
+// ─── DOCUMENTOS ────────────────────────────────────────────────
+let docTipo='atestado', assinaturaDataUrl=null, assinaturaUploadUrl=null;
+let docExamesList=[], docUltimoPdfUrl=null, profissionalData={};
+
+function setDocTab(tipo,el){
+  docTipo=tipo; if(el){
+    document.querySelectorAll('.doc-tab').forEach(t=>t.classList.remove('on'));
+    el.classList.add('on');
+  }
+  document.querySelectorAll('.doc-form').forEach(f=>f.classList.remove('on'));
+  document.getElementById('doc-'+tipo).classList.add('on');
+  document.getElementById('doc-preview').style.display='none';
+  document.getElementById('btn-share-doc').style.display='none';
+  // Atualizar lista de medicamentos se for receita
+  if(tipo==='receita')renderDocMedLista();
+  if(tipo==='pedido_exame')renderDocExamesLista();
+  if(tipo==='atestado')document.getElementById('at-data').value=new Date().toISOString().split('T')[0];
+  if(tipo==='danfe'){document.getElementById('danfe-data').value=new Date().toISOString().split('T')[0];renderDanfeLista();}
+}
+
+function renderDocMedLista(){
+  const lista=document.getElementById('doc-med-lista');
+  if(!sessao.medicamentos.length){
+    lista.innerHTML='<div style="color:var(--t3);font-size:11px">Nenhum medicamento. Adicione na aba 💊 Receita primeiro.</div>';
+    return;
+  }
+  lista.innerHTML=sessao.medicamentos.map((m,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04)">
+      <span>💊</span><span style="flex:1;font-size:12px"><b>${m.nome}</b> — ${m.dose} (${m.via}) · ${m.duracao}${m.obs?' — '+m.obs:''}</span>
+      <button class="med-del" onclick="sessao.medicamentos.splice(${i},1);renderDocMedLista();renderMedLista()">×</button>
+    </div>`).join('');
+}
+
+function addDocExame(){
+  const inp=document.getElementById('doc-exame-novo');
+  const nome=inp.value.trim();
+  if(!nome){toast('Digite o nome do exame',true);return;}
+  docExamesList.push(nome); inp.value=''; renderDocExamesLista();
+}
+function renderDocExamesLista(){
+  const lista=document.getElementById('doc-exames-lista');
+  if(!docExamesList.length){lista.innerHTML='<div style="color:var(--t3);font-size:11px">Nenhum exame adicionado</div>';return;}
+  lista.innerHTML=docExamesList.map((e,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04)">
+    <span>🔬</span><span style="flex:1;font-size:12px">☐ ${e}</span>
+    <button class="med-del" onclick="docExamesList.splice(${i},1);renderDocExamesLista()">×</button></div>`).join('');
+}
+
+// ─── ASSINATURA ──────────────────────────────────────────────────
+let sigCanvas,sigCtx,sigDrawing=false,sigPath=[];
+function abrirAssinatura(){
+  document.getElementById('modal-assinatura').style.display='flex';
+  sigCanvas=document.getElementById('sig-canvas');
+  sigCtx=sigCanvas.getContext('2d'); sigCtx.lineWidth=2; sigCtx.strokeStyle='#000';
+  sigCtx.lineCap='round'; sigCtx.lineJoin='round';
+  if(profissionalData.assinatura_url){
+    document.getElementById('sig-draw-area').style.display='none';
+    document.getElementById('sig-img-preview').style.display='block';
+    document.getElementById('sig-preview-img').src=profissionalData.assinatura_url;
+    assinaturaUploadUrl=profissionalData.assinatura_url;
+  } else {
+    document.getElementById('sig-draw-area').style.display='block';
+    document.getElementById('sig-img-preview').style.display='none';
+  }
+}
+function sigStart(e){e.preventDefault();sigDrawing=true;const r=sigCanvas.getBoundingClientRect();const sx=sigCanvas.width/r.width;const sy=sigCanvas.height/r.height;sigPath=[{x:(e.clientX-r.left)*sx,y:(e.clientY-r.top)*sy}];sigCtx.beginPath();sigCtx.moveTo(sigPath[0].x,sigPath[0].y);}
+function sigMove(e){if(!sigDrawing)return;e.preventDefault();const r=sigCanvas.getBoundingClientRect();const sx=sigCanvas.width/r.width;const sy=sigCanvas.height/r.height;const p={x:(e.clientX-r.left)*sx,y:(e.clientY-r.top)*sy};sigPath.push(p);sigCtx.lineTo(p.x,p.y);sigCtx.stroke();}
+function sigEnd(){if(!sigDrawing)return;sigDrawing=false;sigCtx.closePath();assinaturaDataUrl=sigCanvas.toDataURL('image/png');}
+function sigTouch(e){e.preventDefault();const t=e.touches[0];const r=sigCanvas.getBoundingClientRect();sigDrawing=true;const sx=sigCanvas.width/r.width;const sy=sigCanvas.height/r.height;sigPath=[{x:(t.clientX-r.left)*sx,y:(t.clientY-r.top)*sy}];sigCtx.beginPath();sigCtx.moveTo(sigPath[0].x,sigPath[0].y);}
+function sigTouchMove(e){if(!sigDrawing)return;e.preventDefault();const t=e.touches[0];const r=sigCanvas.getBoundingClientRect();sigCtx.lineTo((t.clientX-r.left)*(sigCanvas.width/r.width),(t.clientY-r.top)*(sigCanvas.height/r.height));sigCtx.stroke();}
+function limparCanvasSig(){sigCtx.clearRect(0,0,sigCanvas.width,sigCanvas.height);assinaturaDataUrl=null;assinaturaUploadUrl=null;document.getElementById('sig-draw-area').style.display='block';document.getElementById('sig-img-preview').style.display='none';}
+function uploadSigFile(inp){
+  const f=inp.files?.[0]; if(!f)return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    assinaturaDataUrl=ev.target.result;
+    document.getElementById('sig-preview-img').src=ev.target.result;
+    document.getElementById('sig-draw-area').style.display='none';
+    document.getElementById('sig-img-preview').style.display='block';
+  };
+  reader.readAsDataURL(f);
+}
+async function salvarAssinatura(){
+  if(!assinaturaDataUrl){toast('Desenhe ou faça upload da assinatura',true);return;}
+  try{
+    // Converter dataURL para blob e upload
+    const resp=await fetch(assinaturaDataUrl); const blob=await resp.blob();
+    const path=`${CID}/assinaturas/${profissionalData.id||'prof'}_${Date.now()}.png`;
+    const{error:upErr}=await sb.storage.from('documentos_saude').upload(path,blob,{contentType:'image/png',upsert:true});
+    if(upErr){toast('Erro upload: '+upErr.message,true);return;}
+    const{data:ud}=sb.storage.from('documentos_saude').getPublicUrl(path);
+    assinaturaUploadUrl=ud?.publicUrl;
+    // Salvar no perfil
+    await sb.from('kh_profissionais').update({assinatura_url:assinaturaUploadUrl}).eq('id',profissionalData.id);
+    profissionalData.assinatura_url=assinaturaUploadUrl;
+    fecharModal('modal-assinatura');
+    toast('✅ Assinatura salva no perfil!');
+  }catch(e){toast('Erro: '+e.message,true);}
+}
+
+// ─── PDF GENERATOR ───────────────────────────────────────────────
+function getDocHeader(doc, titulo){
+  const m=18; // margin em mm
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(16);
+  // Nome da clinica
+  const clinicaNome=profissionalData.clinica_nome||'Kronexa Saude';
+  doc.text(clinicaNome,105,m+6,{align:'center'});
+  doc.setFontSize(7); doc.setFont('helvetica','normal');
+  const subtitulo=[profissionalData.clinica_cnpj&&`CNPJ: ${profissionalData.clinica_cnpj}`,profissionalData.clinica_endereco,profissionalData.clinica_telefone].filter(Boolean).join(' · ');
+  if(subtitulo)doc.text(subtitulo,105,m+10,{align:'center'});
+  doc.setDrawColor(180,180,180); doc.line(m,m+12,210-m,m+12);
+  // Titulo
+  doc.setFontSize(14); doc.setFont('helvetica','bold');
+  doc.text(titulo,105,m+20,{align:'center'});
+  doc.setDrawColor(180,180,180); doc.line(m,m+24,210-m,m+24);
+  // Info medico
+  doc.setFontSize(9); doc.setFont('helvetica','bold');
+  doc.text('Médico:',m,m+32);
+  doc.setFont('helvetica','normal');
+  doc.text(`${profissionalData.nome||'—'} — CRM ${profissionalData.crm_numero||'—'}/${profissionalData.crm_uf||'SP'}`,m+20,m+32);
+  if(profissionalData.especialidade)doc.text(`Especialidade: ${profissionalData.especialidade}`,m+20,m+38);
+  return m;
+}
+
+function getDocFooter(doc, y){
+  doc.setFontSize(6); doc.setFont('helvetica','normal');
+  doc.setTextColor(160,160,160);
+  doc.text('Documento gerado eletronicamente por Kronexa Saude',105,y-8,{align:'center'});
+  doc.text(`Emitido em: ${new Date().toLocaleString('pt-BR')}`,105,y-5,{align:'center'});
+  doc.setTextColor(0,0,0);
+}
+
+function addSignatureBlock(doc, y){
+  const m=18;
+  if(y<210)y=210; // garantir espaco no final
+  doc.setDrawColor(180,180,180); doc.line(m,y,210-m,y); y+=4;
+  // Assinatura
+  if(assinaturaUploadUrl||profissionalData.assinatura_url){
+    try{
+      const sigUrl=assinaturaUploadUrl||profissionalData.assinatura_url;
+      doc.addImage(sigUrl,'PNG',m+55,y,60,22);
+      y+=24;
+    }catch(e){/* assinatura nao disponivel, usar espaco em branco */y+=10;}
+  }else{y+=10;}
+  doc.setFontSize(10); doc.setFont('helvetica','bold');
+  doc.text(`Dr(a). ${profissionalData.nome||'—'}`,105,y,{align:'center'});
+  doc.setFontSize(8); doc.setFont('helvetica','normal');
+  doc.text(`CRM ${profissionalData.crm_numero||'—'}/${profissionalData.crm_uf||'SP'}`,105,y+4,{align:'center'});
+  doc.setFontSize(7); doc.setTextColor(140,140,140);
+  doc.text(`Assinado digitalmente em: ${new Date().toLocaleString('pt-BR')}`,105,y+8,{align:'center'});
+  doc.setTextColor(0,0,0);
+}
+
+async function gerarPDF(){
+  if(!sessao.paciente_id && docTipo!=='atestado'){toast('Inicie um atendimento primeiro',true);return;}
+  if(!profissionalData.id){toast('Carregando dados do médico...',true);return;}
+  const btn=document.getElementById('btn-gerar-pdf');
+  btn.disabled=true; btn.textContent='⏳ Gerando...';
+
+  try{
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    const m=18, w=210-2*m;
+    let y;
+
+    if(docTipo==='atestado')y=await gerarPDFAtestado(doc,m,w);
+    else if(docTipo==='receita')y=await gerarPDFReceita(doc,m,w);
+    else if(docTipo==='pedido_exame')y=await gerarPDFPedidoExame(doc,m,w);
+    else if(docTipo==='encaminhamento')y=await gerarPDFEncaminhamento(doc,m,w);
+    else if(docTipo==='danfe')y=await gerarPDFDanfe(doc,m,w);
+    else {toast('Tipo desconhecido',true);btn.disabled=false;btn.textContent='📥 Gerar PDF';return;}
+
+    addSignatureBlock(doc,y);
+    getDocFooter(doc,290);
+
+    // Preview
+    const pdfDataUri=doc.output('datauristring');
+    document.getElementById('doc-preview').style.display='block';
+    document.getElementById('doc-preview').innerHTML=`<h4 style="color:#555;text-align:center;margin-bottom:8px">✅ PDF Gerado — Pré-visualização</h4><iframe src="${pdfDataUri}" style="width:100%;height:350px;border:none;border-radius:8px"></iframe>`;
+
+    // Upload para Storage
+    const pdfBlob=doc.output('blob');
+    const numero=await getProximoNumero(docTipo);
+    const path=`${CID}/documentos/${docTipo}/${new Date().getFullYear()}/${numero}.pdf`;
+    const{error:upErr}=await sb.storage.from('documentos_saude').upload(path,pdfBlob,{contentType:'application/pdf',upsert:true});
+    if(upErr){console.error('Upload PDF:',upErr);}
+    const{data:ud}=sb.storage.from('documentos_saude').getPublicUrl(path);
+    docUltimoPdfUrl=ud?.publicUrl||pdfDataUri;
+
+    // Salvar no banco
+    const conteudo=getDocConteudo();
+    const docRecord={
+      clinica_id:CID, paciente_id:sessao.paciente_id||null,
+      agendamento_id:sessao.agendamento_id||null,
+      prontuario_id:sessao.prontuario_id||null,
+      tipo:docTipo, numero_documento:numero,
+      conteudo, pdf_url:docUltimoPdfUrl,
+      signature_image_url:assinaturaUploadUrl||profissionalData.assinatura_url||null,
+      assinado_em:new Date().toISOString(),
+      assinado_por:profissionalData.id
+    };
+    const{data:docInsert}=await sb.from('kh_documentos').insert(docRecord).select('id').single();
+    if(docInsert?.id && !sessao.documentos_gerados.includes(docInsert.id)){
+      sessao.documentos_gerados.push(docInsert.id);
+    }
+
+    document.getElementById('btn-share-doc').style.display='inline-flex';
+    toast(`✅ ${getTipoLabel(docTipo)} gerado! Nº ${numero}`);
+  }catch(e){
+    toast('Erro: '+e.message,true);
+    console.error(e);
+  }
+  btn.disabled=false; btn.textContent='📥 Gerar PDF';
+}
+
+function getDocConteudo(){
+  if(docTipo==='atestado')return {cid:document.getElementById('at-cid')?.value||'',dias:document.getElementById('at-dias')?.value||'1',justificativa:document.getElementById('at-just')?.value||''};
+  if(docTipo==='receita')return {medicamentos:sessao.medicamentos,orientacoes:document.getElementById('doc-rec-orient')?.value||'',tipo:document.getElementById('doc-rec-tipo')?.value||'Simples',validade:document.getElementById('doc-rec-val')?.value||'30 dias'};
+  if(docTipo==='pedido_exame')return {exames:docExamesList,cid:document.getElementById('doc-exame-cid')?.value||'',preparo:document.getElementById('doc-exame-prep')?.value||''};
+  if(docTipo==='encaminhamento')return {especialidade:document.getElementById('enc-esp')?.value||'',profissional:document.getElementById('enc-prof')?.value||'',motivo:document.getElementById('enc-motivo')?.value||'',cid:document.getElementById('enc-cid')?.value||'',conduta:document.getElementById('enc-conduta')?.value||''};
+  if(docTipo==='danfe')return {numero:document.getElementById('danfe-num')?.value||'',cliente:document.getElementById('danfe-cliente')?.value||'',cpf:document.getElementById('danfe-cpf')?.value||'',itens:danfeItens,total:danfeItens.reduce((s,i)=>s+i.valor,0),obs:document.getElementById('danfe-obs')?.value||''};
+  return{};
+}
+
+function getTipoLabel(t){return {atestado:'Atestado',receita:'Receita',pedido_exame:'Pedido de Exames',encaminhamento:'Encaminhamento',danfe:'Recibo/DANFE'}[t]||t;}
+
+// ─── DANFE / RECIBO ────────────────────────────────────────────
+let danfeItens=[];
+function addDanfeItem(){
+  const nome=document.getElementById('danfe-item-nome').value.trim();
+  const valor=parseFloat(document.getElementById('danfe-item-valor').value)||0;
+  if(!nome||valor<=0){toast('Preencha nome e valor',true);return;}
+  danfeItens.push({nome,valor});
+  document.getElementById('danfe-item-nome').value='';
+  document.getElementById('danfe-item-valor').value='';
+  renderDanfeLista();
+}
+function renderDanfeLista(){
+  const lista=document.getElementById('danfe-itens-lista');
+  if(!danfeItens.length){lista.innerHTML='<div style="color:var(--t3);font-size:11px">Nenhum item adicionado</div>';document.getElementById('danfe-total').textContent='Total: R$ 0,00';return;}
+  lista.innerHTML=danfeItens.map((it,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:11px"><span>📦 ${it.nome}</span><span>R$ ${it.valor.toFixed(2)} <button class="med-del" onclick="danfeItens.splice(${i},1);renderDanfeLista()">×</button></span></div>`).join('');
+  document.getElementById('danfe-total').textContent='Total: R$ '+danfeItens.reduce((s,i)=>s+i.valor,0).toFixed(2);
+  document.getElementById('danfe-num').value='REC-'+new Date().toISOString().slice(0,10).replace(/-/g,'')+'-'+String(danfeItens.length).padStart(3,'0');
+}
+
+async function gerarPDFDanfe(doc,m,w){
+  let y=getDocHeader(doc,'RECIBO / DANFE SIMPLIFICADO');
+  y+=28; doc.setFontSize(7); doc.setFont('helvetica','italic');
+  doc.text('Documento sem valor fiscal — válido como comprovante',105,y,{align:'center'}); y+=8;
+  // Cliente
+  doc.setFontSize(10); doc.setFont('helvetica','bold');
+  const cliente=document.getElementById('danfe-cliente')?.value||sessao.pac_nome||'—';
+  const cpf=document.getElementById('danfe-cpf')?.value||'';
+  doc.text(`Cliente: ${cliente}`,m,y); if(cpf)doc.text(`CPF/CNPJ: ${cpf}`,130,y); y+=7;
+  doc.setFontSize(9); doc.text(`Documento: ${document.getElementById('danfe-num')?.value||'—'}`,m,y);
+  doc.text(`Data: ${document.getElementById('danfe-data')?.value||new Date().toLocaleDateString('pt-BR')}`,130,y); y+=5;
+  doc.setDrawColor(180,180,180); doc.line(m,y,210-m,y); y+=5;
+  // Tabela
+  doc.setFontSize(9); doc.setFont('helvetica','bold');
+  doc.text('Item',m,y); doc.text('Valor',170,y,{align:'right'}); y+=4;
+  doc.line(m,y,210-m,y); y+=3;
+  doc.setFont('helvetica','normal');
+  let total=0;
+  (danfeItens.length?danfeItens:[{nome:'Serviço prestado',valor:0}]).forEach((it,i)=>{
+    if(y>260){doc.addPage();y=25;}
+    doc.text(`${i+1}. ${it.nome}`,m,y);
+    doc.text(`R$ ${it.valor.toFixed(2)}`,170,y,{align:'right'});
+    total+=it.valor; y+=5;
+  });
+  y+=3; doc.setDrawColor(180,180,180); doc.line(m,y,210-m,y); y+=5;
+  doc.setFontSize(11); doc.setFont('helvetica','bold');
+  doc.text(`TOTAL: R$ ${total.toFixed(2)}`,170,y,{align:'right'}); y+=8;
+  // Obs
+  const obs=document.getElementById('danfe-obs')?.value||'';
+  if(obs){doc.setFontSize(8);doc.setFont('helvetica','normal');doc.text(`Obs: ${obs}`,m,y);y+=8;}
+  return y;
+}
+
+async function getProximoNumero(tipo){
+  try{
+    const ano=new Date().getFullYear();
+    const{data,error}=await sb.rpc('incrementar_contador_documento',{p_clinica_id:CID,p_tipo:tipo,p_ano:ano});
+    if(error)throw error;
+    const prefixos={atestado:'AT',receita:'REC',pedido_exame:'PE',encaminhamento:'ENC'};
+    return `${prefixos[tipo]||'DOC'}-${ano}-${String(data).padStart(4,'0')}`;
+  }catch(e){return `${docTipo.substring(0,3).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;}
+}
+
+// ─── TEMPLATES PDF ──────────────────────────────────────────────
+async function gerarPDFAtestado(doc,m,w){
+  let y=getDocHeader(doc,'ATESTADO MÉDICO');
+  doc.setFontSize(7); doc.setFont('helvetica','italic');
+  doc.text('Nos termos do art. 6º, II, da Lei nº 6.259/75 e Resolução CFM nº 1.658/2002',105,y+28,{align:'center'});
+  y+=37;
+  // Paciente
+  doc.setFontSize(10); doc.setFont('helvetica','bold');
+  doc.text('Paciente:',m,y);
+  doc.setFont('helvetica','normal');
+  doc.text(sessao.pac_nome||'—',m+24,y); y+=6;
+  if(sessao.pac_idade){doc.text(`Idade: ${sessao.pac_idade}`,m+24,y);y+=6;}
+  y+=2; doc.setDrawColor(180,180,180); doc.line(m,y,210-m,y); y+=6;
+  // Corpo
+  const dias=document.getElementById('at-dias')?.value||'1';
+  const cid=document.getElementById('at-cid')?.value||'';
+  const just=document.getElementById('at-just')?.value||'Paciente necessita de afastamento de suas atividades habituais por motivo de saúde.';
+  doc.setFontSize(11); doc.setFont('helvetica','normal');
+  const texto=`Atesto, para os devidos fins, que o(a) paciente acima identificado(a) foi atendido(a) nesta data, necessitando de afastamento de suas atividades habituais por ${dias} dia(s)${cid?`, conforme CID-10: ${cid}`:''}.${just?`\n\nJustificativa: ${just}`:''}`;
+  doc.text(doc.splitTextToSize(texto,w),m,y);
+  y+=35;
+  // CID visibility
+  if(cid){
+    doc.setFontSize(7); doc.setFont('helvetica','italic');
+    doc.text('* O CID-10 consta neste documento por autorização do paciente, conforme Lei nº 13.787/2018.',m,y); y+=6;
+  }
+  y+=8;
+  return y;
+}
+
+async function gerarPDFReceita(doc,m,w){
+  let y=getDocHeader(doc,'RECEITA MÉDICA');
+  y+=28;
+  // Paciente
+  doc.setFontSize(10); doc.setFont('helvetica','bold');
+  doc.text('Paciente:',m,y);
+  doc.setFont('helvetica','normal');
+  doc.text(sessao.pac_nome||'—',m+24,y); y+=6;
+  doc.setFontSize(8);
+  const tipo=document.getElementById('doc-rec-tipo')?.value||'Simples';
+  const val=document.getElementById('doc-rec-val')?.value||'30 dias';
+  doc.text(`Uso: INTERNO · Tipo: ${tipo} · Validade: ${val}`,m+24,y); y+=4;
+  y+=2; doc.setDrawColor(180,180,180); doc.line(m,y,210-m,y); y+=6;
+  // Medicamentos
+  if(!sessao.medicamentos.length){
+    doc.setFontSize(10); doc.setTextColor(200,0,0);
+    doc.text('Nenhum medicamento adicionado.',m,y);
+    doc.setTextColor(0,0,0); y+=10;
+  }else{
+    // Tabela
+    doc.setFontSize(7); doc.setFont('helvetica','bold');
+    doc.text('Medicamento',m,y); doc.text('Dose',m+70,y); doc.text('Via',m+115,y); doc.text('Duração',m+140,y);
+    y+=4; doc.line(m,y,210-m,y); y+=3;
+    doc.setFont('helvetica','normal');
+    sessao.medicamentos.forEach((med,i)=>{
+      if(y>250){doc.addPage();y=20;}
+      doc.text(`${i+1}. ${med.nome}`,m,y);
+      doc.text(med.dose||'—',m+70,y);
+      doc.text(med.via||'Oral',m+115,y);
+      doc.text(med.duracao||'—',m+140,y);
+      y+=5;
+      if(med.obs){doc.setFontSize(6);doc.text(`Obs: ${med.obs}`,m+5,y);doc.setFontSize(7);y+=4;}
+    });
+  }
+  y+=4; doc.setDrawColor(180,180,180); doc.line(m,y,210-m,y); y+=5;
+  // Orientacoes
+  const orient=document.getElementById('doc-rec-orient')?.value||'';
+  if(orient){
+    doc.setFontSize(9); doc.setFont('helvetica','bold');
+    doc.text('Orientações:',m,y); y+=5;
+    doc.setFont('helvetica','normal');
+    doc.text(doc.splitTextToSize(orient,w),m,y); y+=12;
+  }
+  return y;
+}
+
+async function gerarPDFPedidoExame(doc,m,w){
+  let y=getDocHeader(doc,'PEDIDO DE EXAMES');
+  y+=28;
+  // Paciente
+  doc.setFontSize(10); doc.setFont('helvetica','bold');
+  doc.text('Paciente:',m,y);
+  doc.setFont('helvetica','normal');
+  doc.text(sessao.pac_nome||'—',m+24,y); y+=6;
+  y+=2; doc.setDrawColor(180,180,180); doc.line(m,y,210-m,y); y+=6;
+  // Exames
+  if(!docExamesList.length){
+    doc.setFontSize(10); doc.setTextColor(200,0,0);
+    doc.text('Nenhum exame adicionado.',m,y);
+    doc.setTextColor(0,0,0); y+=10;
+  }else{
+    doc.setFontSize(10); doc.setFont('helvetica','bold');
+    doc.text('Exames solicitados:',m,y); y+=6;
+    doc.setFont('helvetica','normal');
+    docExamesList.forEach((e,i)=>{
+      if(y>260){doc.addPage();y=25;}
+      doc.text(`☐ ${e}`,m,y); y+=5;
+    });
+  }
+  y+=4; doc.setDrawColor(180,180,180); doc.line(m,y,210-m,y); y+=5;
+  // CID + info clinica
+  const cid=document.getElementById('doc-exame-cid')?.value||'';
+  if(cid){doc.setFontSize(9);doc.text(`CID/Info. clínica: ${cid}`,m,y);y+=5;}
+  const prep=document.getElementById('doc-exame-prep')?.value||'';
+  if(prep){doc.setFontSize(9);doc.text(`Preparo: ${prep}`,m,y);y+=5;}
+  return y;
+}
+
+async function gerarPDFEncaminhamento(doc,m,w){
+  let y=getDocHeader(doc,'ENCAMINHAMENTO MÉDICO');
+  y+=28;
+  // Destino
+  const esp=document.getElementById('enc-esp')?.value||'';
+  const profDest=document.getElementById('enc-prof')?.value||'';
+  if(esp||profDest){
+    doc.setFontSize(10); doc.setFont('helvetica','bold');
+    doc.text('Para:',m,y); y+=6;
+    doc.setFont('helvetica','normal');
+    if(esp)doc.text(`Especialidade: ${esp}`,m,y); y+=5;
+    if(profDest)doc.text(`Profissional: ${profDest}`,m,y); y+=5;
+    y+=4; doc.setDrawColor(180,180,180); doc.line(m,y,210-m,y); y+=6;
+  }
+  // Paciente
+  doc.setFontSize(10); doc.setFont('helvetica','bold');
+  doc.text('Paciente:',m,y);
+  doc.setFont('helvetica','normal');
+  doc.text(sessao.pac_nome||'—',m+24,y); y+=6;
+  y+=2; doc.setDrawColor(180,180,180); doc.line(m,y,210-m,y); y+=5;
+  // Prezado colega
+  doc.setFontSize(9);
+  doc.text('Prezado(a) Colega,',m,y); y+=7;
+  const motivo=document.getElementById('enc-motivo')?.value||'';
+  doc.text(doc.splitTextToSize(motivo||'Encaminho o(a) paciente para avaliação e conduta especializada.',w),m,y);
+  y+=motivo?20:8;
+  const cid=document.getElementById('enc-cid')?.value||'';
+  if(cid){doc.text(`CID: ${cid}`,m,y);y+=6;}
+  const conduta=document.getElementById('enc-conduta')?.value||'';
+  if(conduta){doc.text(`Conduta sugerida: ${conduta}`,m,y);y+=8;}
+  y+=4;
+  return y;
+}
+
+// ─── COMPARTILHAR ────────────────────────────────────────────────
+function compartilharDocWpp(){
+  if(!docUltimoPdfUrl){toast('Gere o PDF primeiro',true);return;}
+  const tel=sessao.pac_tel?('55'+sessao.pac_tel.replace(/\D/g,'')):'';
+  const msg=`Olá ${sessao.pac_nome||''}! Segue seu ${getTipoLabel(docTipo)} gerado pela Kronexa Saúde: ${docUltimoPdfUrl}`;
+  if(tel)window.open(`https://wa.me/${tel}?text=${encodeURIComponent(msg)}`);
+  else{navigator.clipboard.writeText(docUltimoPdfUrl);toast('📋 Link copiado!');}
+}
+
+function limparDocForm(){
+  ['at-cid','at-dias','at-just','doc-rec-orient','doc-exame-cid','doc-exame-prep','doc-exame-novo','enc-esp','enc-prof','enc-motivo','enc-cid','enc-conduta','danfe-cliente','danfe-cpf','danfe-obs','danfe-item-nome','danfe-item-valor'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  danfeItens=[];renderDanfeLista();
+  docExamesList=[];renderDocExamesLista();
+  document.getElementById('doc-preview').style.display='none';
+  document.getElementById('btn-share-doc').style.display='none';
+  docUltimoPdfUrl=null;
+  toast('🗑 Formulário limpo');
+}
+
+// ─── CALENDÁRIOS ──────────────────────────────────────────────
+async function loadCalendarios(){
+  const{data}=await sb.from('kh_calendar_connections').select('*').eq('clinica_id',CID).order('criado_em');
+  const lista=document.getElementById('calendarios-lista');
+  if(!data?.length){lista.innerHTML='<div style="color:var(--t3);font-size:12px;text-align:center;padding:24px;background:var(--bg2);border-radius:10px;border:1px solid var(--border)">🔗 Nenhum calendário conectado.<br><br>Clique em "+ Conectar" para sincronizar com Google, Outlook, Apple Calendar...</div>';return;}
+  const tipoIcon={ical_feed:'📅',google_oauth:'🔵',outlook_oauth:'🟦',caldav:'📅'};
+  const feedBase='https://tcjynyfusqkqtdohnyzq.supabase.co/functions/v1/ical-feed';
+  lista.innerHTML=data.map(c=>`
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center">
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <span style="font-size:18px">${tipoIcon[c.tipo]||'📅'}</span>
+          <span style="font-size:13px;font-weight:700">${c.nome}</span>
+          <span style="font-size:9px;padding:2px 6px;border-radius:100px;background:${c.enabled?'rgba(34,197,94,.1)':'rgba(244,63,94,.1)'};color:${c.enabled?'var(--g)':'var(--r)'}">${c.enabled?'✅ Ativo':'⏸ Pausado'}</span>
+        </div>
+        <div style="font-size:10px;color:var(--t3);margin-bottom:4px">
+          ${c.tipo==='ical_feed'?`Feed iCal · ${c.sync_direction==='both'?'↔️ Mão dupla':c.sync_direction==='export'?'→ Export':'← Import'}`:c.tipo}
+          ${c.last_synced_at?` · Última sync: ${new Date(c.last_synced_at).toLocaleString('pt-BR')}`:''}
+        </div>
+        ${c.tipo==='ical_feed'&&c.feed_secret?`
+        <div style="display:flex;align-items:center;gap:6px;background:var(--bg3);border-radius:6px;padding:4px 8px;margin-top:4px">
+          <code style="font-size:9px;color:var(--c);word-break:break-all;flex:1">${feedBase}?secret=${c.feed_secret}</code>
+          <button class="btn btn-o" style="padding:2px 6px;font-size:9px" onclick="copiarFeedUrl('${feedBase}?secret=${c.feed_secret}')">📋 Copiar</button>
+        </div>`:''}
+      </div>
+      <div style="display:flex;gap:4px;flex-shrink:0;margin-left:8px">
+        <button class="btn btn-o" style="padding:4px 8px;font-size:10px" onclick="alternarCalendario('${c.id}',${c.enabled})">${c.enabled?'⏸':'▶'}</button>
+        <button class="med-del" onclick="removerCalendario('${c.id}')" title="Remover">×</button>
+      </div>
+    </div>`).join('');
+}
+
+async function conectarCalendario(){
+  const nome=document.getElementById('cal-nome').value.trim();
+  if(!nome){toast('Digite um nome',true);return;}
+  const tipo=document.getElementById('cal-tipo').value;
+  const escopo=document.getElementById('cal-escopo').value;
+  const direcao=document.getElementById('cal-dir').value;
+  const record={clinica_id:CID,nome,tipo,sync_direction:direcao,enabled:true};
+  if(escopo==='profissional'){
+    const profId=document.getElementById('cal-prof-id').value;
+    if(!profId){toast('Selecione um profissional',true);return;}
+    record.profissional_id=profId;
+  }
+  const{error}=await sb.from('kh_calendar_connections').insert(record);
+  if(error){toast('Erro: '+error.message,true);return;}
+  fecharModal('modal-calendario');
+  toast('✅ Calendário conectado!');
+  await loadCalendarios();
+}
+
+async function removerCalendario(id){
+  if(!confirm('Remover este calendário? A URL do feed será invalidada.'))return;
+  await sb.from('kh_calendar_connections').delete().eq('id',id);
+  toast('🗑 Calendário removido');
+  await loadCalendarios();
+}
+
+async function alternarCalendario(id,enabled){
+  await sb.from('kh_calendar_connections').update({enabled:!enabled}).eq('id',id);
+  toast(enabled?'⏸ Calendário pausado':'▶ Calendário ativado');
+  await loadCalendarios();
+}
+
+function copiarFeedUrl(url){
+  navigator.clipboard.writeText(url).then(()=>toast('📋 URL copiada! Cole no seu app de calendário.'));
+}
+
+function toggleCalTipo(){
+  // placeholder para Google/Outlook OAuth futuro
+}
+
+async function abrirModalCalendario(){
+  // Carregar profissionais para o select
+  const{data:profs}=await sb.from('kh_profissionais').select('id,nome').eq('clinica_id',CID);
+  const sel=document.getElementById('cal-prof-id');
+  if(sel&&profs)sel.innerHTML=profs.map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
+  document.getElementById('modal-calendario').style.display='flex';
+}
+
+// ─── TESTE SOFIA ──────────────────────────────────────────────
+let sofiaHistorico=[];
+
+function getSofiaConfig(){
+  return{
+    nome: document.getElementById('sofia-nome')?.value||'Sofia',
+    tom: document.getElementById('sofia-tom')?.value||'Amigavel e profissional',
+    espec: document.getElementById('sofia-espec')?.value||'Clinica Geral'
+  };
+}
+
+async function enviarMsgSofia(){
+  const inp=document.getElementById('sofia-input');
+  const msg=inp.value.trim();
+  if(!msg)return;
+  inp.value=''; inp.disabled=true;
+  document.getElementById('sofia-status').textContent='⏳ Pensando...';
+
+  // Mostrar mensagem do paciente
+  addSofiaBubble(msg,'paciente');
+
+  const cfg=getSofiaConfig();
+  const contexto=sofiaHistorico.slice(-6).map(h=>`Paciente: ${h.msg}\n${cfg.nome}: ${h.resp}`).join('\n');
+  const prompt=`Voce eh ${cfg.nome}, secretaria virtual de uma clinica de ${cfg.espec}.
+Tom: ${cfg.tom}
+Personalidade: Profissional, acolhedora e eficiente. Voce conhece os pacientes pelo nome.
+Servicos: Consulta, Retorno, Check-up, Exames laboratoriais, Ultrassonografia.
+
+FUNCOES: Agendar/remarcar consultas, informar precos e horarios, receber exames, tirar duvidas.
+REGRAS: JAMAIS de diagnostico ou prescricao. Emergencia -> oriente UPA/hospital. Max 2 paragrafos. Use 1-2 emojis.
+${contexto?'\nHISTORICO:\n'+contexto+'\n':''}
+PACIENTE: ${msg}
+${cfg.nome}:`;
+
+  try{
+    let resposta='';
+    // Tenta Groq primeiro
+    const groqKey=localStorage.getItem('KRONEXA_GROQ_KEY')||'';
+    if(groqKey){
+      try{
+        const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',
+          headers:{'Authorization':'Bearer '+groqKey,'Content-Type':'application/json'},
+          body:JSON.stringify({model:'llama-3.3-70b-versatile',messages:[{role:'user',content:prompt}],temperature:0.7,max_tokens:500})});
+        const d=await r.json();
+        if(d.choices?.[0]?.message?.content)resposta=d.choices[0].message.content.trim();
+      }catch(e){/* fallthrough */}
+    }
+    // Fallback Gemini
+    if(!resposta){
+      const geminiKey=localStorage.getItem('KRONEXA_GEMINI_KEY')||localStorage.getItem('KRONEXA_GROQ_KEY')||'';
+      const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,{method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.7,maxOutputTokens:500}})});
+      const d=await r.json();
+      if(d.error)throw new Error(d.error.message||'Erro');
+      resposta=d.candidates?.[0]?.content?.parts?.[0]?.text?.trim()||'';
+    }
+    if(!resposta)resposta='Desculpe, estou com dificuldade tecnica no momento. A recepcao ja foi avisada e entrara em contato. 😊';
+    addSofiaBubble(resposta,'sofia');
+    sofiaHistorico.push({msg,resp:resposta});
+  }catch(e){
+    addSofiaBubble('Erro: '+e.message+' — Verifique a conexao ou configure uma chave de IA em 🔑 Configurar IA.','sofia');
+  }
+  document.getElementById('sofia-status').textContent='Pronto para testar';
+  inp.disabled=false; inp.focus();
+}
+
+function addSofiaBubble(texto, tipo){
+  const msgs=document.getElementById('sofia-msgs');
+  const nome=tipo==='sofia'?(getSofiaConfig().nome):'Paciente';
+  const icon=tipo==='sofia'?'🤖':'👤';
+  msgs.innerHTML+=`<div class="sofia-bubble ${tipo}"><div class="sender">${icon} ${nome}</div><div>${texto.replace(/\n/g,'<br>')}</div></div>`;
+  msgs.scrollTop=msgs.scrollHeight;
+}
+
+function limparChatSofia(){
+  sofiaHistorico=[];
+  document.getElementById('sofia-msgs').innerHTML=`
+    <div class="sofia-bubble sofia">
+      <div class="sender">🤖 Sofia</div>
+      <div>Chat limpo! Pode testar novamente. Como posso ajudar? 😊</div>
+    </div>`;
+}
+
+async function salvarConfigSofia(){
+  const cfg=getSofiaConfig();
+  try{
+    // Salvar no localStorage como fallback
+    localStorage.setItem('KRONEXA_SOFIA_CONFIG',JSON.stringify(cfg));
+    // Salvar no banco
+    const{data:exist}=await sb.from('kronexa_ia_configs').select('id').eq('clinica_id',CID).eq('produto','saude').single();
+    if(exist){
+      await sb.from('kronexa_ia_configs').update({nome_assistente:cfg.nome,tom:cfg.tom,atualizado_em:new Date().toISOString()}).eq('id',exist.id);
+    }else{
+      await sb.from('kronexa_ia_configs').insert({clinica_id:CID,produto:'saude',nome_assistente:cfg.nome,tom:cfg.tom,personalidade:'Profissional, acolhedora e eficiente'});
+    }
+    // Atualizar nome da secretaria na clinica
+    await sb.from('kh_clinicas').update({nome_secretaria:cfg.nome}).eq('id',CID);
+    toast('✅ Configuracao da Sofia salva!');
+  }catch(e){toast('Erro ao salvar: '+e.message,true);}
+}
+
+// Carregar config salva ao iniciar
+function carregarConfigSofia(){
+  const saved=localStorage.getItem('KRONEXA_SOFIA_CONFIG');
+  if(saved){
+    try{
+      const c=JSON.parse(saved);
+      if(c.nome)document.getElementById('sofia-nome').value=c.nome;
+      if(c.tom)document.getElementById('sofia-tom').value=c.tom;
+    }catch(e){}
+  }
+}
+
+// ─── KRONEY BRAIN ──────────────────────────────────────────────
+async function loadKroneyBrain(){
+  // Contadores
+  try{const{count:m}=await sb.from('kh_memoria_vetorial').select('*',{count:'exact',head:true});document.getElementById('kb-memorias').textContent=m||0}catch(e){}
+  try{const{count:i}=await sb.from('kh_insights').select('*',{count:'exact',head:true});document.getElementById('kb-insights').textContent=i||0}catch(e){}
+  try{const{count:w}=await sb.from('kh_workflows').select('*',{count:'exact',head:true}).eq('enabled',true);document.getElementById('kb-workflows').textContent=w||0}catch(e){}
+  // Insights
+  try{
+    const{data:insights}=await sb.from('kh_insights').select('*').order('criado_em',{ascending:false}).limit(5);
+    const il=document.getElementById('kb-insights-lista');
+    if(insights?.length)il.innerHTML=insights.map(i=>`<div style="padding:6px 0;border-bottom:1px solid var(--border)"><b>${i.titulo||'—'}</b><br><span style="color:var(--t2)">${i.descricao||''} ${i.acao_sugerida?'→ '+i.acao_sugerida:''}</span></div>`).join('');
+    else il.innerHTML='Nenhum insight ainda. O Kroney Brain aprende com o tempo.';
+  }catch(e){}
+  // Workflows
+  try{
+    const{data:wfs}=await sb.from('kh_workflows').select('*').eq('enabled',true);
+    const wl=document.getElementById('kb-workflows-lista');
+    if(wfs?.length)wl.innerHTML=wfs.map(w=>`<div style="padding:5px 0;border-bottom:1px solid var(--border);font-size:11px">🔄 <b>${w.nome}</b> → ${w.evento_gatilho}</div>`).join('');
+    else wl.innerHTML='Nenhum workflow configurado.';
+  }catch(e){}
+}
+
+async function buscarMemoria(){
+  const q=document.getElementById('kb-query').value.trim();
+  if(!q)return;
+  document.getElementById('kb-resultados').innerHTML='🔍 Buscando...';
+  try{
+    const geminiKey=localStorage.getItem('KRONEXA_GEMINI_KEY')||localStorage.getItem('KRONEXA_GROQ_KEY')||'';
+    // Gerar embedding localmente via API
+    const er=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${geminiKey}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'models/text-embedding-004',content:{parts:[{text:q}]}})});
+    const ed=await er.json();
+    if(!ed.embedding?.values){document.getElementById('kb-resultados').innerHTML='Erro ao gerar embedding';return;}
+    // Buscar via RPC
+    const{data,error}=await sb.rpc('buscar_memorias_similares',{p_embedding:ed.embedding.values,p_clinica_id:CID,p_limit:5,p_threshold:0.5});
+    if(error){document.getElementById('kb-resultados').innerHTML='Erro: '+error.message;return;}
+    if(!data?.length){document.getElementById('kb-resultados').innerHTML='Nenhuma memoria similar encontrada.';return;}
+    document.getElementById('kb-resultados').innerHTML=data.map((m,i)=>`<div style="padding:8px;margin-bottom:4px;background:var(--bg3);border-radius:6px;font-size:10px"><b>${(m.similaridade*100).toFixed(0)}%</b> · ${m.texto_original?.substring(0,150)}...</div>`).join('');
+  }catch(e){document.getElementById('kb-resultados').innerHTML='Erro: '+e.message;}
+}
+
+// ─── HISTÓRICO ────────────────────────────────────────────────
+async function loadHistorico() {
+  const busca=document.getElementById('busca-hist')?.value||'';
+  let q=sb.from('kh_pacientes').select('*').eq('clinica_id',CID).order('nome').limit(50);
+  if(busca)q=q.ilike('nome','%'+busca+'%');
+  const{data}=await q;
+  const lista=document.getElementById('hist-lista');
+  if(!data?.length){lista.innerHTML='<div style="color:var(--t3);font-size:12px">Nenhum paciente</div>';return;}
+  lista.innerHTML=data.map(p=>`<div class="hist-card">
+    <div class="hist-hd">
+      <div><div style="font-size:13px;font-weight:700">${p.nome}</div><div style="font-size:11px;color:var(--t2)">${p.telefone||'—'} · ${p.data_nascimento?new Date(p.data_nascimento).toLocaleDateString('pt-BR'):''}</div></div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-c" style="padding:5px 10px;font-size:11px" onclick="event.stopPropagation();resumoIAPaciente('${p.id}','${p.nome}')">🤖 Resumo IA</button>
+        <button class="btn btn-p" style="padding:5px 10px;font-size:11px" onclick="event.stopPropagation();iniciarAtendimento('','${p.id}','${p.nome}','${p.telefone||''}','${p.data_nascimento||''}')">Atender</button>
+      </div>
+    </div>
+  </div>`).join('');
+}
+
+// ─── RESUMO IA DO PACIENTE ──────────────────────────────────────
+async function resumoIAPaciente(pacId, nome){
+  document.getElementById('hist-resumo').style.display='block';
+  document.getElementById('hist-resumo-content').innerHTML='🤖 <i>Analisando histórico de '+nome+'...</i>';
+
+  // Buscar tudo do paciente em paralelo
+  const[pront,exames,docs]=await Promise.all([
+    sb.from('kh_prontuarios').select('*').eq('paciente_id',pacId).order('data_atendimento',{ascending:false}).limit(10),
+    sb.from('kh_exames').select('*').eq('paciente_id',pacId).eq('clinica_id',CID).order('criado_em',{ascending:false}).limit(10),
+    sb.from('kh_documentos').select('*').eq('paciente_id',pacId).order('criado_em',{ascending:false}).limit(10).catch(()=>({data:[]}))
+  ]);
+
+  const totalConsultas=pront.data?.length||0;
+  const totalExames=exames.data?.length||0;
+  const totalDocs=docs.data?.length||0;
+  const ultimaConsulta=pront.data?.[0];
+  const examesLaudados=exames.data?.filter(e=>e.laudo).length||0;
+
+  // Construir resumo estruturado
+  let html=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+    <div style="background:var(--bg3);padding:8px;border-radius:8px;text-align:center"><b>${totalConsultas}</b><br><span style="font-size:10px;color:var(--t2)">Consultas</span></div>
+    <div style="background:var(--bg3);padding:8px;border-radius:8px;text-align:center"><b>${totalExames}</b><br><span style="font-size:10px;color:var(--t2)">Exames (${examesLaudados} laudados)</span></div>
+  </div>`;
+
+  // Últimos diagnósticos
+  if(pront.data?.length){
+    html+='<div style="margin-bottom:8px"><b>📋 Últimos diagnósticos:</b></div>';
+    pront.data.slice(0,5).forEach(p=>{
+      html+=`<div style="font-size:11px;padding:4px 0;border-bottom:1px solid var(--border)">${p.diagnostico||'Sem registro'} ${p.cid?'<span class="cid-pill">'+p.cid+'</span>':''} <span style="color:var(--t3)">${p.data_atendimento?new Date(p.data_atendimento).toLocaleDateString('pt-BR'):''}</span></div>`;
+    });
+  }
+
+  // Exames recentes
+  if(exames.data?.length){
+    html+='<div style="margin-top:8px;margin-bottom:4px"><b>🔬 Exames recentes:</b></div>';
+    exames.data.slice(0,5).forEach(e=>{
+      html+=`<div style="font-size:11px;padding:3px 0">${e.tipo==='pdf'?'📄':'🖼️'} ${e.nome||'Exame'} · ${e.laudo?'✅ Laudado':'⏳ Pendente'} <span style="color:var(--t3)">${new Date(e.criado_em).toLocaleDateString('pt-BR')}</span></div>`;
+    });
+  }
+
+  // Documentos
+  if(docs.data?.length){
+    html+='<div style="margin-top:8px;margin-bottom:4px"><b>📄 Documentos:</b></div>';
+    docs.data.slice(0,5).forEach(d=>{
+      html+=`<div style="font-size:11px;padding:3px 0">📄 ${d.tipo==='atestado'?'Atestado':d.tipo==='receita'?'Receita':d.tipo==='pedido_exame'?'Pedido Exame':d.tipo} · ${new Date(d.criado_em).toLocaleDateString('pt-BR')}</div>`;
+    });
+  }
+
+  if(totalConsultas===0&&totalExames===0&&totalDocs===0){
+    html='<div style="color:var(--t3)">Nenhum histórico encontrado para este paciente.</div>';
+  }
+
+  document.getElementById('hist-resumo-content').innerHTML=html;
+
+  // Se tiver dados, chamar IA para resumo
+  if(totalConsultas>0||totalExames>0){
+    try{
+      const groqKey=localStorage.getItem('KRONEXA_GROQ_KEY')||'';
+      if(groqKey){
+        const prompt=`Paciente: ${nome}. ${totalConsultas} consultas, ${totalExames} exames. Diagnósticos: ${pront.data?.slice(0,3).map(p=>p.diagnostico).filter(Boolean).join(', ')||'nenhum'}. Faça um resumo clínico de 3 linhas em português.`;
+        const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Authorization':'Bearer '+groqKey,'Content-Type':'application/json'},body:JSON.stringify({model:'llama-3.3-70b-versatile',messages:[{role:'user',content:prompt}],temperature:0.3,max_tokens:200})});
+        const d=await r.json();
+        if(d.choices?.[0]?.message?.content){
+          document.getElementById('hist-resumo-content').innerHTML='<div style="background:#CCFBF1;padding:10px;border-radius:8px;margin-bottom:12px;font-size:12px;line-height:1.7">🤖 <b>Resumo IA:</b> '+d.choices[0].message.content+'</div>'+html;
+        }
+      }
+    }catch(e){}
+  }
+}
+
+init();
+</script>
+</body>
+</html>

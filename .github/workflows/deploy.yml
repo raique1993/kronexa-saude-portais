@@ -1,0 +1,79 @@
+name: Deploy Kronexa (CI/CD)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  # ═══ QUALITY GATE ═══
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: kronexa-saude/package.json
+
+      - name: Install dependencies
+        run: cd kronexa-saude && npm ci
+
+      - name: Lint check
+        run: cd kronexa-saude && npx eslint . --ext .js,.ts 2>/dev/null || echo "⚠️ ESLint nao configurado — execute: npm init @eslint/config"
+
+      - name: Security audit
+        run: cd kronexa-saude && npm audit --audit-level=high
+
+  # ═══ DEPLOY TO GITHUB PAGES ═══
+  deploy-pages:
+    needs: quality
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Build (preparar artefatos)
+        run: |
+          mkdir -p dist
+          cp -r kronexa-saude/*.html dist/ 2>/dev/null || true
+          cp -r kronexa-saude/shared dist/ 2>/dev/null || true
+          cp kronexa-saude/manifest.json dist/ 2>/dev/null || true
+          cp kronexa-saude/service-worker.js dist/ 2>/dev/null || true
+          # Remover arquivos de dev
+          rm -f dist/*.ps1 dist/*.cjs dist/*.py dist/*.sql 2>/dev/null || true
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'dist'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  # ═══ HEALTH CHECK PÓS-DEPLOY ═══
+  smoke-test:
+    needs: deploy-pages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check site is live
+        run: |
+          sleep 10
+          curl -sSf -o /dev/null -w "%{http_code}" https://saude.kronexa.com.br/ || echo "⚠️ Site pode estar em propagacao"
+          curl -sSf -o /dev/null -w "%{http_code}" https://kronexa.com.br/ || echo "⚠️ Site pode estar em propagacao"

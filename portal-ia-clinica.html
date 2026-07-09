@@ -1,0 +1,1212 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<script>if(location.protocol!=="https:"&&location.hostname!=="localhost")location.replace("https://"+location.host+location.pathname+location.search);</script>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IA Clínica — Kronexa Saúde</title>
+<style>
+:root{
+  --p:#0D9488;--c:#0284C7;--g:#059669;--r:#DC2626;--o:#D97706;
+  --bg:#08081A;--bg2:#12122A;--bg3:#1a1a35;--bg4:#0d0d22;
+  --t1:#0F172A;--t2:#9090b0;--t3:#505070;
+  --border:#E2E8F0
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--t1);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;height:100vh;display:grid;grid-template-rows:54px 1fr;overflow:hidden}
+
+/* HEADER */
+.hd{background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:10px}
+.logo{font-size:14px;font-weight:900}.logo span{color:var(--p)}
+.hd-badge{font-size:9px;font-weight:800;padding:2px 8px;border-radius:100px;background:linear-gradient(90deg,rgba(13,148,136,.35),rgba(0,229,255,.2));color:var(--c);border:1px solid rgba(0,229,255,.2)}
+.hd-title{font-size:13px;color:var(--t2)}
+.hd-right{margin-left:auto;display:flex;gap:6px;align-items:center}
+.hd-btn{height:30px;padding:0 12px;border:1px solid var(--border);background:rgba(0,0,0,.02);color:var(--t2);border-radius:7px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap;transition:.2s}
+.hd-btn:hover{background:rgba(13,148,136,.12);border-color:var(--p);color:var(--t1)}
+.esp-select{height:30px;padding:0 10px;border:1px solid var(--border);background:rgba(0,0,0,.02);color:var(--t1);border-radius:7px;font-size:12px;outline:none;cursor:pointer}
+.esp-select:focus{border-color:var(--p)}
+
+/* LAYOUT */
+.layout{display:grid;grid-template-columns:340px 1fr;overflow:hidden}
+
+/* PAINEL ESQUERDO */
+.left{background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.mode-tabs{display:flex;padding:10px 10px 0;gap:4px}
+.mode-tab{flex:1;padding:9px;background:rgba(0,0,0,.02);border:1px solid var(--border);border-radius:9px 9px 0 0;border-bottom:none;font-size:11px;font-weight:700;cursor:pointer;text-align:center;color:var(--t2);transition:.2s}
+.mode-tab.on{background:var(--bg3);color:var(--t1);border-color:rgba(13,148,136,.35)}
+.mode-panel{display:none;flex:1;overflow-y:auto;flex-direction:column;border-top:1px solid rgba(13,148,136,.25);background:var(--bg3)}
+.mode-panel.on{display:flex}
+.panel-inner{padding:14px;display:flex;flex-direction:column;gap:12px;flex:1}
+
+/* IMAGE UPLOAD */
+.img-drop{border:2px dashed rgba(255,255,255,.12);border-radius:12px;min-height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:.3s;position:relative;overflow:hidden;background:rgba(255,255,255,.01)}
+.img-drop:hover{border-color:var(--p);background:rgba(108,63,232,.03)}
+.img-drop.has-img{border-style:solid;border-color:rgba(13,148,136,.3)}
+.img-drop img{width:100%;max-height:200px;object-fit:contain;border-radius:10px}
+.img-drop-label{text-align:center;pointer-events:none}
+.img-drop-label .ico{font-size:32px;margin-bottom:8px;opacity:.5}
+.img-drop-label p{font-size:11px;color:var(--t2)}
+.img-overlay{position:absolute;inset:0;background:rgba(8,8,26,.7);display:flex;align-items:center;justify-content:center;opacity:0;transition:.2s}
+.img-drop:hover .img-overlay{opacity:1}
+label.fi-label{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px}
+.fi{width:100%;padding:9px 11px;background:rgba(0,0,0,.03);border:1px solid rgba(255,255,255,.09);border-radius:8px;color:var(--t1);font-size:12px;outline:none;resize:none;line-height:1.5;transition:.2s}
+.fi:focus{border-color:var(--p)}
+.btn-analyze{padding:12px;background:linear-gradient(135deg,var(--p),#5530c4);color:var(--t1);border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;width:100%;transition:.2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-analyze:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 20px rgba(13,148,136,.3)}
+.btn-analyze:disabled{opacity:.5;cursor:not-allowed}
+.btn-analyze.loading{animation:pulse-btn 1s infinite}
+@keyframes pulse-btn{0%,100%{opacity:.7}50%{opacity:1}}
+.context-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+/* PAINEL DIREITO — RESULTADO */
+.right{overflow-y:auto;display:flex;flex-direction:column}
+.right-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;color:var(--t3);padding:40px}
+.right-empty .ico{font-size:64px;margin-bottom:16px;opacity:.3}
+.right-empty h3{font-size:16px;font-weight:700;margin-bottom:8px;color:var(--t2)}
+.right-empty p{font-size:13px;text-align:center;max-width:360px;line-height:1.7}
+.features-preview{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:24px;max-width:480px}
+.feat-prev{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.feat-prev .ico{font-size:22px;margin-bottom:6px}
+.feat-prev .t{font-size:11px;font-weight:700;color:var(--t1);margin-bottom:3px}
+.feat-prev .d{font-size:10px;color:var(--t3)}
+
+/* RESULTADO */
+.result-wrap{padding:20px;display:flex;flex-direction:column;gap:20px}
+.result-header{background:linear-gradient(135deg,rgba(13,148,136,.10),rgba(0,229,255,.04));border:1px solid rgba(13,148,136,.25);border-radius:14px;padding:18px}
+.result-header h2{font-size:17px;font-weight:800;letter-spacing:-.3px;margin-bottom:6px}
+.result-header .meta{font-size:11px;color:var(--t2);display:flex;gap:14px;flex-wrap:wrap}
+.result-header .meta span{display:flex;align-items:center;gap:4px}
+.disclaimer{background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.2);border-radius:10px;padding:12px;font-size:11px;color:#fbbf24;line-height:1.6}
+.section-block{background:var(--bg2);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.section-block-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.02)}
+.section-block-header .section-ico{font-size:18px}
+.section-block-header h3{font-size:14px;font-weight:700;flex:1}
+.section-block-header .count{font-size:10px;font-weight:700;background:rgba(13,148,136,.12);color:var(--p);padding:2px 8px;border-radius:100px}
+.section-body{padding:14px 18px;display:flex;flex-direction:column;gap:12px}
+
+/* DIAGNÓSTICO */
+.diag-item{border:1px solid var(--border);border-radius:10px;padding:14px;transition:.2s}
+.diag-item:hover{border-color:rgba(13,148,136,.35)}
+.diag-item.high{border-color:rgba(244,63,94,.25);background:rgba(244,63,94,.03)}
+.diag-item.medium{border-color:rgba(251,191,36,.2);background:rgba(251,191,36,.02)}
+.diag-item.low{border-color:rgba(34,197,94,.15)}
+.diag-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.diag-name{font-size:14px;font-weight:700}
+.diag-prob{padding:3px 10px;border-radius:100px;font-size:11px;font-weight:700}
+.prob-high{background:rgba(244,63,94,.12);color:var(--r)}
+.prob-medium{background:rgba(251,191,36,.12);color:var(--o)}
+.prob-low{background:rgba(34,197,94,.12);color:var(--g)}
+.diag-desc{font-size:12px;color:var(--t2);line-height:1.7;margin-bottom:8px}
+.diag-signs{font-size:11px;color:var(--t3)}
+.diag-signs strong{color:var(--t2)}
+
+/* RECOMENDAÇÕES */
+.rec-item{background:var(--bg3);border-radius:9px;padding:12px;border-left:3px solid var(--p)}
+.rec-item.med{border-color:var(--c)}
+.rec-item.exam{border-color:var(--g)}
+.rec-item.ref{border-color:var(--o)}
+.rec-item.proc{border-color:#0D9488}
+.rec-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.rec-ico{font-size:15px}
+.rec-name{font-size:13px;font-weight:700}
+.rec-tag{font-size:9px;font-weight:700;padding:1px 7px;border-radius:100px;background:rgba(13,148,136,.12);color:var(--p)}
+.rec-desc{font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:6px}
+.rec-detail{font-size:11px;color:var(--t3)}
+.rec-detail strong{color:var(--t2)}
+
+/* REFERÊNCIAS */
+.ref-item{border:1px solid var(--border);border-radius:9px;padding:12px;transition:.2s;cursor:pointer}
+.ref-item:hover{border-color:rgba(0,229,255,.3);background:rgba(0,229,255,.02)}
+.ref-header{display:flex;gap:10px;align-items:flex-start;margin-bottom:6px}
+.ref-type-badge{font-size:9px;font-weight:800;padding:2px 7px;border-radius:5px;flex-shrink:0;margin-top:1px}
+.ref-article{background:rgba(0,229,255,.1);color:var(--c)}
+.ref-book{background:rgba(13,148,136,.12);color:var(--p)}
+.ref-guideline{background:rgba(34,197,94,.1);color:var(--g)}
+.ref-journal{background:rgba(251,191,36,.1);color:var(--o)}
+.ref-title{font-size:12px;font-weight:700;line-height:1.5;flex:1}
+.ref-authors{font-size:11px;color:var(--t2);margin-bottom:3px}
+.ref-source{font-size:10px;color:var(--t3);display:flex;gap:10px;flex-wrap:wrap}
+.ref-source span{display:flex;align-items:center;gap:3px}
+.ref-relevance{font-size:11px;color:var(--t2);margin-top:6px;font-style:italic;border-top:1px solid var(--border);padding-top:6px}
+.ref-link{font-size:10px;color:var(--c);text-decoration:none;display:inline-flex;align-items:center;gap:3px;margin-top:4px}
+.ref-link:hover{text-decoration:underline}
+
+/* CONFIDENCE */
+.confidence-bar{height:4px;background:rgba(0,0,0,.04);border-radius:100px;overflow:hidden;margin-top:4px}
+.confidence-fill{height:100%;border-radius:100px;transition:.5s}
+
+/* LOADING */
+.loading-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:14px;padding:40px}
+.spinner-large{width:56px;height:56px;border:3px solid rgba(13,148,136,.25);border-top-color:var(--p);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-steps{display:flex;flex-direction:column;gap:6px;text-align:center}
+.loading-step{font-size:12px;color:var(--t3);transition:.3s}
+.loading-step.active{color:var(--t1);font-weight:600}
+.loading-step.done{color:var(--g)}
+
+/* COPY BUTTON */
+.copy-btn{font-size:10px;color:var(--t3);background:none;border:none;cursor:pointer;padding:2px 6px;border-radius:4px;transition:.2s}
+.copy-btn:hover{background:rgba(0,0,0,.04);color:var(--t1)}
+.alert-urgent{background:rgba(244,63,94,.08);border:1px solid rgba(244,63,94,.25);border-radius:10px;padding:12px;font-size:12px;color:var(--r);line-height:1.6}
+
+@media(max-width:900px){.layout{grid-template-columns:1fr}.right{display:none}}
+</style>
+</head>
+<body>
+<header class="hd">
+  <div class="logo">KRO<span>NEXA</span></div>
+  <div class="hd-badge">IA CLÍNICA BETA</div>
+  <span class="hd-title">Assistente Clínico com Evidências</span>
+  <div class="hd-right">
+    <select class="esp-select" id="esp-select" onchange="setEspecialidade()">
+      <option value="clinica_geral">🏥 Clínica Geral</option>
+      <option value="odontologia">🦷 Odontologia</option>
+      <option value="veterinaria">🐾 Veterinária</option>
+      <option value="dermatologia">🫁 Dermatologia</option>
+      <option value="pediatria">👶 Pediatria</option>
+      <option value="cardiologia">🫀 Cardiologia</option>
+      <option value="ortopedia">🦴 Ortopedia</option>
+      <option value="psicologia">🧠 Psicologia/Psiquiatria</option>
+      <option value="ginecologia">🌸 Ginecologia</option>
+      <option value="estetica">✨ Estética</option>
+    </select>
+    <button class="hd-btn" onclick="abrirConfigurarIA()" style="background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.3);color:#f59e0b">🔑 Configurar IA</button>
+    <button class="hd-btn" onclick="limparTudo()">🗑️ Limpar</button>
+    <button class="hd-btn" onclick="window.location.href='portal-medico.html'">← Portal Médico</button>
+  </div>
+</header>
+
+<div class="layout">
+  <!-- PAINEL ESQUERDO -->
+  <div class="left">
+    <div class="mode-tabs">
+      <div class="mode-tab on" onclick="setMode('imagem',this)" id="tab-imagem">🔬 Imagem</div>
+      <div class="mode-tab" onclick="setMode('consulta',this)" id="tab-consulta">📋 Consulta</div>
+      <div class="mode-tab" onclick="setMode('busca',this)" id="tab-busca">🔍 Referências</div>
+    </div>
+
+    <!-- MODO: ANÁLISE DE IMAGEM -->
+    <div id="panel-imagem" class="mode-panel on">
+      <div class="panel-inner">
+        <div>
+          <label class="fi-label">Imagem do exame</label>
+          <div class="img-drop" id="img-drop" onclick="document.getElementById('img-input').click()"
+            ondragover="ev.preventDefault()" ondrop="dropImg(event)">
+            <div class="img-drop-label" id="img-placeholder">
+              <div class="ico">🖼️</div>
+              <p>Arraste ou clique para enviar<br><span style="color:var(--t3)">JPG, PNG, PDF · Rx, USG, ECG, foto clínica...</span></p>
+            </div>
+            <img id="img-preview" style="display:none" alt="Exame">
+            <div class="img-overlay" id="img-overlay" style="display:none">
+              <span style="font-size:12px">Trocar imagem</span>
+            </div>
+          </div>
+          <input type="file" id="img-input" accept="image/*,.pdf" style="display:none" onchange="previewImg(this)">
+        </div>
+
+        <div class="context-grid">
+          <div>
+            <label class="fi-label">Região/Órgão</label>
+            <input class="fi" id="img-regiao" placeholder="Ex: tórax, colo, joelho...">
+          </div>
+          <div>
+            <label class="fi-label">Tipo de exame</label>
+            <select class="fi" id="img-tipo">
+              <option>Raio-X</option>
+              <option>Ressonância</option>
+              <option>Tomografia</option>
+              <option>Ultrassom</option>
+              <option>ECG</option>
+              <option>Fundoscopia</option>
+              <option>Dermatoscopia</option>
+              <option>Foto clínica</option>
+              <option>Radiografia dental</option>
+              <option>Hemograma</option>
+              <option>Outro</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="fi-label">Dados clínicos do paciente</label>
+          <textarea class="fi" id="img-contexto" rows="3" placeholder="Idade, sexo, sintomas principais, histórico relevante, medicações em uso..."></textarea>
+        </div>
+
+        <div>
+          <label class="fi-label">Hipótese diagnóstica prévia (opcional)</label>
+          <input class="fi" id="img-hipotese" placeholder="Ex: suspeita de pneumonia, fratura por estresse...">
+        </div>
+
+        <button class="btn-analyze" id="btn-img" onclick="analisarImagem()">
+          🔬 Analisar com IA + Referências
+        </button>
+        <button style="padding:6px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:7px;color:var(--t2);font-size:10px;cursor:pointer;width:100%;margin-top:4px" onclick="testarConexaoIA()">
+          🔧 Testar conexão com IA
+        </button>
+      </div>
+    </div>
+
+    <!-- MODO: ASSISTENTE DE CONSULTA -->
+    <div id="panel-consulta" class="mode-panel">
+      <div class="panel-inner">
+        <div>
+          <label class="fi-label">Descrição do atendimento</label>
+          <textarea class="fi" id="cons-descricao" rows="5" placeholder="Descreva o que observou na consulta: queixa principal, sintomas, exame físico, sinais vitais, achados relevantes...
+
+Ex: Paciente 45 anos, masculino, refere dor precordial em aperto há 2 horas irradiando para braço esquerdo, sudorese, náuseas. PA 150/90, FC 98, SpO2 96%."></textarea>
+        </div>
+
+        <div>
+          <label class="fi-label">Diagnóstico provisório</label>
+          <input class="fi" id="cons-diag" placeholder="Ex: IAM, pneumonia, crise hipertensiva...">
+        </div>
+
+        <div class="context-grid">
+          <div>
+            <label class="fi-label">Idade do paciente</label>
+            <input class="fi" id="cons-idade" type="number" placeholder="Ex: 45">
+          </div>
+          <div>
+            <label class="fi-label">Sexo</label>
+            <select class="fi" id="cons-sexo">
+              <option value="M">Masculino</option>
+              <option value="F">Feminino</option>
+              <option value="O">Outro</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="fi-label">Alergias e comorbidades</label>
+          <input class="fi" id="cons-comorbidades" placeholder="Ex: DM2, HAS, alergia à penicilina...">
+        </div>
+
+        <div>
+          <label class="fi-label">Medicações em uso</label>
+          <input class="fi" id="cons-meds" placeholder="Ex: Metformina 850mg, Losartana 50mg...">
+        </div>
+
+        <div>
+          <label class="fi-label">O que precisa de ajuda</label>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px">
+            <label style="font-size:11px;color:var(--t2);display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="need-med" checked> Medicamentos</label>
+            <label style="font-size:11px;color:var(--t2);display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="need-exam" checked> Exames</label>
+            <label style="font-size:11px;color:var(--t2);display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="need-proc" checked> Procedimentos</label>
+            <label style="font-size:11px;color:var(--t2);display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="need-ref" checked> Encaminhamentos</label>
+            <label style="font-size:11px;color:var(--t2);display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="need-cid"> CID-10</label>
+          </div>
+        </div>
+
+        <button class="btn-analyze" id="btn-cons" onclick="analisarConsulta()">
+          🧠 Gerar recomendações com evidências
+        </button>
+      </div>
+    </div>
+
+    <!-- MODO: BUSCA DE REFERÊNCIAS -->
+    <div id="panel-busca" class="mode-panel">
+      <div class="panel-inner">
+        <div>
+          <label class="fi-label">Pesquisa na literatura</label>
+          <textarea class="fi" id="busca-query" rows="4" placeholder="O que deseja pesquisar? Ex:&#10;- 'Eficácia de metformina em DM2 gestacional'&#10;- 'Protocolo de tratamento de sepse 2024'&#10;- 'Diagnóstico diferencial de linfadenopatia cervical'"></textarea>
+        </div>
+
+        <div class="context-grid">
+          <div>
+            <label class="fi-label">Nível de evidência</label>
+            <select class="fi" id="busca-nivel">
+              <option value="todos">Todos</option>
+              <option value="rct">Ensaios clínicos (RCT)</option>
+              <option value="meta">Meta-análises</option>
+              <option value="guideline">Diretrizes (Guidelines)</option>
+              <option value="revisao">Revisões sistemáticas</option>
+            </select>
+          </div>
+          <div>
+            <label class="fi-label">Período</label>
+            <select class="fi" id="busca-periodo">
+              <option value="5">Últimos 5 anos</option>
+              <option value="10">Últimos 10 anos</option>
+              <option value="all">Todos</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="btn-analyze" id="btn-busca" onclick="buscarReferencias()">
+          📚 Buscar na literatura científica
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAINEL DIREITO — RESULTADO -->
+  <div class="right" id="result-area">
+    <div class="right-empty" id="empty-state">
+      <div class="ico">🧬</div>
+      <h3>Assistente Clínico com IA</h3>
+      <p>Análise de imagens, sugestões diagnósticas e recomendações baseadas em evidências científicas com referências rastreáveis.</p>
+      <div class="features-preview">
+        <div class="feat-prev"><div class="ico">🔬</div><div class="t">Análise de Imagem</div><div class="d">Rx, USG, ECG, dermatoscopia, foto clínica</div></div>
+        <div class="feat-prev"><div class="ico">📋</div><div class="t">Assistente de Consulta</div><div class="d">Medicamentos, exames, encaminhamentos</div></div>
+        <div class="feat-prev"><div class="ico">📚</div><div class="t">Literatura Científica</div><div class="d">PubMed, UpToDate, diretrizes, livros</div></div>
+        <div class="feat-prev"><div class="ico">⚠️</div><div class="t">Alertas Urgência</div><div class="d">Detecção de achados críticos</div></div>
+      </div>
+      <div style="margin-top:20px;font-size:11px;color:var(--t3);max-width:400px;text-align:center;line-height:1.7;background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.15);border-radius:8px;padding:10px">
+        ⚠️ <strong style="color:#fbbf24">Ferramenta de apoio clínico.</strong> As sugestões geradas por IA são baseadas em literatura científica e não substituem o julgamento clínico do profissional de saúde habilitado.
+      </div>
+    </div>
+    <div class="loading-wrap" id="loading-state" style="display:none">
+      <div class="spinner-large"></div>
+      <div style="font-size:14px;font-weight:700">Analisando com IA...</div>
+      <div class="loading-steps" id="loading-steps"></div>
+    </div>
+    <div id="result-content" style="display:none"></div>
+  </div>
+</div>
+
+<script>
+// ═══ CONFIGURAÇÃO IA — Proxy Kronexa (chave protegida no servidor) ═══════════════
+// A chave Gemini fica protegida na Edge Function kronexa-ia-proxy
+// Nao precisa configurar nada — funciona direto!
+const IA_PROXY_URL = 'https://tcjynyfusqkqtdohnyzq.supabase.co/functions/v1/kronexa-ia-proxy';
+function getGroqKey(){ return localStorage.getItem('KRONEXA_GROQ_KEY')||''; }
+// Gemini sempre disponivel via proxy do servidor
+function getGeminiKey(){ return 'proxy'; }
+
+function abrirConfigurarIA() {
+  const groq = getGroqKey();
+  const gemini = getGeminiKey();
+  const html = `<div style="position:fixed;inset:0;background:rgba(255,255,255,.95);z-index:99;display:flex;align-items:center;justify-content:center;padding:16px">
+    <div style="background:#12122A;border:1px solid rgba(13,148,136,.35);border-radius:14px;padding:22px;width:100%;max-width:480px;color:#F0F0FF">
+      <h3 style="font-size:15px;font-weight:800;margin-bottom:6px">🔑 Configurar chave de IA</h3>
+      <p style="font-size:12px;color:#9090b0;margin-bottom:16px;line-height:1.6">Configure pelo menos uma chave para usar a IA Clínica. O Groq é totalmente gratuito.</p>
+      <div style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <label style="font-size:10px;font-weight:700;color:#00E5FF;text-transform:uppercase">🟢 Groq (GRATUITO — recomendado)</label>
+          <a href="https://console.groq.com/keys" target="_blank" style="font-size:10px;color:#00E5FF">Criar key grátis →</a>
+        </div>
+        <input id="cfg-groq" value="${groq}" placeholder="gsk_xxxxxxxxxxxxxxxxxxxx" style="width:100%;padding:9px 11px;background:#0A0A18;border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#F0F0FF;font-size:12px;outline:none">
+        <p style="font-size:10px;color:#505070;margin-top:3px">14.400 requests/dia · sem cartão · sem quota · llama-3.3-70b</p>
+      </div>
+      <div style="margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <label style="font-size:10px;font-weight:700;color:#f59e0b;text-transform:uppercase">🟡 Gemini (fallback)</label>
+          <a href="https://aistudio.google.com/apikey" target="_blank" style="font-size:10px;color:#f59e0b">aistudio.google.com →</a>
+        </div>
+        <input id="cfg-gemini" value="${gemini}" placeholder="AIzaSy..." style="width:100%;padding:9px 11px;background:#0A0A18;border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#F0F0FF;font-size:12px;outline:none">
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button onclick="document.getElementById('ia-cfg-modal').remove()" style="padding:8px 14px;background:rgba(0,0,0,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#9090b0;font-size:12px;font-weight:700;cursor:pointer">Cancelar</button>
+        <button onclick="salvarConfigIA()" style="padding:8px 18px;background:#0D9488;border:none;border-radius:8px;color:var(--t1);font-size:12px;font-weight:700;cursor:pointer">✅ Salvar</button>
+      </div>
+    </div>
+  </div>`;
+  const div = document.createElement('div');
+  div.id = 'ia-cfg-modal';
+  div.innerHTML = html;
+  document.body.appendChild(div);
+}
+
+function salvarConfigIA() {
+  const groq = document.getElementById('cfg-groq')?.value?.trim();
+  const gemini = document.getElementById('cfg-gemini')?.value?.trim();
+  if(groq) localStorage.setItem('KRONEXA_GROQ_KEY', groq);
+  else localStorage.removeItem('KRONEXA_GROQ_KEY');
+  if(gemini) localStorage.setItem('KRONEXA_GEMINI_KEY', gemini);
+  document.getElementById('ia-cfg-modal')?.remove();
+  alert('✅ Chave salva! Tente novamente.');
+}
+
+// Extrai JSON robusto de uma resposta de texto
+function extrairJSON(txt) {
+  if(!txt) throw new Error('Resposta vazia da IA');
+  try { return JSON.parse(txt); } catch{}
+  const clean = txt.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+  const m = clean.match(/\{[\s\S]*\}/);
+  if(m) { try { return JSON.parse(m[0]); } catch(e2) { throw new Error('JSON inválido: '+e2.message); } }
+  throw new Error('IA retornou formato inválido: '+txt.substring(0,80));
+}
+
+// Chama Groq (gratuito, sem quota, CORS aberto)
+async function chamarGroq(prompt, imgBase64=null, imgMime=null) {
+  const key = getGroqKey();
+  if(!key) throw new Error('SEM_KEY_GROQ');
+  
+  const messages = imgBase64
+    ? [{ role:'user', content: [
+        { type:'image_url', image_url:{ url:`data:${imgMime};base64,${imgBase64}` } },
+        { type:'text', text: prompt }
+      ]}]
+    : [{ role:'user', content: prompt }];
+  
+  const model = imgBase64 ? 'meta-llama/llama-4-scout-17b-16e-instruct' : 'llama-3.3-70b-versatile';
+  
+  const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method:'POST',
+    headers: { 'Authorization':'Bearer '+key, 'Content-Type':'application/json' },
+    body: JSON.stringify({
+      model, messages, temperature:0.1, max_tokens:8000,
+      response_format: imgBase64 ? undefined : { type:'json_object' }
+    })
+  });
+  const d = await r.json();
+  if(d.error) throw new Error('Groq: '+(d.error.message||JSON.stringify(d.error)));
+  return extrairJSON(d.choices?.[0]?.message?.content||'');
+}
+
+// Chama IA via proxy Kronexa (chave protegida no servidor)
+async function chamarGemini(prompt, imgBase64=null, imgMime=null) {
+  const r = await fetch(IA_PROXY_URL, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      prompt: prompt,
+      imageBase64: imgBase64 || null,
+      tenant_id: CID,
+      action: 'ia_clinica'
+    })
+  });
+  const d = await r.json();
+  if(!d.ok) throw new Error(d.error || 'IA indisponivel');
+  return extrairJSON(d.text);
+}
+
+// Função principal — Groq PRIMÁRIO (grátis), Gemini só fallback
+async function chamarIA(tipo, dados, img64=null, imgMime=null, promptOverride=null) {
+  const prompt = promptOverride || buildPromptIA(tipo, dados);
+
+  // 1. Groq — SEMPRE tenta primeiro se tiver chave
+  const groqKey = getGroqKey();
+  if(groqKey) {
+    const r = await chamarGroq(prompt, img64, imgMime);
+    if(r) return r; // sucesso!
+    // Se Groq falhou, NÃO cai no Gemini — mostra o erro do Groq
+    throw new Error('Groq falhou. Verifique sua chave em console.groq.com/keys');
+  }
+
+  // 2. Proxy Kronexa (sempre disponivel)
+  {
+    const r = await chamarGemini(prompt, img64, imgMime);
+    if(r) return r;
+  }
+
+  // 3. Nenhuma chave
+  throw new Error('Nenhuma chave configurada. Clique em 🔑 Configurar IA. Groq é 100% GRÁTIS: console.groq.com/keys');
+}
+
+function buildPromptIA(tipo, dados) {
+  if(tipo==='imagem') {
+    const{tipoExame,regiao,contexto,hipotese,especialidade}=dados;
+    return `Você é especialista em ${especialidade||'clínica geral'}. Analise a imagem clínica (${tipoExame||'exame'}) da região ${regiao||'não especificada'}. Paciente: ${contexto||'não informado'}. Hipótese: ${hipotese||'nenhuma'}.
+RESPONDA SOMENTE JSON VÁLIDO (sem markdown):
+{"achados":"achados detalhados na imagem","urgente":false,"alerta_urgencia":null,"diagnosticos":[{"nome":"Nome","cid10":"CID","probabilidade":"Alta","cor":"high","descricao":"explicação","sinais_imagem":"achados que suportam","criterios_diagnosticos":"critérios"}],"recomendacoes":[{"tipo":"exame","nome":"nome","justificativa":"motivo","urgencia":"urgência","referencia_id":"ref1"}],"referencias":[{"id":"ref1","tipo":"artigo","titulo":"título real","autores":"autores","fonte":"revista/livro","ano":"2024","doi":"","url":"","relevancia":"relevância"}],"nota_clinica":"nota"}`;
+  }
+  if(tipo==='consulta') {
+    const{descricao,diag,idade,sexo,comorb,meds,especialidade}=dados;
+    return `Especialista em ${especialidade||'clínica geral'}. Paciente ${idade||'?'} anos, ${sexo==='M'?'masculino':'feminino'}. Descrição: ${descricao}. Diagnóstico: ${diag||'não informado'}. Comorbidades: ${comorb||'nenhuma'}. Medicações: ${meds||'nenhuma'}.
+RESPONDA SOMENTE JSON com: diagnosticos_diferenciais, urgente, alerta_urgencia, medicamentos (nome_generico,nome_comercial,classe,dose,via,frequencia,duracao,contraindicacoes,nivel_evidencia,referencia_id), exames (nome,justificativa,urgencia,achados_esperados,referencia_id), procedimentos, encaminhamentos (especialidade,motivo,urgencia), cid10 (codigo,descricao), referencias (id,tipo,titulo,autores,fonte,ano,doi,url,nivel_evidencia,relevancia), nota_clinica`;
+  }
+  if(tipo==='busca') {
+    const{query,nivel,periodo,especialidade}=dados;
+    return `Especialista em medicina baseada em evidências, área ${especialidade||'clínica geral'}. Pesquise: "${query}". Filtro: ${nivel||'todos'}. Período: ${periodo||'5'} anos.
+RESPONDA SOMENTE JSON com: sintese, consensos (array), controversias (array), referencias (id,tipo,titulo,autores,fonte,ano,doi,url,nivel_evidencia,conclusao_principal,relevancia)`;
+  }
+  return '{"status":"ok"}';
+}
+
+async function testarConexaoIA() {
+  // Verificar keys configuradas
+  const loading = document.getElementById('loading-state');
+  const empty = document.getElementById('empty-state');
+  const result = document.getElementById('result-content');
+  empty.style.display='none'; result.style.display='none';
+  loading.style.display='flex';
+  document.getElementById('loading-steps').innerHTML='<span class="loading-step active">🔧 Testando conexão com IA...</span>';
+
+  try {
+    const r = await fetch(IA_PROXY_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        prompt: 'Respond with exactly this JSON: {"status":"ok","versao":"gemini-2.5-flash"}',
+        tenant_id: CID,
+        action: 'ping'
+      })
+    });
+    const d = await r.json();
+    const txt = d.text || '';
+    const reason = d.candidates?.[0]?.finishReason;
+    const apiErr = d.error?.message || '';
+    const blocked = d.promptFeedback?.blockReason || '';
+    loading.style.display='none';
+    let html = '<div class="result-wrap">';
+    if (txt && txt.includes('ok')) {
+      html += '<div style="background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:12px;padding:16px;color:var(--g)"><strong>✅ Gemini API funcionando!</strong><br>Resposta: ' + txt + '</div>';
+    } else if (apiErr) {
+      html += '<div style="background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.3);border-radius:12px;padding:16px;color:var(--r)"><strong>❌ Erro na API:</strong> ' + apiErr + '</div>';
+    } else if (blocked) {
+      html += '<div style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);border-radius:12px;padding:16px;color:var(--o)"><strong>⚠️ Bloqueado:</strong> ' + blocked + '<br>finishReason: ' + reason + '</div>';
+    } else {
+      html += '<div style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);border-radius:12px;padding:16px;color:var(--o)"><strong>⚠️ Resposta inesperada</strong><br>HTTP: ' + r.status + '<br>finishReason: ' + reason + '<br>Resposta: ' + JSON.stringify(d).substring(0,200) + '</div>';
+    }
+    html += '<div style="font-size:11px;color:var(--t3);margin-top:8px;padding:8px;background:var(--bg3);border-radius:6px">HTTP Status: ' + r.status + ' | finishReason: ' + (reason||'—') + ' | Tamanho resposta: ' + JSON.stringify(d).length + ' chars</div>';
+    html += '</div>';
+    result.innerHTML = html;
+    result.style.display = 'block';
+  } catch(e) {
+    loading.style.display='none';
+    result.innerHTML = '<div class="result-wrap"><div style="background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.3);border-radius:12px;padding:16px;color:var(--r)"><strong>❌ Erro de rede:</strong> ' + e.message + '<br><small style="opacity:.7">Possível bloqueio de CORS ou sem internet.</small></div></div>';
+    result.style.display = 'block';
+  }
+}
+let currentMode = 'imagem';
+let currentEsp = 'clinica_geral';
+let imgBase64 = '';
+let imgMime = '';
+
+const especialidades = {
+  clinica_geral: { nome: 'Clínica Geral', refs: ['Harrison Medicina Interna','Cecil Medicina','UpToDate','NEJM','The Lancet','JAMA','BMJ','Diretrizes CFM'] },
+  odontologia:   { nome: 'Odontologia', refs: ['Gray Anatomia','Journal of Dental Research','Oral Surgery','Diretrizes CFO','Dental Clinics of North America','JADA'] },
+  veterinaria:   { nome: 'Medicina Veterinária', refs: ['Ettinger Medicina Interna Veterinária','Kirk Terapêutica','Merck Veterinary Manual','JAVMA','Journal of Veterinary Internal Medicine','CFMV'] },
+  dermatologia:  { nome: 'Dermatologia', refs: ['Fitzpatrick Dermatologia','Journal of the American Academy of Dermatology','Skin Medicine','Diretrizes SBD'] },
+  pediatria:     { nome: 'Pediatria', refs: ['Nelson Textbook of Pediatrics','Pediatrics Journal','JAMA Pediatrics','Diretrizes SBP','Atenção Integrada às Doenças Prevalentes na Infância - OMS'] },
+  cardiologia:   { nome: 'Cardiologia', refs: ['Braunwald Heart Disease','JACC','European Heart Journal','Circulation','Diretrizes SBC','ESC Guidelines'] },
+  ortopedia:     { nome: 'Ortopedia', refs: ['Campbell Operative Orthopaedics','Journal of Bone and Joint Surgery','AAOS Guidelines','Diretrizes SBOT'] },
+  psicologia:    { nome: 'Psicologia/Psiquiatria', refs: ['DSM-5-TR','CID-11','American Journal of Psychiatry','Kaplan Sinopse de Psiquiatria','Diretrizes CFP/CFM'] },
+  ginecologia:   { nome: 'Ginecologia/Obstetrícia', refs: ['Williams Obstetrics','Green-top Guidelines RCOG','ACOG Practice Bulletins','Diretrizes FEBRASGO'] },
+  estetica:      { nome: 'Medicina Estética', refs: ['Aesthetic Plastic Surgery','Dermatologic Surgery','JAAD','Diretrizes CFM Medicina Estética'] }
+};
+
+function setMode(mode, el) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('on'));
+  document.querySelectorAll('.mode-panel').forEach(p => p.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('panel-' + mode).classList.add('on');
+}
+function setEspecialidade() {
+  currentEsp = document.getElementById('esp-select').value;
+}
+
+// Image preview
+function previewImg(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    imgBase64 = e.target.result.split(',')[1];
+    imgMime = file.type;
+    const img = document.getElementById('img-preview');
+    img.src = e.target.result;
+    img.style.display = 'block';
+    document.getElementById('img-placeholder').style.display = 'none';
+    document.getElementById('img-overlay').style.display = 'flex';
+  };
+  reader.readAsDataURL(file);
+}
+function dropImg(e) {
+  e.preventDefault();
+  const file = e.dataTransfer.files[0];
+  if (file) { document.getElementById('img-input').files = e.dataTransfer.files; previewImg({ files: [file] }); }
+}
+
+// Mostrar loading
+function showLoading(steps) {
+  document.getElementById('empty-state').style.display = 'none';
+  document.getElementById('result-content').style.display = 'none';
+  document.getElementById('loading-state').style.display = 'flex';
+  const stepsEl = document.getElementById('loading-steps');
+  stepsEl.innerHTML = steps.map((s, i) => `<div class="loading-step ${i===0?'active':''}" id="step-${i}">${s}</div>`).join('');
+  let current = 0;
+  return setInterval(() => {
+    if (current < steps.length - 1) {
+      document.getElementById('step-'+current)?.classList.replace('active','done');
+      current++;
+      document.getElementById('step-'+current)?.classList.add('active');
+    }
+  }, 1800);
+}
+function hideLoading(interval) {
+  clearInterval(interval);
+  document.getElementById('loading-state').style.display = 'none';
+}
+
+// ─── ANÁLISE DE IMAGEM ─────────────────────────────────────────
+// Comprimir imagem antes de enviar ao Gemini (máximo 1.5MB base64)
+async function comprimirImagem(b64, mime) {
+  if (b64.length < 1500000) return { b64, mime: 'image/jpeg' }; // já pequena
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 1024;
+      let w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+        else { w = Math.round(w * MAX / h); h = MAX; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const compressed = canvas.toDataURL('image/jpeg', 0.75).split(',')[1];
+      resolve({ b64: compressed, mime: 'image/jpeg' });
+    };
+    img.onerror = () => resolve({ b64, mime });
+    img.src = 'data:' + mime + ';base64,' + b64;
+  });
+}
+
+async function analisarImagem() {
+  if (!imgBase64) { alert('Selecione uma imagem para analisar'); return; }
+  const regiao = document.getElementById('img-regiao').value;
+  const tipo = document.getElementById('img-tipo').value;
+  const contexto = document.getElementById('img-contexto').value;
+  const hipotese = document.getElementById('img-hipotese').value;
+  const esp = especialidades[currentEsp];
+
+  const btn = document.getElementById('btn-img');
+  btn.disabled = true; btn.classList.add('loading');
+
+  const steps = ['🔍 Analisando a imagem...','📊 Identificando achados clínicos...','📚 Consultando literatura científica...','🔗 Buscando referências...','✍️ Elaborando diagnósticos diferenciais...'];
+  const interval = showLoading(steps);
+
+  const prompt = `Você é um especialista em ${esp.nome} com amplo conhecimento em análise de imagens médicas. Analise esta imagem clínica e forneça um parecer COMPLETO e BASEADO EM EVIDÊNCIAS.
+
+CONTEXTO CLÍNICO:
+- Especialidade: ${esp.nome}
+- Tipo de exame: ${tipo}
+- Região/Órgão: ${regiao || 'não especificada'}
+- Dados do paciente: ${contexto || 'não fornecidos'}
+- Hipótese prévia: ${hipotese || 'nenhuma'}
+
+INSTRUÇÕES OBRIGATÓRIAS:
+1. Descreva os achados visíveis na imagem com detalhes técnicos
+2. Liste 2-4 diagnósticos diferenciais em ordem de probabilidade
+3. Para CADA diagnóstico, indique o nível de probabilidade (Alta/Média/Baixa) baseado nos achados
+4. Forneça RECOMENDAÇÕES CLÍNICAS: exames complementares, conduta, urgência
+5. Para CADA afirmação, cite a referência bibliográfica ESPECÍFICA
+6. Se detectar achados urgentes/críticos, destaque claramente
+
+RESPONDA EXCLUSIVAMENTE EM JSON com esta estrutura:
+{
+  "achados": "Descrição técnica detalhada dos achados na imagem",
+  "urgente": false,
+  "alerta_urgencia": "texto se urgente, null caso contrário",
+  "diagnosticos": [
+    {
+      "nome": "Nome do diagnóstico",
+      "cid10": "CID-10",
+      "probabilidade": "Alta",
+      "cor": "high",
+      "descricao": "Explicação clínica detalhada",
+      "sinais_imagem": "Achados específicos nesta imagem que suportam",
+      "criterios_diagnosticos": "Critérios diagnósticos aplicáveis"
+    }
+  ],
+  "recomendacoes": [
+    {
+      "tipo": "exame",
+      "nome": "Nome do exame/conduta",
+      "justificativa": "Por que é indicado",
+      "urgencia": "Imediato/Curto prazo/Eletivo",
+      "referencia_id": "ref1"
+    }
+  ],
+  "referencias": [
+    {
+      "id": "ref1",
+      "tipo": "artigo",
+      "titulo": "Título completo do artigo/capítulo",
+      "autores": "Sobrenome, Iniciais. et al.",
+      "fonte": "Nome do periódico/livro",
+      "ano": "2023",
+      "volume": "vol:paginas",
+      "doi": "10.xxxx/xxxxx se disponível",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/xxxxx se disponível",
+      "relevancia": "Por que esta referência é pertinente para este achado"
+    }
+  ],
+  "nota_clinica": "Observação importante sobre limitações da análise por IA"
+}`;
+
+  try {
+    // Comprimir imagem antes de enviar
+    const compImg = await comprimirImagem(imgBase64, imgMime);
+    const result = await chamarIA('imagem', {
+      tipoExame: tipo, regiao, contexto: contexto, hipotese,
+      especialidade: esp.nome
+    }, compImg.b64, compImg.mime, prompt);
+    hideLoading(interval);
+    renderResultado(result, 'imagem', tipo, regiao);
+  } catch (e) {
+    hideLoading(interval);
+    renderErro('Erro: ' + e.message);
+  }
+  btn.disabled = false; btn.classList.remove('loading');
+}
+
+// ─── ASSISTENTE DE CONSULTA ────────────────────────────────────
+async function analisarConsulta() {
+  const descricao = document.getElementById('cons-descricao').value;
+  if (!descricao.trim()) { alert('Descreva o atendimento para análise'); return; }
+  const diag = document.getElementById('cons-diag').value;
+  const idade = document.getElementById('cons-idade').value;
+  const sexo = document.getElementById('cons-sexo').value;
+  const comorb = document.getElementById('cons-comorbidades').value;
+  const meds = document.getElementById('cons-meds').value;
+  const needMed = document.getElementById('need-med').checked;
+  const needExam = document.getElementById('need-exam').checked;
+  const needProc = document.getElementById('need-proc').checked;
+  const needRef = document.getElementById('need-ref').checked;
+  const needCid = document.getElementById('need-cid').checked;
+  const esp = especialidades[currentEsp];
+
+  const btn = document.getElementById('btn-cons');
+  btn.disabled = true; btn.classList.add('loading');
+
+  const steps = ['📋 Analisando descrição clínica...','🔎 Identificando diagnósticos...','💊 Buscando protocolos terapêuticos...','📚 Pesquisando diretrizes e evidências...','✍️ Elaborando recomendações...'];
+  const interval = showLoading(steps);
+
+  const prompt = `Você é um especialista em ${esp.nome} com acesso à literatura médica mais atualizada. Com base na descrição clínica fornecida, gere recomendações DETALHADAS E BASEADAS EM EVIDÊNCIAS com citações bibliográficas específicas e rastreáveis.
+
+DADOS DO ATENDIMENTO:
+- Especialidade: ${esp.nome}
+- Paciente: ${idade ? idade + ' anos' : 'idade não informada'}, ${sexo === 'M' ? 'Masculino' : sexo === 'F' ? 'Feminino' : 'Outro'}
+- Descrição: ${descricao}
+- Diagnóstico provisório: ${diag || 'não informado'}
+- Comorbidades/Alergias: ${comorb || 'não informadas'}
+- Medicações em uso: ${meds || 'não informadas'}
+
+Gero recomendações para: ${[needMed&&'medicamentos',needExam&&'exames',needProc&&'procedimentos',needRef&&'encaminhamentos',needCid&&'CID-10'].filter(Boolean).join(', ')}
+
+INSTRUÇÕES OBRIGATÓRIAS:
+- Para cada medicamento: nome genérico + comercial, dose, via, frequência, duração, contraindicações
+- Para cada exame: justificativa clínica, urgência, valor diagnóstico esperado
+- Para cada encaminhamento: especialidade, motivo, urgência
+- CADA recomendação deve ter pelo menos 1 referência bibliográfica ESPECÍFICA e REAL
+- As referências devem ser reais: artigos do PubMed, diretrizes de sociedades (CFM, SBC, SBD, etc.), livros-texto clássicos, OMS, etc.
+- Indique o nível de evidência (A/B/C ou I/II/III)
+
+RESPONDA EXCLUSIVAMENTE EM JSON:
+{
+  "diagnosticos_diferenciais": [
+    {
+      "nome": "Diagnóstico",
+      "cid10": "código",
+      "probabilidade": "Alta",
+      "cor": "high",
+      "descricao": "Justificativa clínica",
+      "criterios_diagnosticos": "Critérios aplicáveis"
+    }
+  ],
+  "urgente": false,
+  "alerta_urgencia": null,
+  "medicamentos": [
+    {
+      "nome_generico": "nome",
+      "nome_comercial": "exemplo",
+      "classe": "classe farmacológica",
+      "dose": "dose completa",
+      "via": "oral/IV/IM/tópica",
+      "frequencia": "12/12h, 8/8h...",
+      "duracao": "X dias",
+      "contraindicacoes": "lista",
+      "nivel_evidencia": "A",
+      "referencia_id": "ref1"
+    }
+  ],
+  "exames": [
+    {
+      "nome": "nome do exame",
+      "justificativa": "por que é indicado",
+      "urgencia": "Imediato/24h/48h/Eletivo",
+      "achados_esperados": "o que se espera encontrar",
+      "referencia_id": "ref2"
+    }
+  ],
+  "procedimentos": [
+    {
+      "nome": "procedimento",
+      "indicacao": "por que indicado",
+      "tecnica": "como realizar",
+      "cuidados": "cuidados especiais",
+      "referencia_id": "ref3"
+    }
+  ],
+  "encaminhamentos": [
+    {
+      "especialidade": "Cardiologia",
+      "motivo": "motivo detalhado",
+      "urgencia": "Imediato/Urgente/Rotina",
+      "referencia_id": "ref4"
+    }
+  ],
+  "cid10": {
+    "codigo": "I21.0",
+    "descricao": "descrição completa do CID"
+  },
+  "referencias": [
+    {
+      "id": "ref1",
+      "tipo": "guideline",
+      "titulo": "Título completo",
+      "autores": "Autores ou Organização",
+      "fonte": "Periódico/Livro/Sociedade",
+      "ano": "2024",
+      "volume": "detalhes",
+      "doi": "DOI se disponível",
+      "url": "URL se disponível",
+      "nivel_evidencia": "A",
+      "relevancia": "Por que esta referência suporta a recomendação"
+    }
+  ],
+  "nota_clinica": "Observações importantes e limitações"
+}`;
+
+  try {
+    const result = await chamarIA('consulta', {
+      descricao, diag, idade, sexo, comorb, meds, especialidade: esp.nome,
+      needMed, needExam, needProc, needRef, needCid
+    }, null, null, prompt);
+    hideLoading(interval);
+    renderResultado(result, 'consulta', '', '');
+  } catch (e) {
+    hideLoading(interval);
+    renderErro('Erro: ' + e.message);
+  }
+  btn.disabled = false; btn.classList.remove('loading');
+}
+
+// ─── BUSCA DE REFERÊNCIAS ──────────────────────────────────────
+async function buscarReferencias() {
+  const query = document.getElementById('busca-query').value.trim();
+  if (!query) { alert('Digite o que deseja pesquisar'); return; }
+  const nivel = document.getElementById('busca-nivel').value;
+  const periodo = document.getElementById('busca-periodo').value;
+  const esp = especialidades[currentEsp];
+
+  const btn = document.getElementById('btn-busca');
+  btn.disabled = true; btn.classList.add('loading');
+  const steps = ['🔍 Pesquisando literatura científica...','📊 Avaliando nível de evidência...','📚 Compilando referências...','✍️ Elaborando síntese...'];
+  const interval = showLoading(steps);
+
+  const prompt = `Você é um especialista em medicina baseada em evidências com acesso à literatura científica de ${esp.nome}. Realize uma revisão da literatura sobre a seguinte questão clínica:
+
+QUESTÃO: ${query}
+ESPECIALIDADE: ${esp.nome}
+FILTRO: ${nivel !== 'todos' ? nivel : 'todos os tipos de estudo'}
+PERÍODO: ${periodo === 'all' ? 'sem limite' : 'últimos ' + periodo + ' anos'}
+
+FONTES PREFERENCIAIS: PubMed, Cochrane, UpToDate, diretrizes de sociedades médicas brasileiras e internacionais, livros-texto de referência.
+
+INSTRUÇÕES:
+1. Forneça uma síntese das principais evidências sobre o tema
+2. Liste 5-8 referências REAIS e ESPECÍFICAS (não invente - use apenas referências que realmente existem na literatura)
+3. Para cada referência: autores reais, ano real, periódico real, conclusão principal
+4. Inclua o nível de evidência de cada estudo
+5. Destaque consensos e controvérsias atuais
+6. Mencione diretrizes relevantes (OMS, CFM, SBC, SBD, etc.)
+
+RESPONDA EXCLUSIVAMENTE EM JSON:
+{
+  "sintese": "Síntese narrativa das principais evidências em 2-3 parágrafos",
+  "consensos": ["Ponto de consenso 1", "Ponto de consenso 2"],
+  "controversias": ["Controvérsia ou lacuna 1"],
+  "referencias": [
+    {
+      "id": "ref1",
+      "tipo": "meta",
+      "titulo": "Título completo e real",
+      "autores": "Sobrenome A, Sobrenome B, et al.",
+      "fonte": "Periódico/Livro/Diretriz",
+      "ano": "2023",
+      "volume": "volume(número):páginas",
+      "doi": "10.xxxx/xxxxx",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/xxxxx",
+      "nivel_evidencia": "Ia",
+      "conclusao_principal": "Conclusão central do estudo",
+      "relevancia": "Por que é relevante para a questão"
+    }
+  ]
+}`;
+
+  try {
+    const result = await chamarIA('busca', {
+      query, nivel, periodo, especialidade: esp.nome
+    }, null, null, prompt);
+    hideLoading(interval);
+    renderBusca(result, query);
+  } catch (e) {
+    hideLoading(interval);
+    renderErro('Erro: ' + e.message);
+  }
+  btn.disabled = false; btn.classList.remove('loading');
+}
+
+// ─── RENDERIZAÇÃO ──────────────────────────────────────────────
+function renderResultado(r, tipo, exTipo, regiao) {
+  const esp = especialidades[currentEsp];
+  const probMap = {Alta:'prob-high',Média:'prob-medium',Media:'prob-medium',Baixa:'prob-low'};
+  const tipoRef = {artigo:'ref-article',guideline:'ref-guideline',livro:'ref-book',meta:'ref-guideline',journal:'ref-journal',revisao:'ref-journal'};
+  const tipoLabel = {artigo:'Artigo',guideline:'Diretriz',livro:'Livro',meta:'Meta-análise',journal:'Journal',revisao:'Revisão'};
+
+  let html = '<div class="result-wrap">';
+
+  // Header
+  html += `<div class="result-header">
+    <h2>${tipo==='imagem'?`🔬 Análise: ${exTipo}${regiao?' — '+regiao:''}`:tipo==='consulta'?'🧠 Recomendações Clínicas':'📚 Síntese da Literatura'}</h2>
+    <div class="meta">
+      <span>🏥 ${esp.nome}</span>
+      <span>📅 ${new Date().toLocaleDateString('pt-BR')}</span>
+      <span>📚 ${r.referencias?.length||0} referências</span>
+      ${r.cid10?`<span>🏷️ CID: ${r.cid10.codigo}</span>`:''}
+    </div>
+  </div>`;
+
+  // Disclaimer
+  html += `<div class="disclaimer">⚠️ <strong>Apoio clínico baseado em evidências.</strong> As recomendações são geradas por IA a partir da literatura científica e não substituem o julgamento clínico do profissional habilitado. Verifique sempre as referências originais antes de aplicar qualquer conduta.</div>`;
+
+  // Alerta urgência
+  if (r.urgente && r.alerta_urgencia) {
+    html += `<div class="alert-urgent">🚨 <strong>ACHADO URGENTE:</strong> ${r.alerta_urgencia}</div>`;
+  }
+
+  // Achados (imagem)
+  if (r.achados && tipo === 'imagem') {
+    html += `<div class="section-block">
+      <div class="section-block-header"><span class="section-ico">🔍</span><h3>Achados na Imagem</h3></div>
+      <div class="section-body"><p style="font-size:13px;color:var(--t2);line-height:1.7">${r.achados}</p></div>
+    </div>`;
+  }
+
+  // Diagnósticos
+  const diags = r.diagnosticos || r.diagnosticos_diferenciais || [];
+  if (diags.length) {
+    html += `<div class="section-block">
+      <div class="section-block-header"><span class="section-ico">🎯</span><h3>Diagnósticos Diferenciais</h3><span class="count">${diags.length}</span></div>
+      <div class="section-body">
+      ${diags.map(d => `<div class="diag-item ${d.cor||'low'}">
+        <div class="diag-header">
+          <div>
+            <div class="diag-name">${d.nome}</div>
+            ${d.cid10?`<div style="font-size:10px;color:var(--t3);margin-top:2px">CID: ${d.cid10}</div>`:''}
+          </div>
+          <div>
+            <span class="diag-prob ${probMap[d.probabilidade]||'prob-low'}">${d.probabilidade}</span>
+          </div>
+        </div>
+        <p class="diag-desc">${d.descricao||''}</p>
+        ${d.sinais_imagem?`<div class="diag-signs">🔬 <strong>Achados:</strong> ${d.sinais_imagem}</div>`:''}
+        ${d.criterios_diagnosticos?`<div class="diag-signs" style="margin-top:4px">📋 <strong>Critérios:</strong> ${d.criterios_diagnosticos}</div>`:''}
+      </div>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  // Medicamentos
+  if (r.medicamentos?.length) {
+    html += `<div class="section-block">
+      <div class="section-block-header"><span class="section-ico">💊</span><h3>Medicamentos Recomendados</h3><span class="count">${r.medicamentos.length}</span></div>
+      <div class="section-body">
+      ${r.medicamentos.map(m => `<div class="rec-item med">
+        <div class="rec-header">
+          <span class="rec-ico">💊</span>
+          <span class="rec-name">${m.nome_generico}${m.nome_comercial?' ('+m.nome_comercial+')':''}</span>
+          ${m.nivel_evidencia?`<span class="rec-tag">Evidência ${m.nivel_evidencia}</span>`:''}
+        </div>
+        <div class="rec-desc"><strong>Classe:</strong> ${m.classe||'—'} | <strong>Via:</strong> ${m.via||'—'}</div>
+        <div class="rec-desc"><strong>Dose:</strong> ${m.dose||'—'} | <strong>Frequência:</strong> ${m.frequencia||'—'} | <strong>Duração:</strong> ${m.duracao||'—'}</div>
+        ${m.contraindicacoes?`<div class="rec-detail">⚠️ <strong>Contraindicações:</strong> ${m.contraindicacoes}</div>`:''}
+        ${m.referencia_id?`<div class="rec-detail" style="margin-top:4px">📚 Ref: <a href="#${m.referencia_id}" style="color:var(--c);text-decoration:none" onclick="scrollToRef('${m.referencia_id}')">[${m.referencia_id}]</a></div>`:''}
+      </div>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  // Exames
+  const exames = r.exames || (r.recomendacoes?.filter(x=>x.tipo==='exame')||[]).map(x=>({nome:x.nome,justificativa:x.justificativa,urgencia:x.urgencia,referencia_id:x.referencia_id}));
+  if (exames?.length) {
+    html += `<div class="section-block">
+      <div class="section-block-header"><span class="section-ico">🔬</span><h3>Exames Complementares</h3><span class="count">${exames.length}</span></div>
+      <div class="section-body">
+      ${exames.map(e => `<div class="rec-item exam">
+        <div class="rec-header"><span class="rec-ico">🧪</span><span class="rec-name">${e.nome}</span><span class="rec-tag">${e.urgencia||''}</span></div>
+        <div class="rec-desc">${e.justificativa||''}</div>
+        ${e.achados_esperados?`<div class="rec-detail">📊 <strong>Achados esperados:</strong> ${e.achados_esperados}</div>`:''}
+        ${e.referencia_id?`<div class="rec-detail" style="margin-top:4px">📚 <a href="#${e.referencia_id}" style="color:var(--c);text-decoration:none" onclick="scrollToRef('${e.referencia_id}')">[${e.referencia_id}]</a></div>`:''}
+      </div>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  // Procedimentos
+  if (r.procedimentos?.length) {
+    html += `<div class="section-block">
+      <div class="section-block-header"><span class="section-ico">🏥</span><h3>Procedimentos</h3><span class="count">${r.procedimentos.length}</span></div>
+      <div class="section-body">
+      ${r.procedimentos.map(p => `<div class="rec-item proc">
+        <div class="rec-header"><span class="rec-ico">🔧</span><span class="rec-name">${p.nome}</span></div>
+        <div class="rec-desc"><strong>Indicação:</strong> ${p.indicacao||''}</div>
+        ${p.tecnica?`<div class="rec-desc"><strong>Técnica:</strong> ${p.tecnica}</div>`:''}
+        ${p.cuidados?`<div class="rec-detail">⚠️ <strong>Cuidados:</strong> ${p.cuidados}</div>`:''}
+      </div>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  // Encaminhamentos
+  if (r.encaminhamentos?.length) {
+    html += `<div class="section-block">
+      <div class="section-block-header"><span class="section-ico">↗️</span><h3>Encaminhamentos</h3><span class="count">${r.encaminhamentos.length}</span></div>
+      <div class="section-body">
+      ${r.encaminhamentos.map(e => `<div class="rec-item ref">
+        <div class="rec-header">
+          <span class="rec-ico">👨‍⚕️</span>
+          <span class="rec-name">${e.especialidade}</span>
+          <span class="rec-tag" style="${e.urgencia==='Imediato'?'background:rgba(244,63,94,.15);color:var(--r)':''}">${e.urgencia||''}</span>
+        </div>
+        <div class="rec-desc">${e.motivo||''}</div>
+      </div>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  // CID-10
+  if (r.cid10?.codigo) {
+    html += `<div class="section-block">
+      <div class="section-block-header"><span class="section-ico">🏷️</span><h3>CID-10</h3></div>
+      <div class="section-body"><div class="rec-item"><span style="font-size:18px;font-weight:900;color:var(--c)">${r.cid10.codigo}</span> <span style="font-size:13px;color:var(--t2);margin-left:8px">${r.cid10.descricao||''}</span></div></div>
+    </div>`;
+  }
+
+  // REFERÊNCIAS
+  if (r.referencias?.length) {
+    html += `<div class="section-block">
+      <div class="section-block-header"><span class="section-ico">📚</span><h3>Referências Bibliográficas</h3><span class="count">${r.referencias.length}</span></div>
+      <div class="section-body">
+      ${r.referencias.map(ref => `<div class="ref-item" id="${ref.id}">
+        <div class="ref-header">
+          <span class="ref-type-badge ${tipoRef[ref.tipo]||'ref-article'}">${tipoLabel[ref.tipo]||'Ref'}</span>
+          <div>
+            <div class="ref-title">${ref.titulo}</div>
+            <div class="ref-authors">${ref.autores||''}</div>
+            <div class="ref-source">
+              <span>📰 ${ref.fonte||''}</span>
+              ${ref.ano?`<span>📅 ${ref.ano}</span>`:''}
+              ${ref.volume?`<span>📄 ${ref.volume}</span>`:''}
+              ${ref.nivel_evidencia?`<span>⭐ Evidência ${ref.nivel_evidencia}</span>`:''}
+            </div>
+          </div>
+        </div>
+        ${ref.relevancia?`<div class="ref-relevance">💡 ${ref.relevancia}</div>`:''}
+        ${ref.conclusao_principal?`<div class="ref-relevance" style="margin-top:4px">📊 <strong>Conclusão:</strong> ${ref.conclusao_principal}</div>`:''}
+        <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">
+          ${ref.doi?`<a class="ref-link" href="https://doi.org/${ref.doi}" target="_blank">🔗 DOI</a>`:''}
+          ${ref.url?`<a class="ref-link" href="${ref.url}" target="_blank">🔗 Acessar</a>`:''}
+          <button class="copy-btn" onclick="copyRef(${JSON.stringify(ref).replace(/"/g,'&quot;')})">📋 Copiar referência</button>
+        </div>
+      </div>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  // Nota clínica
+  if (r.nota_clinica) {
+    html += `<div style="background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:11px;color:var(--t3);line-height:1.7">
+      ℹ️ <strong style="color:var(--t2)">Nota:</strong> ${r.nota_clinica}
+    </div>`;
+  }
+
+  html += '</div>';
+  document.getElementById('result-content').innerHTML = html;
+  document.getElementById('result-content').style.display = 'block';
+}
+
+function renderBusca(r, query) {
+  const tipoRef = {artigo:'ref-article',guideline:'ref-guideline',livro:'ref-book',meta:'ref-guideline',journal:'ref-journal',revisao:'ref-journal'};
+  const tipoLabel = {artigo:'Artigo',guideline:'Diretriz',livro:'Livro',meta:'Meta-análise',journal:'Journal',revisao:'Revisão'};
+  const esp = especialidades[currentEsp];
+
+  let html = '<div class="result-wrap">';
+  html += `<div class="result-header">
+    <h2>📚 Literatura: "${query}"</h2>
+    <div class="meta"><span>🏥 ${esp.nome}</span><span>📅 ${new Date().toLocaleDateString('pt-BR')}</span><span>📚 ${r.referencias?.length||0} referências</span></div>
+  </div>`;
+
+  if (r.sintese) {
+    html += `<div class="section-block">
+      <div class="section-block-header"><span class="section-ico">📋</span><h3>Síntese das Evidências</h3></div>
+      <div class="section-body"><p style="font-size:13px;color:var(--t2);line-height:1.8">${r.sintese.replace(/\n/g,'<br>')}</p></div>
+    </div>`;
+  }
+
+  if (r.consensos?.length || r.controversias?.length) {
+    html += `<div class="section-block">
+      <div class="section-block-header"><span class="section-ico">⚖️</span><h3>Consensos e Controvérsias</h3></div>
+      <div class="section-body">
+        ${r.consensos?.length?`<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:var(--g);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Consensos</div>${r.consensos.map(c=>`<div style="font-size:12px;color:var(--t2);padding:4px 0;padding-left:12px;border-left:2px solid var(--g)">${c}</div>`).join('')}</div>`:''}
+        ${r.controversias?.length?`<div><div style="font-size:11px;font-weight:700;color:var(--o);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Controvérsias/Lacunas</div>${r.controversias.map(c=>`<div style="font-size:12px;color:var(--t2);padding:4px 0;padding-left:12px;border-left:2px solid var(--o)">${c}</div>`).join('')}</div>`:''}
+      </div>
+    </div>`;
+  }
+
+  if (r.referencias?.length) {
+    html += `<div class="section-block">
+      <div class="section-block-header"><span class="section-ico">📚</span><h3>Referências</h3><span class="count">${r.referencias.length}</span></div>
+      <div class="section-body">
+      ${r.referencias.map(ref => `<div class="ref-item" id="${ref.id}">
+        <div class="ref-header">
+          <span class="ref-type-badge ${tipoRef[ref.tipo]||'ref-article'}">${tipoLabel[ref.tipo]||'Ref'}</span>
+          <div>
+            <div class="ref-title">${ref.titulo}</div>
+            <div class="ref-authors">${ref.autores||''}</div>
+            <div class="ref-source">
+              <span>📰 ${ref.fonte||''}</span>
+              ${ref.ano?`<span>📅 ${ref.ano}</span>`:''}
+              ${ref.nivel_evidencia?`<span>⭐ ${ref.nivel_evidencia}</span>`:''}
+            </div>
+          </div>
+        </div>
+        ${ref.conclusao_principal?`<div class="ref-relevance">📊 <strong>Conclusão:</strong> ${ref.conclusao_principal}</div>`:''}
+        ${ref.relevancia?`<div class="ref-relevance" style="margin-top:4px">💡 ${ref.relevancia}</div>`:''}
+        <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">
+          ${ref.doi?`<a class="ref-link" href="https://doi.org/${ref.doi}" target="_blank">🔗 DOI</a>`:''}
+          ${ref.url?`<a class="ref-link" href="${ref.url}" target="_blank">🔗 PubMed</a>`:''}
+          <button class="copy-btn" onclick="copyRef(${JSON.stringify(ref).replace(/"/g,'&quot;')})">📋 Copiar</button>
+        </div>
+      </div>`).join('')}
+      </div>
+    </div>`;
+  }
+  html += '</div>';
+  document.getElementById('result-content').innerHTML = html;
+  document.getElementById('result-content').style.display = 'block';
+}
+
+function renderErro(msg) {
+  document.getElementById('result-content').innerHTML = `<div class="result-wrap"><div class="alert-urgent">❌ Erro na análise: ${msg}<br><br><small>Verifique sua conexão e tente novamente. Se persistir, a chave da API Gemini pode precisar ser atualizada.</small></div></div>`;
+  document.getElementById('result-content').style.display = 'block';
+}
+
+function scrollToRef(id) {
+  const el = document.getElementById(id);
+  if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.style.border = '1px solid var(--c)'; setTimeout(()=>el.style.border='',2000); }
+}
+
+function copyRef(ref) {
+  const text = `${ref.autores}. ${ref.titulo}. ${ref.fonte}. ${ref.ano}${ref.volume?';'+ref.volume:''}${ref.doi?'. DOI: '+ref.doi:''}${ref.url?'. Disponível em: '+ref.url:''}`;
+  navigator.clipboard.writeText(text).then(()=>{
+    const btn = event.target; btn.textContent = '✓ Copiado!'; setTimeout(()=>btn.textContent='📋 Copiar referência',2000);
+  });
+}
+
+function limparTudo() {
+  document.getElementById('empty-state').style.display = 'flex';
+  document.getElementById('result-content').style.display = 'none';
+  imgBase64 = ''; imgMime = '';
+  document.getElementById('img-preview').style.display = 'none';
+  document.getElementById('img-placeholder').style.display = 'flex';
+  document.getElementById('img-overlay').style.display = 'none';
+}
+
+// Auto-abrir config se sem chave
+// IA configurada automaticamente via proxy Kronexa — sem popup
+</script>
+</body>
+</html>

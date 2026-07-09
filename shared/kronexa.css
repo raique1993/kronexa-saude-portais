@@ -1,0 +1,124 @@
+/* ═══════════════════════════════════════════════════════════
+   KRONEXA — Design System Compartilhado
+   Use em todos os portais: <link rel="stylesheet" href="/shared/kronexa.css">
+   ═══════════════════════════════════════════════════════════ */
+
+/* ═══ CSS RESET ═══ */
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;line-height:1.6;color:var(--t1);background:var(--bg)}
+
+/* ═══ DESIGN TOKENS ═══ */
+:root{
+  /* Cores primárias — Saúde (Teal) */
+  --p:#0D9488;--p-dark:#0F766E;--p-light:#CCFBF1;
+  /* Cores de suporte */
+  --c:#0284C7;--c-light:#E0F2FE;
+  --g:#059669;--g-light:#DCFCE7;
+  --r:#DC2626;--r-light:#FEE2E2;
+  --o:#D97706;--o-light:#FEF3C7;
+  /* Fundo */
+  --bg:#F8FAFC;--bg2:#FFFFFF;--bg3:#F1F5F9;
+  /* Texto */
+  --t1:#0F172A;--t2:#475569;--t3:#94A3B8;
+  /* Bordas */
+  --b:#E2E8F0;--b-hover:#CBD5E1;
+  /* Sombras */
+  --shadow-sm:0 1px 3px rgba(0,0,0,.04);
+  --shadow-md:0 4px 12px rgba(0,0,0,.08);
+  --shadow-lg:0 12px 40px rgba(0,0,0,.12);
+  /* Border-radius */
+  --radius-sm:6px;--radius:10px;--radius-lg:16px;
+}
+
+/* ═══ TEMA ESCURO ═══ */
+.theme-dark,.sec-dark{
+  --bg:#030712;--bg2:#111827;--bg3:#1F2937;
+  --t1:#F9FAFB;--t2:#D1D5DB;--t3:#6B7280;
+  --b:#1F2937;--b-hover:#374151;
+}
+
+/* ═══ TIPOGRAFIA ═══ */
+h1,h2,h3,h4{line-height:1.2;font-weight:800}
+h1{font-size:clamp(2rem,5vw,3.5rem);letter-spacing:-.02em}
+h2{font-size:clamp(1.5rem,4vw,2.2rem);letter-spacing:-.01em}
+h3{font-size:1.15rem}h4{font-size:1rem}
+p{color:var(--t2);line-height:1.7}
+a{color:var(--p);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* ═══ LAYOUT ═══ */
+.container{max-width:1150px;margin:0 auto;padding:0 24px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.grid-4{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}
+.flex{display:flex}.flex-wrap{flex-wrap:wrap}.items-center{align-items:center}
+.justify-between{justify-content:space-between}.gap-sm{gap:8px}.gap{gap:16px}.gap-lg{gap:24px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+
+/* ═══ BOTÕES ═══ */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;border:none;border-radius:var(--radius);font-size:13px;font-weight:700;cursor:pointer;transition:.15s;font-family:inherit;text-decoration:none;line-height:1.4}
+.btn:hover{transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-p{background:var(--p);color:#fff}.btn-p:hover{background:var(--p-dark)}
+.btn-g{background:var(--g);color:#fff}.btn-g:hover{opacity:.9}
+.btn-r{background:var(--r);color:#fff}
+.btn-o{background:transparent;border:1.5px solid var(--b);color:var(--t2)}.btn-o:hover{border-color:var(--p);color:var(--p)}
+.btn-ghost{background:transparent;color:var(--t2)}.btn-ghost:hover{background:var(--bg3)}
+.btn-sm{padding:6px 12px;font-size:11px}.btn-lg{padding:14px 32px;font-size:15px}
+
+/* ═══ CARDS ═══ */
+.card{background:var(--bg2);border:1px solid var(--b);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow-sm)}
+.card-hover:hover{border-color:var(--p);box-shadow:var(--shadow-md);transform:translateY(-2px);transition:.2s}
+
+/* ═══ FORMULÁRIOS ═══ */
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.form-input{width:100%;padding:10px 14px;background:var(--bg2);border:1.5px solid var(--b);border-radius:var(--radius-sm);color:var(--t1);font-size:13px;outline:none;transition:.15s;font-family:inherit}
+.form-input:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(13,148,136,.12)}
+.form-input.error{border-color:var(--r)}
+.form-error{font-size:11px;color:var(--r);margin-top:3px}
+textarea.form-input{resize:vertical;min-height:80px;line-height:1.6}
+
+/* ═══ TABELAS ═══ */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:10px 12px;font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid var(--b)}
+td{padding:10px 12px;border-bottom:1px solid var(--b);color:var(--t2)}
+tr:hover td{background:var(--bg3)}
+
+/* ═══ BADGES ═══ */
+.badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:9px;font-weight:700}
+.badge-g{background:var(--g-light);color:var(--g)}
+.badge-r{background:var(--r-light);color:var(--r)}
+.badge-o{background:var(--o-light);color:var(--o)}
+.badge-p{background:var(--p-light);color:var(--p)}
+.badge-c{background:var(--c-light);color:var(--c)}
+
+/* ═══ TOAST ═══ */
+.toast{position:fixed;bottom:20px;right:20px;z-index:9999;background:var(--bg2);border:1px solid var(--b);border-radius:var(--radius);padding:12px 20px;box-shadow:var(--shadow-lg);font-size:13px;max-width:380px;animation:slideUp .3s ease}
+.toast.error{border-color:var(--r);background:var(--r-light)}
+.toast.success{border-color:var(--g);background:var(--g-light)}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+/* ═══ LOADING ═══ */
+.spinner{width:24px;height:24px;border:3px solid var(--b);border-top-color:var(--p);border-radius:50%;animation:spin .6s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{display:flex;align-items:center;gap:8px;color:var(--t3);font-size:13px}
+.skeleton{background:linear-gradient(90deg,var(--bg3),var(--b),var(--bg3));background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:var(--radius-sm)}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+
+/* ═══ RESPONSIVO ═══ */
+@media(max-width:768px){
+  .grid-2,.grid-3{grid-template-columns:1fr}
+  .grid-4{grid-template-columns:1fr}
+  .hide-mobile{display:none!important}
+  .container{padding:0 16px}
+}
+
+/* ═══ ACESSIBILIDADE ═══ */
+:focus-visible{outline:2px solid var(--p);outline-offset:2px}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}

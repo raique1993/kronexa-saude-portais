@@ -1,0 +1,393 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Calculadoras Médicas — Kronexa</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--p:#0D9488;--c:#0284C7;--g:#059669;--r:#DC2626;--o:#D97706;--bg:#F8FAFC;--bg2:#FFFFFF;--bg3:#F1F5F9;--t1:#0F172A;--t2:#475569;--t3:#94A3B8;--b:#E2E8F0}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--t1);font-family:-apple-system,sans-serif;min-height:100vh}
+.hd{background:var(--bg2);border-bottom:1px solid var(--b);display:flex;align-items:center;padding:0 16px;gap:12px;height:48px}
+.logo{font-size:14px;font-weight:900}.logo span{color:var(--p)}
+.hd-btn{height:28px;padding:0 14px;border:1px solid var(--b);background:rgba(0,0,0,.02);color:var(--t2);border-radius:7px;font-size:11px;cursor:pointer;transition:.15s;display:flex;align-items:center;gap:5px;margin-left:auto}
+.hd-btn:hover{background:rgba(13,148,136,.12);color:var(--t1);border-color:var(--p)}
+
+.container{max-width:960px;margin:0 auto;padding:20px}
+
+/* Tabs */
+.tabs{display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid var(--b);overflow-x:auto}
+.tab{padding:10px 16px;border:none;background:none;color:var(--t2);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;margin-bottom:-2px;transition:.15s}
+.tab:hover{color:var(--t1)}
+.tab.on{color:var(--c);border-bottom-color:var(--c)}
+
+/* Cards */
+.card{background:var(--bg2);border:1px solid var(--b);border-radius:14px;padding:20px 24px;margin-bottom:16px}
+.card h3{font-size:16px;font-weight:700;margin-bottom:4px}
+.card .sub{font-size:11px;color:var(--t3);margin-bottom:16px}
+.card-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:600px){.card-grid{grid-template-columns:1fr}}
+
+.field{margin-bottom:10px}
+.field label{display:block;font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:4px;letter-spacing:.5px}
+.field input,.field select{width:100%;padding:10px 12px;background:var(--bg3);border:1px solid var(--b);border-radius:8px;color:var(--t1);font-size:13px;outline:none}
+.field input:focus,.field select:focus{border-color:var(--p)}
+.field select option{background:var(--bg3);color:var(--t1)}
+.field .unit{font-size:10px;color:var(--t3)}
+.field-row{display:flex;gap:8px}.field-row .field{flex:1}
+
+.result-box{background:linear-gradient(135deg,rgba(13,148,136,.10),rgba(0,229,255,.04));border:1px solid rgba(13,148,136,.25);border-radius:12px;padding:20px;text-align:center;margin-top:12px}
+.result-box .score{font-size:48px;font-weight:900;line-height:1}
+.result-box .label{font-size:13px;color:var(--t2);margin-top:4px}
+.result-box .interpretation{font-size:12px;margin-top:8px;line-height:1.6;padding:8px 12px;border-radius:8px;display:inline-block}
+.risk-low{background:rgba(34,197,94,.1);color:var(--g);border:1px solid rgba(34,197,94,.2)}
+.risk-medium{background:rgba(245,158,11,.1);color:var(--o);border:1px solid rgba(245,158,11,.2)}
+.risk-high{background:rgba(244,63,94,.1);color:var(--r);border:1px solid rgba(244,63,94,.2)}
+.risk-critical{background:rgba(244,63,94,.15);color:var(--r);border:2px solid rgba(244,63,94,.4)}
+
+.btn{padding:12px 20px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;transition:.15s}
+.btn-p{background:var(--p);color:#fff;width:100%}.btn-p:hover{opacity:.9}
+.btn-c{background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.2);color:var(--c);width:100%}
+
+/* Details */
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;font-size:11px}
+.detail-item{display:flex;justify-content:space-between;padding:6px 10px;background:rgba(0,0,0,.04);border-radius:6px}
+.detail-item .dk{color:var(--t3)}.detail-item .dv{color:var(--t1);font-weight:600}
+
+.toast{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);padding:9px 20px;border-radius:100px;font-size:12px;font-weight:700;z-index:99;display:none;background:var(--p);color:#fff}
+</style>
+</head>
+<body>
+<header class="hd">
+  <div class="logo">KRO<span>NEXA</span> <span style="font-size:10px;color:var(--t3);font-weight:400">| Calculadoras Médicas</span></div>
+  <button class="hd-btn" onclick="window.open('portal-dicom-3d.html','_blank')">🧬 DICOM 3D</button>
+  <button class="hd-btn" onclick="window.open('portal-telemedicina.html','_blank')">📹 Tele</button>
+  <button class="hd-btn" onclick="window.open('portal-prescricao.html','_blank')">💊 Prescrição</button>
+  <button class="hd-btn" onclick="window.open('portal-dashboard.html','_blank')">📊 BI</button>
+  <button class="hd-btn" onclick="window.location.href='portal-medico.html'">← Médico</button>
+</header>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab on" onclick="switchCalc('euroscore',this)">❤️ EuroSCORE II</button>
+    <button class="tab" onclick="switchCalc('asa',this)">🫁 ASA Score</button>
+    <button class="tab" onclick="switchCalc('caprini',this)">🩸 Caprini (TEV)</button>
+    <button class="tab" onclick="switchCalc('cha2ds2',this)">💓 CHA₂DS₂-VASc</button>
+    <button class="tab" onclick="switchCalc('pediatrica',this)">👶 Dose Pediátrica</button>
+    <button class="tab" onclick="switchCalc('triagem',this)">🤖 Triagem IA</button>
+  </div>
+
+  <!-- EUROSCORE II -->
+  <div id="calc-euroscore" class="calc-panel">
+    <div class="card">
+      <h3>❤️ EuroSCORE II — Risco Cirúrgico Cardíaco</h3>
+      <div class="sub">Calculadora de mortalidade em cirurgia cardíaca adulta (2011)</div>
+      <div class="card-grid">
+        <div class="field"><label>Idade</label><input type="number" id="eu-age" value="65" min="18" max="100"></div>
+        <div class="field"><label>Sexo</label><select id="eu-sex"><option value="M">Masculino</option><option value="F">Feminino</option></select></div>
+        <div class="field"><label>NYHA</label><select id="eu-nyha"><option value="1">I — Sem limitação</option><option value="2">II — Leve limitação</option><option value="3" selected>III — Moderada</option><option value="4">IV — Repouso</option></select></div>
+        <div class="field"><label>Angina CCS</label><select id="eu-ccs"><option value="0">0 — Sem angina</option><option value="1">I — Grandes esforços</option><option value="2">II — Esforços moderados</option><option value="3">III — Pequenos esforços</option><option value="4">IV — Repouso</option></select></div>
+        <div class="field"><label>FEVE (%)</label><input type="number" id="eu-feve" value="55" min="10" max="80"></div>
+        <div class="field"><label>Creatinina (mg/dL)</label><input type="number" id="eu-creat" value="1.0" step="0.1" min="0.3"></div>
+        <div class="field"><label>Cirurgia</label><select id="eu-surgery"><option value="cabg">Revascularização (CABG)</option><option value="valve">Valvar</option><option value="cabgValve">CABG + Valvar</option><option value="aorta">Aorta</option><option value="other">Outra</option></select></div>
+        <div class="field"><label>Urgência</label><select id="eu-urgency"><option value="elective">Eletiva</option><option value="urgent">Urgente</option><option value="emergency">Emergência</option><option value="salvage">Salvamento</option></select></div>
+      </div>
+      <button class="btn btn-p" onclick="calcEuroScore()" style="margin-top:12px">Calcular EuroSCORE II</button>
+      <div class="result-box" id="eu-result" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- ASA Score -->
+  <div id="calc-asa" class="calc-panel" style="display:none">
+    <div class="card">
+      <h3>🫁 Classificação ASA — Risco Anestésico</h3>
+      <div class="sub">American Society of Anesthesiologists — Estado físico pré-operatório</div>
+      <div class="field"><label>Classificação ASA</label>
+        <select id="asa-class" style="font-size:13px">
+          <option value="1">ASA I — Paciente saudável, sem comorbidades</option>
+          <option value="2" selected>ASA II — Doença sistêmica leve controlada (ex: HAS leve, DM2 controlado)</option>
+          <option value="3">ASA III — Doença sistêmica grave com limitação funcional</option>
+          <option value="4">ASA IV — Doença sistêmica grave com risco de vida constante</option>
+          <option value="5">ASA V — Moribundo, não sobrevive sem cirurgia</option>
+          <option value="6">ASA VI — Morte encefálica (doador de órgãos)</option>
+        </select>
+      </div>
+      <button class="btn btn-p" onclick="calcASA()">Classificar Risco</button>
+      <div class="result-box" id="asa-result" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- CAPRINI Score -->
+  <div id="calc-caprini" class="calc-panel" style="display:none">
+    <div class="card">
+      <h3>🩸 Escore de Caprini — Risco de Tromboembolismo Venoso</h3>
+      <div class="sub">Avaliação de risco de TEV em pacientes cirúrgicos</div>
+      <div class="card-grid">
+        <div class="field"><label>Idade</label><select id="cap-age"><option value="0">< 41 anos</option><option value="1">41-60 anos</option><option value="2">61-74 anos</option><option value="3">≥ 75 anos</option></select></div>
+        <div class="field"><label>IMC</label><select id="cap-bmi"><option value="0">Normal (< 25)</option><option value="1">Sobrepeso (> 25)</option></select></div>
+        <div class="field"><label>Cirurgia</label><select id="cap-surg"><option value="0">Menor</option><option value="1">Maior (> 45 min)</option><option value="2">Artroscópica</option><option value="5">Artroplastia quadril/joelho, trauma, AVC</option></select></div>
+        <div class="field"><label>Histórico TEV</label><select id="cap-hist"><option value="0">Não</option><option value="3">Sim</option><option value="5">Recorrente</option></select></div>
+        <div class="field"><label>Câncer ativo</label><select id="cap-cancer"><option value="0">Não</option><option value="2">Sim</option></select></div>
+        <div class="field"><label>Imobilização</label><select id="cap-imob"><option value="0">Não</option><option value="2">Sim (> 3 dias)</option></select></div>
+        <div class="field"><label>Varizes</label><select id="cap-var"><option value="0">Não</option><option value="1">Sim</option></select></div>
+        <div class="field"><label>Gravidez/Puerpério</label><select id="cap-grav"><option value="0">Não</option><option value="1">Sim</option></select></div>
+      </div>
+      <button class="btn btn-p" onclick="calcCaprini()" style="margin-top:12px">Calcular Caprini</button>
+      <div class="result-box" id="cap-result" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- CHA2DS2-VASc -->
+  <div id="calc-cha2ds2" class="calc-panel" style="display:none">
+    <div class="card">
+      <h3>💓 CHA₂DS₂-VASc — Risco de AVC na Fibrilação Atrial</h3>
+      <div class="sub">Escore para indicação de anticoagulação</div>
+      <div class="card-grid">
+        <div class="field"><label>ICC / Disfunção VE</label><select id="chf"><option value="0">Não</option><option value="1">Sim (1 ponto)</option></select></div>
+        <div class="field"><label>Hipertensão</label><select id="htn"><option value="0">Não</option><option value="1">Sim (1 ponto)</option></select></div>
+        <div class="field"><label>Idade ≥ 75 anos</label><select id="age75"><option value="0">Não</option><option value="2">Sim (2 pontos)</option></select></div>
+        <div class="field"><label>Diabetes</label><select id="dm"><option value="0">Não</option><option value="1">Sim (1 ponto)</option></select></div>
+        <div class="field"><label>AVC/AIT/Tromboembolismo prévio</label><select id="stroke"><option value="0">Não</option><option value="2">Sim (2 pontos)</option></select></div>
+        <div class="field"><label>Doença Vascular (IAM, DAP)</label><select id="vasc"><option value="0">Não</option><option value="1">Sim (1 ponto)</option></select></div>
+        <div class="field"><label>Idade 65-74</label><select id="age65"><option value="0">Não</option><option value="1">Sim (1 ponto)</option></select></div>
+        <div class="field"><label>Sexo Feminino</label><select id="sexF"><option value="0">Não</option><option value="1">Sim (1 ponto)</option></select></div>
+      </div>
+      <button class="btn btn-p" onclick="calcCHA2DS2()" style="margin-top:12px">Calcular CHA₂DS₂-VASc</button>
+      <div class="result-box" id="chf-result" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- DOSE PEDIÁTRICA -->
+  <div id="calc-pediatrica" class="calc-panel" style="display:none">
+    <div class="card">
+      <h3>👶 Calculadora de Dose Pediátrica</h3>
+      <div class="sub">Cálculo de dosagem por peso corporal (mg/kg)</div>
+      <div class="card-grid">
+        <div class="field"><label>Peso da criança (kg)</label><input type="number" id="ped-weight" value="15" step="0.1" min="0.5" max="100"></div>
+        <div class="field"><label>Dose recomendada (mg/kg/dose)</label><input type="number" id="ped-dose" value="10" step="0.1" min="0.1"></div>
+        <div class="field"><label>Frequência</label><select id="ped-freq"><option value="1">1x/dia</option><option value="2">2x/dia (12/12h)</option><option value="3">3x/dia (8/8h)</option><option value="4">4x/dia (6/6h)</option><option value="6">6x/dia (4/4h)</option></select></div>
+        <div class="field"><label>Apresentação (mg/mL)</label><input type="number" id="ped-conc" value="100" step="0.1" min="0.1" placeholder="mg/mL da solução"></div>
+      </div>
+      <button class="btn btn-p" onclick="calcPediatrica()" style="margin-top:12px">Calcular Dose</button>
+      <div class="result-box" id="ped-result" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- TRIAGEM IA -->
+  <div id="calc-triagem" class="calc-panel" style="display:none">
+    <div class="card">
+      <h3>🤖 Triagem IA Pré-Consulta</h3>
+      <div class="sub">Questionário inteligente — a IA resume para o médico antes da consulta</div>
+      <div class="field"><label>Queixa principal</label><input id="tri-queixa" placeholder="Ex: Dor de cabeça há 5 dias"></div>
+      <div class="field"><label>Intensidade (0-10)</label><input type="range" id="tri-intensidade" min="0" max="10" value="5" style="width:100%" oninput="document.getElementById('int-val').textContent=this.value+'/10'"><span id="int-val">5/10</span></div>
+      <div class="field"><label>Quando começou?</label><select id="tri-inicio"><option>Hoje</option><option selected>Há 2-7 dias</option><option>Há 1-4 semanas</option><option>Há mais de 1 mês</option></select></div>
+      <div class="field"><label>Sintomas associados</label><input id="tri-sintomas" placeholder="Ex: náusea, tontura, visão turva..."></div>
+      <div class="field"><label>Medicações em uso</label><input id="tri-meds" placeholder="Ex: Losartana 50mg, Metformina 850mg..."></div>
+      <div class="field"><label>Alergias</label><input id="tri-alergias" placeholder="Ex: Penicilina, dipirona..."></div>
+      <div class="field"><label>Doenças pré-existentes</label><input id="tri-doencas" placeholder="Ex: HAS, DM2, hipotireoidismo..."></div>
+      <button class="btn btn-p" onclick="triagemIA()" style="margin-top:12px">🤖 Analisar com IA</button>
+      <button class="btn btn-c" onclick="limparTriagem()" style="margin-top:4px">Limpar</button>
+      <div class="result-box" id="tri-result" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+function switchCalc(id,btn){
+  document.querySelectorAll('.calc-panel').forEach(p=>p.style.display='none');
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.getElementById('calc-'+id).style.display='block';
+  btn.classList.add('on');
+}
+
+// ═══ EUROSCORE II ═══
+function calcEuroScore(){
+  const age=parseInt(document.getElementById('eu-age').value)||65;
+  const sex=document.getElementById('eu-sex').value;
+  const nyha=parseInt(document.getElementById('eu-nyha').value);
+  const ccs=parseInt(document.getElementById('eu-ccs').value);
+  const feve=parseInt(document.getElementById('eu-feve').value)||55;
+  const creat=parseFloat(document.getElementById('eu-creat').value)||1;
+  const surgery=document.getElementById('eu-surgery').value;
+  const urgency=document.getElementById('eu-urgency').value;
+
+  // EuroSCORE II simplificado (valores aproximados da regressão logística)
+  let logit=0;
+  logit+=(age-60)*0.028;
+  if(sex==='F')logit+=0.22;
+  logit+=(nyha-1)*0.18;
+  logit+=ccs*0.12;
+  if(feve<30)logit+=0.9;else if(feve<50)logit+=0.35;
+  if(creat>2)logit+=0.56;
+  if(surgery==='valve')logit+=0.4;else if(surgery==='cabgValve')logit+=0.8;else if(surgery==='aorta')logit+=0.9;
+  if(urgency==='urgent')logit+=0.4;else if(urgency==='emergency')logit+=0.9;else if(urgency==='salvage')logit+=1.5;
+
+  const mortality=(Math.exp(logit)/(1+Math.exp(logit))*100).toFixed(1);
+  const mortalityNum=parseFloat(mortality);
+  let riskClass='risk-low', interpretation='Baixo risco — Procedimento com risco aceitável';
+  if(mortalityNum>10){riskClass='risk-critical';interpretation='Risco crítico — Requer discussão multidisciplinar e consentimento informado detalhado';}
+  else if(mortalityNum>5){riskClass='risk-high';interpretation='Alto risco — Avaliar cuidadosamente relação risco-benefício';}
+  else if(mortalityNum>2){riskClass='risk-medium';interpretation='Risco moderado — Monitorização intensiva recomendada';}
+
+  document.getElementById('eu-result').style.display='block';
+  document.getElementById('eu-result').innerHTML=`
+    <div class="score" style="color:${mortalityNum>10?'var(--r)':mortalityNum>5?'var(--o)':'var(--c)'}">${mortality}%</div>
+    <div class="label">Mortalidade prevista em 30 dias</div>
+    <div class="interpretation ${riskClass}">${interpretation}</div>
+    <div class="detail-grid" style="margin-top:12px">
+      <div class="detail-item"><span class="dk">Logit</span><span class="dv">${logit.toFixed(3)}</span></div>
+      <div class="detail-item"><span class="dk">NYHA</span><span class="dv">Classe ${nyha}</span></div>
+      <div class="detail-item"><span class="dk">FEVE</span><span class="dv">${feve}%</span></div>
+      <div class="detail-item"><span class="dk">Creatinina</span><span class="dv">${creat} mg/dL</span></div>
+    </div>`;
+}
+
+// ═══ ASA ═══
+function calcASA(){
+  const asa=parseInt(document.getElementById('asa-class').value);
+  const classes={
+    1:{mortality:'0.06%',color:'var(--g)',text:'Paciente saudável. Risco anestésico mínimo.',risk:'risk-low'},
+    2:{mortality:'0.47%',color:'var(--c)',text:'Doença sistêmica leve sem limitação funcional. Risco baixo.',risk:'risk-low'},
+    3:{mortality:'1.40%',color:'var(--o)',text:'Doença sistêmica grave com limitação funcional. Risco moderado.',risk:'risk-medium'},
+    4:{mortality:'7.8%',color:'var(--r)',text:'Doença grave com risco de vida. Requer planejamento intensivo.',risk:'risk-high'},
+    5:{mortality:'38%',color:'var(--r)',text:'Moribundo. Cirurgia de emergência como última alternativa.',risk:'risk-critical'},
+    6:{mortality:'100%',color:'var(--r)',text:'Morte encefálica. Doador de órgãos.',risk:'risk-critical'}
+  };
+  const c=classes[asa];
+  document.getElementById('asa-result').style.display='block';
+  document.getElementById('asa-result').innerHTML=`
+    <div class="score" style="color:${c.color}">ASA ${asa}</div>
+    <div class="label">Mortalidade perioperatória estimada: ${c.mortality}</div>
+    <div class="interpretation ${c.risk}">${c.text}</div>`;
+}
+
+// ═══ CAPRINI ═══
+function calcCaprini(){
+  const scores=['cap-age','cap-bmi','cap-surg','cap-hist','cap-cancer','cap-imob','cap-var','cap-grav'];
+  let total=0;
+  scores.forEach(id=>{total+=parseInt(document.getElementById(id).value)||0;});
+
+  let risk='risk-low', rec='Deambulação precoce. Sem profilaxia farmacológica.';
+  if(total>=5){risk='risk-critical';rec='⚠️ Alto risco! Profilaxia farmacológica (HBPM) + compressão pneumática + deambulação precoce.';}
+  else if(total>=3){risk='risk-high';rec='Profilaxia farmacológica (HBPM) ou compressão pneumática intermitente.';}
+  else if(total>=1){risk='risk-medium';rec='Profilaxia mecânica (meias compressivas) + deambulação precoce.';}
+
+  document.getElementById('cap-result').style.display='block';
+  document.getElementById('cap-result').innerHTML=`
+    <div class="score" style="color:${total>=5?'var(--r)':total>=3?'var(--o)':'var(--g)'}">${total}</div>
+    <div class="label">pontos — Risco de TEV</div>
+    <div class="interpretation ${risk}">${rec}</div>
+    <div class="detail-grid" style="margin-top:8px"><div class="detail-item"><span class="dk">Risco TEV sem profilaxia</span><span class="dv">${total===0?'<0.5%':total<=2?'1.5%':total<=4?'3%':'6-40%'}</span></div></div>`;
+}
+
+// ═══ CHA₂DS₂-VASc ═══
+function calcCHA2DS2(){
+  const keys=['chf','htn','age75','dm','stroke','vasc','age65','sexF'];
+  let total=0;
+  keys.forEach(k=>{total+=parseInt(document.getElementById(k).value)||0;});
+
+  let rec='', risk='risk-low';
+  if(total===0&&document.getElementById('sexF').value==='0'){rec='Sem indicação de anticoagulação. Risco muito baixo.';risk='risk-low';}
+  else if(total===1){rec='Considerar anticoagulação oral (ACO). Avaliar risco de sangramento (HAS-BLED).';risk='risk-medium';}
+  else if(total>=2){rec='⚠️ Anticoagulação oral recomendada (Varfarina, Rivaroxabana, Apixabana, etc).';risk='risk-high';}
+
+  document.getElementById('chf-result').style.display='block';
+  document.getElementById('chf-result').innerHTML=`
+    <div class="score" style="color:${total>=2?'var(--r)':total>=1?'var(--o)':'var(--g)'}">${total}</div>
+    <div class="label">pontos — CHA₂DS₂-VASc</div>
+    <div class="interpretation ${risk}">${rec}</div>
+    <div class="detail-grid" style="margin-top:8px"><div class="detail-item"><span class="dk">Risco AVC/ano</span><span class="dv">${total===0?'0.2%':total===1?'0.6%':total===2?'2.2%':'4-12%'}</span></div></div>`;
+}
+
+// ═══ DOSE PEDIÁTRICA ═══
+function calcPediatrica(){
+  const weight=parseFloat(document.getElementById('ped-weight').value)||15;
+  const dosePerKg=parseFloat(document.getElementById('ped-dose').value)||10;
+  const freq=parseInt(document.getElementById('ped-freq').value)||1;
+  const conc=parseFloat(document.getElementById('ped-conc').value)||100;
+
+  const dosePorVez=weight*dosePerKg;
+  const volumePorVez=dosePorVez/conc;
+  const doseDiaria=dosePorVez*freq;
+
+  document.getElementById('ped-result').style.display='block';
+  document.getElementById('ped-result').innerHTML=`
+    <div class="score" style="color:var(--c)">${dosePorVez.toFixed(0)} mg</div>
+    <div class="label">por dose (${freq}x/dia)</div>
+    <div class="detail-grid" style="margin-top:10px">
+      <div class="detail-item"><span class="dk">Volume por dose</span><span class="dv">${volumePorVez.toFixed(1)} mL</span></div>
+      <div class="detail-item"><span class="dk">Dose diária total</span><span class="dv">${doseDiaria.toFixed(0)} mg/dia</span></div>
+      <div class="detail-item"><span class="dk">Peso</span><span class="dv">${weight} kg</span></div>
+      <div class="detail-item"><span class="dk">mg/kg/dia</span><span class="dv">${(dosePerKg*freq).toFixed(1)} mg/kg/dia</span></div>
+    </div>
+    <div style="font-size:10px;color:var(--o);margin-top:8px">⚠️ Sempre confira o cálculo e consulte a referência antes de administrar</div>`;
+}
+
+// ═══ TRIAGEM IA ═══
+async function triagemIA(){
+  const queixa=document.getElementById('tri-queixa').value||'Não informada';
+  const intensidade=document.getElementById('tri-intensidade').value||'5';
+  const inicio=document.getElementById('tri-inicio').value;
+  const sintomas=document.getElementById('tri-sintomas').value||'Não informados';
+  const meds=document.getElementById('tri-meds').value||'Nenhuma';
+  const alergias=document.getElementById('tri-alergias').value||'Nenhuma';
+  const doencas=document.getElementById('tri-doencas').value||'Nenhuma';
+
+  document.getElementById('tri-result').style.display='block';
+  document.getElementById('tri-result').innerHTML='<div style="color:var(--c)">🤖 IA analisando...</div>';
+
+  try{
+    const geminiKey=localStorage.getItem('KRONEXA_GEMINI_KEY')||'';
+    const prompt=`Você é um assistente de triagem médica. Resuma o caso abaixo para o médico em Português (Brasil), em formato JSON:
+{
+  "resumo_para_medico": "2-3 frases resumindo o quadro",
+  "gravidade_suspeita": "leve|moderada|grave|emergencia",
+  "hipoteses_diagnosticas": ["hipótese 1", "hipótese 2", "hipótese 3"],
+  "exames_sugeridos": ["exame 1"],
+  "urgencia": "atendimento imediato|consultar hoje|consultar esta semana|consultar quando possível",
+  "perguntas_adicionais": ["pergunta 1"]
+}
+
+Dados: Queixa: ${queixa} | Intensidade: ${intensidade}/10 | Início: ${inicio} | Sintomas: ${sintomas} | Medicações: ${meds} | Alergias: ${alergias} | Doenças: ${doencas}`;
+
+    const resp=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.1,maxOutputTokens:1500}})
+    });
+    const d=await resp.json();
+    const tri=JSON.parse((d.candidates?.[0]?.content?.parts?.[0]?.text||'{}').replace(/```json|```/g,'').trim());
+
+    const severidade={leve:'var(--g)',moderada:'var(--o)',grave:'var(--r)',emergencia:'var(--r)'};
+    document.getElementById('tri-result').innerHTML=`
+      <div style="font-size:13px;color:var(--t1);line-height:1.6;margin-bottom:8px"><b>📋 Resumo para o médico:</b><br>${tri.resumo_para_medico||'Análise indisponível'}</div>
+      <div class="detail-grid">
+        <div class="detail-item"><span class="dk">Gravidade</span><span class="dv" style="color:${severidade[tri.gravidade_suspeita]||'var(--t2)'}">${(tri.gravidade_suspeita||'—').toUpperCase()}</span></div>
+        <div class="detail-item"><span class="dk">Urgência</span><span class="dv">${tri.urgencia||'—'}</span></div>
+      </div>
+      <div style="margin-top:8px;font-size:11px;text-align:left">
+        <b style="color:var(--c)">Hipóteses:</b> ${(tri.hipoteses_diagnosticas||[]).join(' · ')}<br>
+        <b style="color:var(--c)">Exames sugeridos:</b> ${(tri.exames_sugeridos||[]).join(' · ')}<br>
+        ${tri.perguntas_adicionais?.length?`<b style="color:var(--o)">Perguntar:</b> ${tri.perguntas_adicionais.join(' · ')}`:''}
+      </div>`;
+  }catch(e){
+    document.getElementById('tri-result').innerHTML='<div style="color:var(--r)">Erro na análise. Configure a chave Gemini.</div>';
+  }
+}
+
+function limparTriagem(){
+  ['tri-queixa','tri-sintomas','tri-meds','tri-alergias','tri-doencas'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('tri-intensidade').value=5;
+  document.getElementById('int-val').textContent='5/10';
+  document.getElementById('tri-result').style.display='none';
+}
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.style.display='block';
+  setTimeout(()=>t.style.display='none',3000);
+}
+</script>
+</body>
+</html>

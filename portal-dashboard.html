@@ -1,0 +1,374 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard — Kronexa BI</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{--p:#0D9488;--c:#0284C7;--g:#059669;--r:#DC2626;--o:#D97706;--bg:#F8FAFC;--bg2:#FFFFFF;--bg3:#F1F5F9;--t1:#0F172A;--t2:#475569;--t3:#94A3B8;--b:#E2E8F0}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--t1);font-family:-apple-system,sans-serif;min-height:100vh}
+.hd{background:var(--bg2);border-bottom:1px solid var(--b);display:flex;align-items:center;padding:0 16px;gap:12px;height:48px;position:sticky;top:0;z-index:10}
+.logo{font-size:14px;font-weight:900}.logo span{color:var(--p)}
+.tag{font-size:9px;font-weight:700;padding:2px 7px;border-radius:100px;background:rgba(13,148,136,.15);color:var(--p)}
+.hd-right{margin-left:auto;display:flex;gap:8px}
+.hd-btn{height:28px;padding:0 14px;border:1px solid var(--b);background:rgba(0,0,0,.02);color:var(--t2);border-radius:7px;font-size:11px;cursor:pointer;transition:.15s;display:flex;align-items:center;gap:5px}
+.hd-btn:hover{background:rgba(13,148,136,.12);color:var(--t1);border-color:var(--p)}
+
+.container{max-width:1300px;margin:0 auto;padding:16px 20px;display:flex;flex-direction:column;gap:16px}
+
+/* KPI Cards */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.kpi-card{background:var(--bg2);border:1px solid var(--b);border-radius:12px;padding:16px;display:flex;align-items:center;gap:12px;transition:.2s}
+.kpi-card:hover{border-color:rgba(13,148,136,.35);box-shadow:0 4px 16px rgba(13,148,136,.08)}
+.kpi-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.kpi-icon.purple{background:rgba(13,148,136,.18)}.kpi-icon.cyan{background:rgba(0,229,255,.1)}
+.kpi-icon.green{background:rgba(34,197,94,.1)}.kpi-icon.orange{background:rgba(245,158,11,.1)}
+.kpi-icon.red{background:rgba(244,63,94,.1)}.kpi-icon.blue{background:rgba(77,150,255,.1)}
+.kpi-info{flex:1}.kpi-value{font-size:24px;font-weight:900}.kpi-label{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px}
+.kpi-delta{font-size:10px;font-weight:700;margin-top:2px}
+.kpi-delta.up{color:var(--g)}.kpi-delta.down{color:var(--r)}
+
+/* Charts */
+.charts-grid{display:grid;grid-template-columns:2fr 1fr;gap:10px}
+@media(max-width:900px){.charts-grid{grid-template-columns:1fr}}
+.chart-card{background:var(--bg2);border:1px solid var(--b);border-radius:12px;padding:16px}
+.chart-card h4{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.chart-wrap{position:relative;width:100%;min-height:280px}
+.chart-wrap canvas{width:100%!important;height:100%!important}
+
+/* Tabelas */
+.table-card{background:var(--bg2);border:1px solid var(--b);border-radius:12px;overflow:hidden}
+.table-card h4{padding:12px 16px;font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;border-bottom:1px solid var(--b)}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{text-align:left;padding:10px 14px;color:var(--t3);font-weight:700;font-size:9px;text-transform:uppercase;background:rgba(0,0,0,.04)}
+td{padding:10px 14px;border-top:1px solid rgba(255,255,255,.03);color:var(--t2)}
+tr:hover td{background:rgba(13,148,136,.06)}
+.badge-row{padding:2px 8px;border-radius:100px;font-size:9px;font-weight:700;display:inline-block}
+.badge-row.green{background:rgba(34,197,94,.12);color:var(--g)}
+.badge-row.yellow{background:rgba(234,179,8,.12);color:var(--o)}
+.badge-row.red{background:rgba(244,63,94,.12);color:var(--r)}
+.badge-row.purple{background:rgba(13,148,136,.15);color:var(--p)}
+
+/* NPS */
+.nps-card{background:var(--bg2);border:1px solid var(--b);border-radius:12px;padding:16px;text-align:center}
+.nps-score{font-size:64px;font-weight:900;line-height:1}
+.nps-score.great{color:var(--g)}.nps-score.good{color:var(--c)}.nps-score.warn{color:var(--o)}.nps-score.bad{color:var(--r)}
+.nps-label{font-size:11px;color:var(--t3);margin-top:4px}
+.nps-breakdown{display:flex;gap:8px;margin-top:12px;justify-content:center}
+.nps-segment{text-align:center;flex:1}
+.nps-segment .count{font-size:20px;font-weight:900}
+.nps-segment .type{font-size:9px;color:var(--t3);text-transform:uppercase}
+.nps-segment.promoter .count{color:var(--g)}
+.nps-segment.neutral .count{color:var(--o)}
+.nps-segment.detractor .count{color:var(--r)}
+
+/* Row 3 */
+.row3{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:900px){.row3{grid-template-columns:1fr}}
+
+.toast{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);padding:9px 20px;border-radius:100px;font-size:12px;font-weight:700;z-index:99;display:none;background:var(--p);color:#fff}
+.loading-text{color:var(--t3);font-size:12px;text-align:center;padding:30px}
+</style>
+</head>
+<body>
+
+<header class="hd">
+  <div class="logo">KRO<span>NEXA</span> <span style="font-size:10px;color:var(--t3);font-weight:400">| Business Intelligence</span></div>
+  <span class="tag">DASHBOARD</span>
+  <span style="font-size:10px;color:var(--t3)" id="period-label">Últimos 30 dias</span>
+  <button class="hd-btn" onclick="window.open('portal-marketing-saude.html','_blank')">📱 Marketing IA</button>
+  <div class="hd-right">
+    <select class="hd-btn" style="height:28px" onchange="changePeriod(this.value)">
+      <option value="7">7 dias</option>
+      <option value="30" selected>30 dias</option>
+      <option value="90">90 dias</option>
+      <option value="365">12 meses</option>
+    </select>
+    <button class="hd-btn" onclick="location.reload()">↻ Atualizar</button>
+    <button class="hd-btn" onclick="window.location.href='portal-medico.html'">🏥 Médico</button>
+  </div>
+</header>
+
+<div class="container">
+  <!-- KPIs -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-icon purple">📅</div>
+      <div class="kpi-info">
+        <div class="kpi-value" id="kpi-consultas">142</div>
+        <div class="kpi-label">Consultas no período</div>
+        <div class="kpi-delta up">↑ 12% vs anterior</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon green">💰</div>
+      <div class="kpi-info">
+        <div class="kpi-value" id="kpi-faturamento">R$ 48.500</div>
+        <div class="kpi-label">Faturamento</div>
+        <div class="kpi-delta up">↑ 8% vs anterior</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon cyan">🔬</div>
+      <div class="kpi-info">
+        <div class="kpi-value" id="kpi-exames">87</div>
+        <div class="kpi-label">Exames laudados</div>
+        <div class="kpi-delta up">↑ 15% vs anterior</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon orange">📱</div>
+      <div class="kpi-info">
+        <div class="kpi-value" id="kpi-whatsapp">1.247</div>
+        <div class="kpi-label">Conversas (WhatsApp)</div>
+        <div class="kpi-delta up">↑ 22% vs anterior</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon red">⏱</div>
+      <div class="kpi-info">
+        <div class="kpi-value" id="kpi-espera">4.2<span style="font-size:14px">min</span></div>
+        <div class="kpi-label">Tempo médio de espera</div>
+        <div class="kpi-delta down">↓ 18% vs anterior</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon blue">⭐</div>
+      <div class="kpi-info">
+        <div class="kpi-value" id="kpi-nps">78</div>
+        <div class="kpi-label">NPS Score</div>
+        <div class="kpi-delta up">↑ 5 pontos</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts Row -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <h4>📈 Consultas e Faturamento</h4>
+      <div class="chart-wrap"><canvas id="chart-consultas"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h4>🧬 Distribuição de Exames</h4>
+      <div class="chart-wrap"><canvas id="chart-exames-pie"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Row 3 -->
+  <div class="row3">
+    <div class="table-card">
+      <h4>👨‍⚕️ Top Médicos</h4>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Médico</th><th>Consultas</th><th>NPS</th><th>Faturamento</th><th>Status</th></tr></thead>
+          <tbody id="top-medicos"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="nps-card">
+      <h4 style="text-align:left;margin-bottom:8px">⭐ Satisfação (NPS)</h4>
+      <div class="nps-score great" id="nps-score-display">78</div>
+      <div class="nps-label">Excelente — acima da média do mercado (42)</div>
+      <div class="nps-breakdown">
+        <div class="nps-segment promoter"><div class="count" id="nps-promoters">82</div><div class="type">Promotores</div></div>
+        <div class="nps-segment neutral"><div class="count" id="nps-neutrals">14</div><div class="type">Neutros</div></div>
+        <div class="nps-segment detractor"><div class="count" id="nps-detractors">4</div><div class="type">Detratores</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Origem pacientes -->
+  <div class="table-card">
+    <h4>📊 Origem dos Agendamentos</h4>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Canal</th><th>Agendamentos</th><th>Conversão</th><th>Custo/Aquisição</th><th>Tendência</th></tr></thead>
+        <tbody>
+          <tr><td>💬 WhatsApp (Sofia)</td><td>68</td><td>48%</td><td>R$ 0,00</td><td><span class="badge-row green">↑ 18%</span></td></tr>
+          <tr><td>🔗 Agendamento Online</td><td>35</td><td>32%</td><td>R$ 0,00</td><td><span class="badge-row green">↑ 25%</span></td></tr>
+          <tr><td>📞 Telefone</td><td>22</td><td>28%</td><td>R$ 2,50</td><td><span class="badge-row yellow">→ estável</span></td></tr>
+          <tr><td>🚶 Presencial</td><td>17</td><td>55%</td><td>R$ 0,00</td><td><span class="badge-row red">↓ 5%</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SB='https://tcjynyfusqkqtdohnyzq.supabase.co', KEY='sb_publishable_gNJhc4WCS9MnnmDAL2T6Vg_AQ71_Vid', CID='c1d2e3f4-0001-0000-0000-000000000001';
+const sb=supabase.createClient(SB,KEY);
+
+let charts={};
+
+function init(){
+  setTimeout(loadUserData,500);
+  renderCharts();
+  renderTopMedicos();
+  updateKPIs();
+}
+
+function changePeriod(days){
+  document.getElementById('period-label').textContent=`Últimos ${days} dias`;
+  // Recarregar dados para o período
+  renderCharts();
+  updateKPIs();
+}
+
+function updateKPIs(){
+  // KPIs reais do Supabase
+  Promise.all([
+    sb.from('kh_agendamentos').select('*',{count:'exact',head:true}).eq('clinica_id',CID),
+    sb.from('kh_financeiro').select('valor').eq('clinica_id',CID).eq('status','PAGO'),
+    sb.from('kh_exames').select('*',{count:'exact',head:true}).eq('clinica_id',CID),
+    sb.from('kh_conversas').select('*',{count:'exact',head:true}).eq('clinica_id',CID),
+    sb.from('kh_avaliacoes').select('nota').eq('clinica_id',CID)
+  ]).then(([consultasRes,fatRes,examesRes,whatsRes,npsRes])=>{
+    const consultas = consultasRes.count || 0;
+    const faturamento = (fatRes.data||[]).reduce((s,r)=>s+(r.valor||0),0);
+    const exames = examesRes.count || 0;
+    const whatsapp = whatsRes.count || 0;
+    const notas = (npsRes.data||[]).map(r=>r.nota).filter(n=>n!=null);
+    const nps = notas.length ? Math.round(notas.reduce((a,b)=>a+b,0)/notas.length*10) : 78;
+
+    document.getElementById('kpi-consultas').textContent = consultas;
+    document.getElementById('kpi-faturamento').textContent = 'R$ '+faturamento.toLocaleString('pt-BR',{maximumFractionDigits:0});
+    document.getElementById('kpi-exames').textContent = exames;
+    document.getElementById('kpi-whatsapp').textContent = whatsapp.toLocaleString();
+    document.getElementById('kpi-espera').innerHTML = (consultas>0?'—':(4.2).toFixed(1))+'<span style="font-size:14px">min</span>';
+    document.getElementById('kpi-nps').textContent = nps;
+  }).catch(e=>{
+    console.error('Erro ao carregar KPIs:',e);
+    // Fallback mostrar zeros
+    document.getElementById('kpi-consultas').textContent='—';
+    document.getElementById('kpi-faturamento').textContent='R$ —';
+    document.getElementById('kpi-exames').textContent='—';
+    document.getElementById('kpi-whatsapp').textContent='—';
+    document.getElementById('kpi-nps').textContent='—';
+  });
+}
+
+function renderCharts(){
+  // Chart 1: Consultas — dados reais do Supabase (agenda dos ultimos 30 dias)
+  const ctx1=document.getElementById('chart-consultas').getContext('2d');
+  if(charts.consultas)charts.consultas.destroy();
+
+  const days=[];
+  for(let i=29;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);days.push(d.toLocaleDateString('pt-BR',{day:'numeric',month:'short'}));}
+
+  // Query real: agendamentos por data nos ultimos 30 dias
+  const trintaDiasAtras = new Date(); trintaDiasAtras.setDate(trintaDiasAtras.getDate()-30);
+  sb.from('kh_agendamentos').select('data_hora,status').eq('clinica_id',CID).gte('data_hora',trintaDiasAtras.toISOString()).then(({data})=>{
+    const consultasPorDia = new Array(30).fill(0);
+    (data||[]).forEach(a=>{
+      const idx = Math.floor((new Date(a.data_hora)-trintaDiasAtras)/(1000*60*60*24));
+      if(idx>=0&&idx<30) consultasPorDia[idx]++;
+    });
+    charts.consultas=new Chart(ctx1,{
+      type:'line',data:{labels:days,datasets:[
+        {label:'Consultas',data:consultasPorDia,borderColor:'#0D9488',backgroundColor:'rgba(13,148,136,.10)',fill:true,tension:.4,yAxisID:'y'},
+      ]},
+      options:{
+        responsive:true,maintainAspectRatio:false,interaction:{intersect:false,mode:"index"},
+        plugins:{legend:{labels:{color:'#404060',font:{size:10},usePointStyle:true}}},
+        scales:{
+          x:{ticks:{color:'#404060',font:{size:9}},grid:{color:'rgba(255,255,255,.03)'}},
+          y:{type:'linear',position:'left',ticks:{color:'#0D9488',font:{size:9}},grid:{color:'rgba(255,255,255,.03)'},title:{display:true,text:'Consultas',color:'#0D9488',font:{size:9}}},
+        }
+      }
+    });
+  }).catch(()=>{/* manter grafico vazio */});
+
+  // Chart 2: Distribuição de Exames
+  const ctx2=document.getElementById('chart-exames-pie').getContext('2d');
+  if(charts.exames)charts.exames.destroy();
+  charts.exames=new Chart(ctx2,{
+    type:'doughnut',
+    data:{
+      labels:['Tomografia','Radiografia','Ultrassonografia','Ressonância','Laboratório','Outros'],
+      datasets:[{data:[28,22,18,10,12,10],backgroundColor:['#0D9488','#00E5FF','#22c55e','#f59e0b','#f43f5e','#4d96ff'],borderWidth:0}]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,hover:{animation:{duration:0}},
+      plugins:{legend:{position:'bottom',labels:{color:'#8888AA',font:{size:9},padding:12,usePointStyle:true}}}
+    }
+  });
+}
+
+function renderTopMedicos(){
+  const medicos=[
+    {nome:'Dr. Carlos Silva',consultas:42,nps:85,faturamento:'R$ 18.400',status:'green'},
+    {nome:'Dra. Ana Oliveira',consultas:38,nps:92,faturamento:'R$ 15.200',status:'green'},
+    {nome:'Dr. Roberto Santos',consultas:31,nps:71,faturamento:'R$ 12.100',status:'yellow'},
+    {nome:'Dra. Julia Costa',consultas:20,nps:78,faturamento:'R$ 8.800',status:'purple'},
+    {nome:'Dr. Marcos Lima',consultas:11,nps:58,faturamento:'R$ 4.200',status:'yellow'},
+  ];
+  document.getElementById('top-medicos').innerHTML=medicos.map(m=>`
+    <tr>
+      <td><b>${m.nome}</b></td>
+      <td>${m.consultas}</td>
+      <td style="color:${m.nps>=80?'var(--g)':m.nps>=60?'var(--o)':'var(--r)'}">${m.nps}</td>
+      <td>${m.faturamento}</td>
+      <td><span class="badge-row ${m.status}">${m.status==='green'?'Excelente':m.status==='yellow'?'Bom':m.status==='purple'?'Crescendo':'Regular'}</span></td>
+    </tr>`).join('');
+}
+
+
+// ── USER MENU ──
+function toggleUserMenu(){ const m=document.getElementById('user-menu');m.style.display=m.style.display==='block'?'none':'block'; }
+document.addEventListener('click',function(e){ const m=document.getElementById('user-menu');const b=document.getElementById('user-btn');if(m&&b&&!b.contains(e.target)&&!m.contains(e.target))m.style.display='none'; });
+let configPanelOpen=false;
+function abrirConfig(tipo){
+  document.getElementById('user-menu').style.display='none';
+  if(configPanelOpen){document.getElementById('config-panel').remove();configPanelOpen=false;return;}
+  configPanelOpen=true;
+  var panel=document.createElement('div');panel.id='config-panel';
+  panel.style.cssText='position:fixed;top:0;right:0;width:420px;max-width:100vw;height:100vh;background:var(--bg2);border-left:1px solid var(--b);z-index:300;overflow-y:auto;padding:24px;box-shadow:-10px 0 40px rgba(0,0,0,.1)';
+  var h='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px"><h3 style="font-size:16px">Configuracoes</h3><button onclick="document.getElementById(\'config-panel\').remove();configPanelOpen=false" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--t2)">X</button></div>';
+  if(tipo==='perfil')h+='<label>Foto</label><input type="file" accept="image/*" style="margin-bottom:12px"><label>Nome</label><input class="fi" id="cfg-nome" placeholder="Nome" style="width:100%;padding:10px;border:1px solid var(--b);border-radius:8px;margin-bottom:10px"><label>Email</label><input class="fi" id="cfg-email" placeholder="Email" style="width:100%;padding:10px;border:1px solid var(--b);border-radius:8px;margin-bottom:10px"><label>WhatsApp</label><input class="fi" id="cfg-tel" placeholder="11999999999" style="width:100%;padding:10px;border:1px solid var(--b);border-radius:8px;margin-bottom:16px"><button style="padding:12px;background:var(--p);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;width:100%" onclick="salvarConfig()">Salvar</button>';
+  if(tipo==='clinica')h+='<label>Nome da Clinica</label><input class="fi" id="cfg-nome" placeholder="Nome" style="width:100%;padding:10px;border:1px solid var(--b);border-radius:8px;margin-bottom:10px"><label>Especialidade</label><select class="fi" id="cfg-seg" style="width:100%;padding:10px;border:1px solid var(--b);border-radius:8px;margin-bottom:10px"><option>Clinica Medica</option><option>Odontologia</option><option>Dermatologia</option><option>Cardiologia</option><option>Ortopedia</option><option>Fisioterapia</option><option>Outro</option></select><label>CNPJ</label><input class="fi" id="cfg-cnpj" placeholder="00.000.000/0000-00" style="width:100%;padding:10px;border:1px solid var(--b);border-radius:8px;margin-bottom:10px"><label>Endereco</label><input class="fi" id="cfg-end" placeholder="Rua, numero, bairro" style="width:100%;padding:10px;border:1px solid var(--b);border-radius:8px;margin-bottom:16px"><button style="padding:12px;background:var(--p);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;width:100%" onclick="salvarConfig()">Salvar</button>';
+  if(tipo==='servicos')h+='<div id="cfg-svcs"></div><button onclick="addCfgSvc()" style="background:var(--bg3);color:var(--p);border:1px dashed var(--p);border-radius:9px;padding:10px;text-align:center;cursor:pointer;font-size:12px;font-weight:600;width:100%;margin-bottom:16px">+ Adicionar Servico</button><button style="padding:12px;background:var(--p);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;width:100%" onclick="salvarConfig()">Salvar</button>';
+  if(tipo==='profissionais')h+='<div id="cfg-profs"></div><button onclick="addCfgProf()" style="background:var(--bg3);color:var(--p);border:1px dashed var(--p);border-radius:9px;padding:10px;text-align:center;cursor:pointer;font-size:12px;font-weight:600;width:100%;margin-bottom:16px">+ Adicionar Profissional</button><button style="padding:12px;background:var(--p);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;width:100%" onclick="salvarConfig()">Salvar</button>';
+  panel.innerHTML=h;document.body.appendChild(panel);
+  if(tipo==='servicos')loadCfgServicos();
+  if(tipo==='profissionais')loadCfgProfissionais();
+  loadUserData();
+}
+window.addCfgSvc=function(){var d=document.getElementById('cfg-svcs');var r=document.createElement('div');r.style.cssText='display:flex;gap:8px;margin-bottom:8px';r.innerHTML='<input class="fi" placeholder="Servico" style="flex:1;margin:0"><input class="fi" placeholder="R$" style="width:80px;margin:0"><button onclick="this.parentElement.remove()" style="background:var(--r);color:#fff;border:none;border-radius:6px;padding:4px 8px;cursor:pointer">X</button>';d.appendChild(r);};
+window.addCfgProf=function(){var d=document.getElementById('cfg-profs');var r=document.createElement('div');r.style.cssText='margin-bottom:10px';r.innerHTML='<input class="fi" placeholder="Nome" style="margin-bottom:4px"><input class="fi" placeholder="CRM/Registro" style="margin-bottom:4px"><input class="fi" placeholder="Especialidade"><button onclick="this.parentElement.remove()" style="margin-top:4px;background:var(--r);color:#fff;border:none;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:11px">Remover</button>';d.appendChild(r);};
+async function loadCfgServicos(){try{var d=document.getElementById('cfg-svcs');const{data}=await sb.from('kh_servicos').select('*').eq('clinica_id',CID).eq('ativo',true);if(data)data.forEach(function(s){var r=document.createElement('div');r.style.cssText='display:flex;gap:8px;margin-bottom:8px';r.innerHTML='<input class="fi" value="'+s.nome+'" style="flex:1;margin:0"><input class="fi" value="'+s.preco+'" style="width:80px;margin:0"><button onclick="this.parentElement.remove()" style="background:var(--r);color:#fff;border:none;border-radius:6px;padding:4px 8px;cursor:pointer">X</button>';d.appendChild(r);});}catch(e){}}
+async function loadCfgProfissionais(){try{var d=document.getElementById('cfg-profs');const{data}=await sb.from('kh_profissionais').select('*').eq('clinica_id',CID);if(data)data.forEach(function(p){var r=document.createElement('div');r.style.cssText='margin-bottom:10px';r.innerHTML='<input class="fi" value="'+(p.nome||'')+'" placeholder="Nome" style="margin-bottom:4px"><input class="fi" value="'+(p.crm_numero||'')+'" placeholder="CRM/Registro" style="margin-bottom:4px"><input class="fi" value="'+(p.especialidade||'')+'" placeholder="Especialidade"><button onclick="this.parentElement.remove()" style="margin-top:4px;background:var(--r);color:#fff;border:none;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:11px">Remover</button>';d.appendChild(r);});}catch(e){}}
+async function salvarConfig(){
+  try{
+    var nome=document.getElementById('cfg-nome')?.value;
+    if(nome){await sb.from('kh_clinicas').update({nome:nome}).eq('id',CID);loadUserData();}
+    var svcs=[];document.querySelectorAll('#cfg-svcs > div').forEach(function(r){var i=r.querySelectorAll('input');if(i[0]?.value)svcs.push({clinica_id:CID,nome:i[0].value,preco:parseFloat(i[1]?.value)||0,duracao:30,ativo:true});});
+    if(svcs.length>0){await sb.from('kh_servicos').delete().eq('clinica_id',CID);for(var s of svcs)await sb.from('kh_servicos').insert(s).catch(function(){});}
+    document.getElementById('config-panel').remove();configPanelOpen=false;toast('Configuracoes salvas!');
+  }catch(e){alert('Erro: '+e.message);}
+}
+async function loadUserData(){
+  try{
+    const{data}=await sb.from('kh_clinicas').select('*').eq('id',CID).single();
+    if(data){
+      document.getElementById('menu-nome').textContent=data.nome||'Clinica';
+      document.getElementById('user-name-hd').textContent=(data.nome||'Clinica').substring(0,15);
+      try{const{data:{session}}=await sb.auth.getSession();if(session?.user?.email)document.getElementById('menu-email').textContent=session.user.email;}catch(e){}
+    }
+  }catch(e){}
+}
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.style.display='block';
+  setTimeout(()=>t.style.display='none',3000);
+}
+
+init();
+</script>
+</body>
+</html>

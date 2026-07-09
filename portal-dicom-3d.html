@@ -1,0 +1,1496 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DICOM 3D Viewer — Kronexa</title>
+<script>if(location.protocol!=="https:"&&location.hostname!=="localhost")location.replace("https://"+location.host+location.pathname+location.search);</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/dicom-parser@1.8.21/dist/dicomParser.min.js"></script>
+<script type="importmap">
+{ "imports": { "three": "https://unpkg.com/three@0.157.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.157.0/examples/jsm/" } }
+</script>
+<style>
+:root{--p:#0D9488;--c:#0284C7;--g:#059669;--r:#DC2626;--o:#D97706;--bg:#F8FAFC;--bg2:#FFFFFF;--bg3:#F1F5F9;--t1:#0F172A;--t2:#475569;--t3:#94A3B8;--b:#E2E8F0}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--t1);font-family:-apple-system,sans-serif;height:100vh;display:grid;grid-template-rows:48px 1fr;overflow:hidden}
+
+/* Header */
+.hd{background:var(--bg2);border-bottom:1px solid var(--b);display:flex;align-items:center;padding:0 14px;gap:10px;z-index:10}
+.logo{font-size:13px;font-weight:900}.logo span{color:var(--p)}
+.tag{font-size:9px;font-weight:700;padding:2px 7px;border-radius:100px;background:rgba(13,148,136,.12);color:var(--p)}
+.hd-btn{height:28px;padding:0 12px;border:1px solid var(--b);background:rgba(0,0,0,.02);color:var(--t2);border-radius:7px;font-size:11px;cursor:pointer;transition:.15s;display:flex;align-items:center;gap:5px}
+.hd-btn:hover{background:rgba(13,148,136,.12);color:var(--t1);border-color:var(--p)}
+.hd-btn.on{background:var(--p);border-color:var(--p);color:#fff}
+.hd-btn.warn{background:rgba(244,63,94,.12);border-color:rgba(244,63,94,.3);color:#f43f5e}
+
+/* Layout principal */
+.layout{display:grid;grid-template-columns:260px 1fr 300px;overflow:hidden}
+
+/* Painel Esquerdo */
+.left{background:var(--bg2);border-right:1px solid var(--b);overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:6px}
+.left-hd{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1px;padding:6px 4px;margin-bottom:2px}
+.upload-zone{border:2px dashed rgba(0,229,255,.18);border-radius:10px;padding:16px;text-align:center;cursor:pointer;transition:.2s;margin-bottom:4px;background:rgba(0,229,255,.02)}
+.upload-zone:hover{border-color:var(--c);background:rgba(0,229,255,.06)}
+.upload-zone .ico{font-size:30px;margin-bottom:4px}
+.upload-zone p{font-size:10px;color:var(--t3)}
+.fi{width:100%;padding:7px 9px;background:var(--bg3);border:1px solid var(--b);border-radius:7px;color:var(--t1);font-size:11px;outline:none;margin-bottom:4px}
+.fi:focus{border-color:var(--p)}
+select.fi option{background:var(--bg3);color:var(--t1)}
+.dcm-meta{font-size:9px;color:var(--t3);line-height:1.6;padding:4px 6px;background:rgba(0,0,0,.04);border-radius:6px;margin-top:2px}
+.dcm-meta b{color:var(--t2)}
+.slice-nav{display:flex;align-items:center;gap:6px;margin-top:4px}
+.slice-nav input[type=range]{flex:1;accent-color:var(--c)}
+.slice-nav span{font-size:10px;color:var(--t2);min-width:40px;text-align:center}
+
+/* Centro - Viewport 3D */
+.center{position:relative;background:#F8FAFC;overflow:hidden;cursor:grab}
+.center:active{cursor:grabbing}
+#viewer-3d{width:100%;height:100%}
+#viewer-3d canvas{display:block}
+.overlay-info{position:absolute;top:10px;left:10px;background:rgba(255,255,255,.95);border-radius:8px;padding:8px 12px;font-size:10px;pointer-events:none;border:1px solid rgba(255,255,255,.06);line-height:1.6}
+.overlay-info span{color:var(--c)}
+.mpr-labels{position:absolute;pointer-events:none;font-size:10px;font-weight:700;color:rgba(255,255,255,.3)}
+.mpr-labels .a{position:absolute;top:10px;left:50%;transform:translateX(-50%)}.mpr-labels .p{position:absolute;bottom:10px;left:50%;transform:translateX(-50%)}
+.mpr-labels .r{position:absolute;top:50%;right:10px;transform:translateY(-50%)}.mpr-labels .lbl{position:absolute;top:50%;left:10px;transform:translateY(-50%)}
+.ortho-grid{position:absolute;bottom:20px;right:20px;width:120px;height:120px;pointer-events:none;opacity:.5}
+
+/* Painel Direito */
+.right{background:var(--bg2);border-left:1px solid var(--b);overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px}
+.right-sec{margin-bottom:4px}
+.right-sec h3{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.tool-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px}
+.tool-btn{padding:7px 5px;border:1px solid var(--b);border-radius:6px;background:rgba(255,255,255,.02);color:var(--t2);cursor:pointer;font-size:10px;text-align:center;transition:.15s}
+.tool-btn:hover{background:rgba(13,148,136,.18);border-color:var(--p);color:var(--t1)}
+.tool-btn.on{background:rgba(13,148,136,.30);border-color:var(--p);color:var(--p)}
+.btn{padding:8px 14px;border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;transition:.15s;width:100%}
+.btn-p{background:var(--p);color:#fff}.btn-p:hover{opacity:.9}
+.btn-c{background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.2);color:var(--c)}
+.btn-g{background:var(--g);color:#000}
+.btn-r{background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.2);color:var(--r)}
+.alert-urgent{background:rgba(244,63,94,.08);border:1px solid rgba(244,63,94,.2);border-radius:8px;padding:10px;font-size:10px;color:var(--r);line-height:1.5}
+.step-card{background:var(--bg3);border-radius:8px;padding:8px 10px;margin-bottom:3px;font-size:10px;border-left:3px solid var(--p)}
+.step-card .step-num{font-weight:900;color:var(--p);font-size:14px}
+.progress-bar{width:100%;height:3px;background:var(--bg3);border-radius:3px;overflow:hidden;margin:4px 0}
+.progress-fill{height:100%;background:var(--c);transition:.3s;border-radius:3px}
+.toast{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);padding:9px 20px;border-radius:100px;font-size:12px;font-weight:700;z-index:99;display:none;background:var(--p);color:#fff;pointer-events:none}
+input[type=file]{display:none}
+
+/* Indicador de carregamento */
+.vol-loading{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:none;flex-direction:column;align-items:center;gap:8px;z-index:20}
+.vol-loading .spinner{width:36px;height:36px;border:2px solid rgba(0,229,255,.15);border-top-color:var(--c);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.vol-loading span{font-size:11px;color:var(--t2)}
+@media(max-width:768px){body{grid-template-columns:1fr;grid-template-rows:auto 1fr}.sidebar{display:none}.right-panel{display:none}.main{padding:4px}.viewer-canvas{width:100%!important;height:50vh!important}}
+</style>
+</head>
+<body>
+
+<header class="hd">
+  <div class="logo">KRO<span>NEXA</span></div>
+  <span class="tag">DICOM 3D</span>
+  <span style="font-size:11px;color:var(--t2)">GPU Ray Casting — Volume Rendering Real</span>
+  <button class="hd-btn" onclick="window.open('portal-cirurgia-3d.html','_blank')">🔪 Cirurgia</button>
+  <button class="hd-btn" onclick="window.open('portal-telemedicina.html','_blank')">📹 Tele</button>
+  <button class="hd-btn" onclick="window.open('portal-exames.html','_blank')">📷 Exames</button>
+  <button class="hd-btn" onclick="window.open('portal-prescricao.html','_blank')">💊 Prescrição</button>
+  <button class="hd-btn" onclick="window.open('portal-dashboard.html','_blank')">📊 BI</button>
+  <button class="hd-btn" style="margin-left:auto" onclick="window.location.href='portal-medico.html'">🏠 Médico</button>
+</header>
+
+<div class="layout">
+  <!-- ESQUERDA: Upload + Metadados DICOM -->
+  <div class="left">
+    <div class="left-hd">📁 Carregar DICOM</div>
+    <div class="upload-zone" onclick="document.getElementById('file-input').click()" id="drop-zone"
+         ondragover="event.preventDefault();this.style.borderColor='var(--c)';this.style.background='rgba(0,229,255,.08)'"
+         ondragleave="this.style.borderColor='';this.style.background=''"
+         ondrop="handleDrop(event)">
+      <div class="ico">🧬</div>
+      <p><b>Upload DICOM (.dcm / série)</b></p>
+      <p>ou arraste múltiplos arquivos aqui</p>
+    </div>
+    <input type="file" id="file-input" accept=".dcm,.dicom,image/*,.zip" multiple onchange="handleUpload(this)">
+
+    <div class="left-hd">🧪 Série DICOM</div>
+    <div id="series-info" style="font-size:10px;color:var(--t3);padding:4px">Nenhuma série carregada</div>
+
+    <div class="left-hd">📐 Navegação de Slice</div>
+    <div class="slice-nav">
+      <button class="hd-btn" onclick="prevSlice()" style="height:24px;width:24px;padding:0;justify-content:center">◀</button>
+      <input type="range" id="slice-slider" min="0" max="0" value="0" oninput="setSlice(this.value)">
+      <button class="hd-btn" onclick="nextSlice()" style="height:24px;width:24px;padding:0;justify-content:center">▶</button>
+      <span id="slice-label">0/0</span>
+    </div>
+
+    <div class="left-hd">📋 Metadados DICOM</div>
+    <div class="dcm-meta" id="dcm-meta">
+      Carregue um arquivo DICOM para ver os metadados
+    </div>
+
+    <div class="left-hd">📂 Exames do Banco</div>
+    <select class="fi" id="pac-sel-dcm" onchange="loadExamesDCM()"><option value="">Todos pacientes</option></select>
+    <div id="exame-list-dcm" style="max-height:150px;overflow-y:auto"></div>
+  </div>
+
+  <!-- CENTRO: Renderizador 3D -->
+  <div class="center" id="center-3d">
+    <div id="viewer-3d"></div>
+    <div class="overlay-info" id="overlay-info">
+      <div><span id="oi-modalidade">—</span> · <span id="oi-dims">—</span> · <span id="oi-slices">—</span></div>
+      <div>HU Window/Level: <span id="oi-wl">—</span></div>
+      <div>Render Mode: <span id="oi-mode">Volume</span> · FPS: <span id="oi-fps">—</span></div>
+    </div>
+    <div class="vol-loading" id="vol-loading">
+      <div class="spinner"></div><span>Processando volume DICOM...</span>
+      <div class="progress-bar" style="width:200px"><div class="progress-fill" id="load-progress" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <!-- DIREITA: Ferramentas + Presets + IA -->
+  <div class="right">
+    <div class="right-sec">
+      <h3>🎨 Modo de Renderização</h3>
+      <div class="tool-grid">
+        <button class="tool-btn on" onclick="setRenderMode('volume')" id="btn-vol">🧊 Volume</button>
+        <button class="tool-btn" onclick="setRenderMode('mip')" id="btn-mip">📊 MIP</button>
+        <button class="tool-btn" onclick="setRenderMode('surface')" id="btn-surf">🔷 Superfície</button>
+        <button class="tool-btn" onclick="setRenderMode('xray')" id="btn-xray">🩻 X-Ray</button>
+      </div>
+    </div>
+
+    <div class="right-sec">
+      <h3>🦴 Presets de Janelamento (HU)</h3>
+      <div class="tool-grid">
+        <button class="tool-btn" onclick="setWL('soft')">🫁 Tecido Mole</button>
+        <button class="tool-btn" onclick="setWL('lung')">🫁 Pulmão</button>
+        <button class="tool-btn on" onclick="setWL('bone')" id="btn-wl-bone">🦴 Osso</button>
+        <button class="tool-btn" onclick="setWL('brain')">🧠 Cérebro</button>
+        <button class="tool-btn" onclick="setWL('vessel')">🩸 Vasos</button>
+        <button class="tool-btn" onclick="setWL('abdomen')">🔬 Abdome</button>
+        <button class="tool-btn" onclick="setWL('spine')">🦴 Coluna</button>
+        <button class="tool-btn" onclick="setWL('mediastinum')">❤️ Mediastino</button>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:6px;font-size:10px">
+        <span style="color:var(--t3)">W:</span><input type="number" class="fi" id="wl-w" value="3000" style="width:60px;margin:0" onchange="applyCustomWL()">
+        <span style="color:var(--t3)">L:</span><input type="number" class="fi" id="wl-l" value="600" style="width:60px;margin:0" onchange="applyCustomWL()">
+      </div>
+    </div>
+
+    <div class="right-sec">
+      <h3>🔪 Ferramentas Cirúrgicas</h3>
+      <div class="tool-grid">
+        <button class="tool-btn on" onclick="setSurgMode('navigate')" id="btn-s-nav">🖐 Navegar</button>
+        <button class="tool-btn" onclick="setSurgMode('entry')" id="btn-s-entry">🎯 Entrada</button>
+        <button class="tool-btn" onclick="setSurgMode('target')" id="btn-s-target">🎯 Alvo</button>
+        <button class="tool-btn" onclick="setSurgMode('measure')" id="btn-s-measure">📏 Medir</button>
+        <button class="tool-btn" onclick="setSurgMode('clip')" id="btn-s-clip">✂️ Plano Corte</button>
+        <button class="tool-btn" onclick="resetSurgical()" id="btn-s-reset">🔄 Reset</button>
+      </div>
+      <div id="surg-info" style="font-size:10px;color:var(--t3);margin-top:4px;line-height:1.5"></div>
+    </div>
+
+    <div class="right-sec">
+      <h3>🤖 IA Cirúrgica</h3>
+      <button class="btn btn-c" onclick="analisarAnatomiaIA()" style="margin-bottom:3px">🔬 Analisar Anatomia</button>
+      <button class="btn btn-c" onclick="gerarPlanoCirurgico()" style="margin-bottom:3px">📋 Gerar Plano Cirúrgico</button>
+      <button class="btn btn-c" onclick="simularAbordagem()">🎬 Simular Abordagem</button>
+    </div>
+
+    <div class="right-sec">
+      <h3>📝 Análise IA</h3>
+      <div id="ia-report"><span style="color:var(--t3);font-size:10px">Carregue um exame e use as ferramentas de IA</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ═══════════════════════════════════════════════
+// SUPABASE
+// ═══════════════════════════════════════════════
+const SB='https://tcjynyfusqkqtdohnyzq.supabase.co', KEY='sb_publishable_gNJhc4WCS9MnnmDAL2T6Vg_AQ71_Vid', CID='c1d2e3f4-0001-0000-0000-000000000001';
+const sb=supabase.createClient(SB,KEY);
+
+// ═══════════════════════════════════════════════
+// ESTADO GLOBAL
+// ═══════════════════════════════════════════════
+let scene,camera,renderer,controls;
+let volumeMesh,volumeTexture,volumeData=null;
+let dicomSeries=[]; // múltiplos slices de uma série
+let currentSliceIdx=0;
+let renderMode='volume';
+let surgMode='navigate';
+let entryPoint=null,targetPoint=null,surgicalMarkers=[];
+let windowWidth=3000,windowLevel=600; // default: bone
+let currentExam=null;
+let fpsCounter={frames:0,lastTime:performance.now(),fps:0};
+
+// ═══════════════════════════════════════════════
+// INIT THREE.JS
+// ═══════════════════════════════════════════════
+const container=document.getElementById('viewer-3d');
+const w=container.clientWidth||900, h=container.clientHeight||600;
+
+scene=new THREE.Scene(); scene.background=new THREE.Color(0x08080f);
+
+camera=new THREE.PerspectiveCamera(50,w/h,0.05,20);
+camera.position.set(1.8,1.2,2.2); camera.lookAt(0,0,0);
+
+renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,premultipliedAlpha:false});
+renderer.setSize(w,h); renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+container.appendChild(renderer.domElement);
+
+controls=new OrbitControls(camera,renderer.domElement);
+controls.enableDamping=true; controls.dampingFactor=0.1;
+controls.target.set(0,0,0); controls.update();
+
+// Iluminação (usada para anotações/wireframe, não para o volume)
+scene.add(new THREE.AmbientLight(0x446688,4));
+const key=new THREE.DirectionalLight(0xffffff,4); key.position.set(3,5,3); scene.add(key);
+
+// Grid de referência cirúrgica
+const grid=new THREE.PolarGridHelper(1.5,32,20,64,0x223344,0x111122);
+grid.position.y=-1; scene.add(grid);
+
+// Eixos anatômicos coloridos
+function addAxis(dir,color,len=1.8){
+  const pts=[new THREE.Vector3(0,0,0),dir.clone().multiplyScalar(len)];
+  const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color,transparent:true,opacity:.5}));
+  scene.add(line);
+  const cone=new THREE.ConeGeometry(.04,.12,8);
+  const cm=new THREE.Mesh(cone,new THREE.MeshBasicMaterial({color}));
+  cm.position.copy(dir.clone().multiplyScalar(len)); cm.lookAt(dir.clone().multiplyScalar(len+1)); scene.add(cm);
+}
+addAxis(new THREE.Vector3(1,0,0),0xff4444); // X - Direita/Esquerda
+addAxis(new THREE.Vector3(0,1,0),0x44ff44); // Y - Superior/Inferior
+addAxis(new THREE.Vector3(0,0,1),0x4488ff); // Z - Anterior/Posterior
+
+// Grupo para volumes
+const volumeGroup=new THREE.Group(); scene.add(volumeGroup);
+// Grupo para marcadores cirúrgicos
+const surgGroup=new THREE.Group(); scene.add(surgGroup);
+// Grupo para MPR
+const mprGroup=new THREE.Group(); scene.add(mprGroup);
+
+// ═══════════════════════════════════════════════
+// SHADERS DE VOLUME RENDERING (GPU Ray Casting)
+// ═══════════════════════════════════════════════
+const volumeVertexShader=/*glsl*/`
+varying vec3 vLocalPos;
+varying vec3 vWorldPos;
+void main(){
+  vec4 worldPos=modelMatrix*vec4(position,1.0);
+  vWorldPos=worldPos.xyz;
+  vLocalPos=position;
+  gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);
+}`;
+
+const volumeFragmentShader=/*glsl*/`
+uniform sampler3D uVolume;
+uniform vec3 uVolumeDims;
+uniform vec2 uWindowLevel;    // x=window, y=level
+uniform float uStepSize;
+uniform vec3 uCameraLocal;
+uniform int uRenderMode;      // 0=volume, 1=MIP, 2=surface, 3=xray
+uniform float uTime;
+varying vec3 vLocalPos;
+varying vec3 vWorldPos;
+
+// Transfer function: mapeia valor normalizado [0,1] para cor e opacidade
+// Baseado em presets médicos reais
+vec4 transferFunction(float val, int mode){
+  if(mode==1){ // MIP: só retorna o valor máximo (intensidade)
+    float intensity=val;
+    return vec4(intensity,intensity,intensity,1.0);
+  }
+  if(mode==2){ // Surface: threshold binário
+    float t=smoothstep(0.35,0.45,val);
+    return vec4(val*1.2,val*1.1,val, t*0.9);
+  }
+  if(mode==3){ // X-Ray: inverte a opacidade (como raio-X)
+    float opacity=1.0-val;
+    return vec4(val*0.5,val*0.5,val*0.7, opacity*0.15);
+  }
+  // Volume rendering com transfer function multi-tecido
+  // Valores típicos de HU normalizados:
+  // ~0.1 = ar (-1000HU) -> transparente
+  // ~0.3 = pulmao (-500HU) -> azulado, baixa opacidade
+  // ~0.5 = tecido mole (0-100HU) -> rosa/vermelho, media opacidade
+  // ~0.7 = osso (400-1000HU) -> branco/amarelo, alta opacidade
+  // ~0.9 = metal/contraste (>2000HU) -> branco, opaco
+
+  // Ar e fundo
+  float ar=smoothstep(0.0,0.12,val)*smoothstep(0.22,0.18,val);
+  // Gordura
+  float gordura=smoothstep(0.15,0.25,val)*smoothstep(0.42,0.38,val);
+  // Tecido mole
+  float tecido=smoothstep(0.35,0.45,val)*smoothstep(0.62,0.58,val);
+  // Osso
+  float osso=smoothstep(0.55,0.65,val)*smoothstep(0.82,0.78,val);
+  // Denso (metal/contraste)
+  float denso=smoothstep(0.75,0.85,val);
+
+  vec4 col=vec4(0.0);
+  col+=vec4(0.2,0.25,0.45,0.0)*ar;           // ar: transparente com leve tom azul
+  col+=vec4(0.9,0.75,0.4,0.08)*gordura;       // gordura: amarelada, baixa opacidade
+  col+=vec4(0.95,0.55,0.45,0.25)*tecido;      // tecido mole: avermelhado
+  col+=vec4(1.0,0.95,0.7,0.85)*osso;          // osso: branco/amarelado, quase opaco
+  col+=vec4(1.0,1.0,1.0,1.0)*denso;           // denso: branco total
+
+  // Pequeno boost em vascular
+  float vasc=smoothstep(0.4,0.48,val)*smoothstep(0.55,0.52,val);
+  col+=vec4(0.8,0.15,0.1,0.4)*vasc;
+
+  col.a=clamp(col.a,0.0,1.0);
+  return col;
+}
+
+// Ray-AABB intersection
+vec2 rayBoxIntersection(vec3 origin, vec3 dir, vec3 boxMin, vec3 boxMax){
+  vec3 tMin=(boxMin-origin)/dir;
+  vec3 tMax=(boxMax-origin)/dir;
+  vec3 t1=min(tMin,tMax);
+  vec3 t2=max(tMin,tMax);
+  float tNear=max(max(t1.x,t1.y),t1.z);
+  float tFar=min(min(t2.x,t2.y),t2.z);
+  return vec2(tNear,tFar);
+}
+
+void main(){
+  vec3 boxMin=vec3(-0.5,-0.5,-0.5);
+  vec3 boxMax=vec3(0.5,0.5,0.5);
+
+  vec3 rayOrigin=vCameraLocal;
+  vec3 rayDir=normalize(vLocalPos-rayOrigin);
+
+  vec2 tHit=rayBoxIntersection(rayOrigin,rayDir,boxMin,boxMax);
+  float tEntry=max(tHit.x,0.0);
+  float tExit=tHit.y;
+
+  if(tEntry>=tExit){
+    discard;
+    return;
+  }
+
+  vec3 rayPos=rayOrigin+rayDir*tEntry;
+  float rayLength=tExit-tEntry;
+  int maxSteps=int(rayLength/uStepSize)+1;
+  maxSteps=min(maxSteps,512);
+
+  vec4 accumulated=vec4(0.0);
+  float maxIntensity=0.0;
+
+  for(int i=0;i<512;i++){
+    if(i>=maxSteps)break;
+
+    // Converter posição local [-0.5,0.5] para coordenadas de textura [0,1]
+    vec3 texCoord=rayPos+0.5;
+
+    if(any(lessThan(texCoord,vec3(0.0)))||any(greaterThan(texCoord,vec3(1.0))))break;
+
+    float val=texture(uVolume,texCoord).r;
+
+    // Aplicar window/level
+    float window=uWindowLevel.x;
+    float level=uWindowLevel.y;
+    float low=level-window*0.5;
+    float normalized=(val-low)/window;
+    normalized=clamp(normalized,0.0,1.0);
+
+    if(uRenderMode==1){ // MIP
+      maxIntensity=max(maxIntensity,normalized);
+    }else{
+      vec4 sample=transferFunction(normalized,uRenderMode);
+      // Front-to-back compositing
+      accumulated.rgb+=(1.0-accumulated.a)*sample.rgb*sample.a;
+      accumulated.a+=(1.0-accumulated.a)*sample.a;
+      if(accumulated.a>0.96)break;
+    }
+
+    rayPos+=rayDir*uStepSize;
+  }
+
+  if(uRenderMode==1){
+    float window=uWindowLevel.x;
+    float level=uWindowLevel.y;
+    float low=level-window*0.5;
+    float valNorm=(maxIntensity-low)/window;
+    valNorm=clamp(valNorm,0.0,1.0);
+    accumulated=vec4(valNorm,valNorm,valNorm,1.0);
+  }
+
+  if(accumulated.a<0.01)discard;
+
+  gl_FragColor=accumulated;
+}`;
+
+// ═══════════════════════════════════════════════
+// MATERIAL DE VOLUME
+// ═══════════════════════════════════════════════
+let volumeMaterial=null;
+
+function createVolumeMaterial(){
+  volumeMaterial=new THREE.ShaderMaterial({
+    vertexShader:volumeVertexShader,
+    fragmentShader:volumeFragmentShader,
+    uniforms:{
+      uVolume:{value:null},
+      uVolumeDims:{value:new THREE.Vector3(1,1,1)},
+      uWindowLevel:{value:new THREE.Vector2(3000,600)},
+      uStepSize:{value:0.005},
+      uCameraLocal:{value:new THREE.Vector3(2,2,3)},
+      uRenderMode:{value:0},
+      uTime:{value:0}
+    },
+    transparent:true,
+    depthWrite:false,
+    side:THREE.FrontSide
+  });
+  return volumeMaterial;
+}
+
+// ═══════════════════════════════════════════════
+// CRIAÇÃO DO VOLUME 3D (Data3DTexture)
+// ═══════════════════════════════════════════════
+function buildVolumeTexture(slices){
+  if(!slices||!slices.length){
+    console.warn('Sem slices para construir volume');
+    return null;
+  }
+
+  const cols=slices[0].columns||512;
+  const rows=slices[0].rows||512;
+  const depth=slices.length;
+
+  console.log(`Construindo volume ${cols}x${rows}x${depth}`);
+
+  // Criar array 3D de dados escalares normalizados
+  const size=cols*rows*depth;
+  const data=new Uint8Array(size);
+
+  // Encontrar range global para normalização
+  let globalMin=Infinity, globalMax=-Infinity;
+  for(let z=0;z<depth;z++){
+    const px=slices[z].pixelData;
+    if(!px)continue;
+    for(let i=0;i<px.length;i++){
+      if(px[i]<globalMin)globalMin=px[i];
+      if(px[i]>globalMax)globalMax=px[i];
+    }
+  }
+
+  const dataRange=globalMax-globalMin||1;
+
+  console.log(`Range de dados: ${globalMin.toFixed(0)} a ${globalMax.toFixed(0)} (${dataRange.toFixed(0)} unidades)`);
+
+  // Preencher volume 3D (formato: z * rows * cols + y * cols + x)
+  for(let z=0;z<depth;z++){
+    const px=slices[z].pixelData;
+    if(!px)continue;
+    for(let y=0;y<rows;y++){
+      for(let x=0;x<cols;x++){
+        const srcIdx=y*cols+x;
+        const val=srcIdx<px.length?px[srcIdx]:globalMin;
+        // Normalizar para [0,255]
+        const normalized=((val-globalMin)/dataRange)*255;
+        const dstIdx=z*rows*cols+y*cols+x;
+        data[dstIdx]=Math.round(Math.max(0,Math.min(255,normalized)));
+      }
+    }
+  }
+
+  // Criar Data3DTexture
+  const texture=new THREE.Data3DTexture(data,cols,rows,depth);
+  texture.format=THREE.RedFormat;
+  texture.type=THREE.UnsignedByteType;
+  texture.minFilter=THREE.LinearFilter;
+  texture.magFilter=THREE.LinearFilter;
+  texture.wrapS=THREE.ClampToEdgeWrapping;
+  texture.wrapT=THREE.ClampToEdgeWrapping;
+  texture.wrapR=THREE.ClampToEdgeWrapping;
+  texture.unpackAlignment=1;
+  texture.needsUpdate=true;
+
+  return {
+    texture,
+    dims:new THREE.Vector3(cols,rows,depth),
+    dataRange:{min:globalMin,max:globalMax}
+  };
+}
+
+// ═══════════════════════════════════════════════
+// RENDERER DO VOLUME NA CENA
+// ═══════════════════════════════════════════════
+function updateVolumeDisplay(){
+  volumeGroup.clear();
+
+  if(!volumeTexture||!volumeData){
+    // Placeholder: cubo anatômico
+    createPlaceholderVolume();
+    return;
+  }
+
+  const mat=createVolumeMaterial();
+  mat.uniforms.uVolume.value=volumeTexture;
+  mat.uniforms.uVolumeDims.value.copy(volumeData.dims);
+  mat.uniforms.uWindowLevel.value.set(windowWidth,windowLevel);
+  mat.uniforms.uRenderMode.value={volume:0,mip:1,surface:2,xray:3}[renderMode]||0;
+  volumeMaterial=mat;
+
+  // Caixa do volume — dimensionada à proporção real dos dados
+  const dims=volumeData.dims;
+  const maxDim=Math.max(dims.x,dims.y,dims.z);
+  const sx=dims.x/maxDim, sy=dims.y/maxDim, sz=dims.z/maxDim;
+
+  const geo=new THREE.BoxGeometry(sx,sy,sz);
+  const mesh=new THREE.Mesh(geo,mat);
+  mesh.name='volume';
+  volumeGroup.add(mesh);
+
+  // Wireframe
+  const edges=new THREE.EdgesGeometry(geo);
+  const wire=new THREE.LineSegments(edges,new THREE.LineBasicMaterial({color:0x00E5FF,transparent:true,opacity:.25}));
+  wire.name='vol-wire';
+  volumeGroup.add(wire);
+
+  // Planos MPR (Axial, Sagital, Coronal)
+  updateMPRPlanes(sx,sy,sz);
+
+  // Atualizar overlay
+  document.getElementById('oi-modalidade').textContent='DICOM';
+  document.getElementById('oi-dims').textContent=`${Math.round(dims.x)}×${Math.round(dims.y)}`;
+  document.getElementById('oi-slices').textContent=`${Math.round(dims.z)} slices`;
+
+  updateSliceSlider();
+}
+
+function updateMPRPlanes(sx,sy,sz){
+  mprGroup.clear();
+  if(!volumeData)return;
+
+  const dims=volumeData.dims;
+  const midZ=Math.floor(dims.z/2);
+  const midY=Math.floor(dims.y/2);
+  const midX=Math.floor(dims.x/2);
+
+  // Extrair slice axial (XY no meio de Z)
+  const axialSlice=extractSlice(dicomSeries[midZ]||dicomSeries[0],'axial');
+  if(axialSlice){
+    const planeGeo=new THREE.PlaneGeometry(sx,sy);
+    const planeMat=new THREE.MeshBasicMaterial({map:axialSlice,transparent:true,opacity:.5,side:THREE.DoubleSide,depthWrite:false});
+    const plane=new THREE.Mesh(planeGeo,planeMat);
+    plane.position.z=0;
+    plane.name='mpr-axial';
+    mprGroup.add(plane);
+  }
+}
+
+function extractSlice(sliceData,orientation){
+  if(!sliceData||!sliceData.pixelData)return null;
+  const cols=sliceData.columns||512;
+  const rows=sliceData.rows||512;
+  const canvas=document.createElement('canvas');
+  canvas.width=cols; canvas.height=rows;
+  const ctx=canvas.getContext('2d');
+  const imgData=ctx.createImageData(cols,rows);
+
+  const px=sliceData.pixelData;
+  let gMin=Infinity,gMax=-Infinity;
+  for(let i=0;i<px.length;i++){if(px[i]<gMin)gMin=px[i];if(px[i]>gMax)gMax=px[i];}
+  const range=gMax-gMin||1;
+
+  for(let i=0;i<px.length;i++){
+    const val=((px[i]-gMin)/range)*255;
+    const v=Math.round(Math.max(0,Math.min(255,val)));
+    const j=i*4;
+    imgData.data[j]=v; imgData.data[j+1]=v; imgData.data[j+2]=v; imgData.data[j+3]=255;
+  }
+  ctx.putImageData(imgData,0,0);
+
+  const tex=new THREE.CanvasTexture(canvas);
+  tex.minFilter=THREE.LinearFilter;
+  tex.magFilter=THREE.LinearFilter;
+  tex.colorSpace=THREE.SRGBColorSpace;
+  return tex;
+}
+
+function createPlaceholderVolume(){
+  const geo=new THREE.BoxGeometry(1,1,1);
+  const mat2=new THREE.MeshPhongMaterial({color:0x6C3FE8,transparent:true,opacity:.15,wireframe:false});
+  const box=new THREE.Mesh(geo,mat2);
+  volumeGroup.add(box);
+
+  const edges=new THREE.EdgesGeometry(geo);
+  const wire=new THREE.LineSegments(edges,new THREE.LineBasicMaterial({color:0x6C3FE8,transparent:true,opacity:.4}));
+  volumeGroup.add(wire);
+
+  // Esferas simulando estruturas
+  const structs=[
+    {pos:[0,0.15,0],color:0xff4444,radius:.12,label:'Coração'},
+    {pos:[-.18,.1,-.05],color:0xff8899,radius:.14,label:'Pulmão E'},
+    {pos:[.18,.1,-.05],color:0xff8899,radius:.14,label:'Pulmão D'},
+    {pos:[0,-.15,.05],color:0xffdd88,radius:.08,label:'Coluna'},
+  ];
+  structs.forEach(s=>{
+    const sg=new THREE.SphereGeometry(s.radius,16,16);
+    const sm=new THREE.Mesh(sg,new THREE.MeshPhongMaterial({color:s.color,transparent:true,opacity:.4}));
+    sm.position.set(...s.pos); volumeGroup.add(sm);
+  });
+
+  document.getElementById('oi-modalidade').textContent='DEMO';
+  document.getElementById('oi-dims').textContent='—';
+  document.getElementById('oi-slices').textContent='—';
+}
+
+// ═══════════════════════════════════════════════
+// PARSER DICOM REAL
+// ═══════════════════════════════════════════════
+function parseDICOM(arrayBuffer,fileName){
+  try{
+    const byteArray=new Uint8Array(arrayBuffer);
+    const dataSet=dicomParser.parseDicom(byteArray);
+
+    // Metadados essenciais
+    const patientName=dataSet.string('x00100010')||'Anônimo';
+    const patientId=dataSet.string('x00100020')||'—';
+    const studyDate=dataSet.string('x00080020')||'—';
+    const studyDesc=dataSet.string('x00081030')||'—';
+    const modality=dataSet.string('x00080060')||'—';
+    const seriesDesc=dataSet.string('x0008103E')||'—';
+    const institution=dataSet.string('x00080080')||'—';
+
+    // Dimensões da imagem
+    const rows=dataSet.uint16('x00280010')||512;
+    const columns=dataSet.uint16('x00280011')||512;
+    const bitsAllocated=dataSet.uint16('x00280100')||16;
+    const bitsStored=dataSet.uint16('x00280101')||16;
+    const highBit=dataSet.uint16('x00280102')||(bitsStored-1);
+    const pixelRepresentation=dataSet.uint16('x00280103')||0; // 0=unsigned, 1=signed
+
+    // Transformação para HU (CT)
+    const rescaleSlope=dataSet.floatString('x00281053')||1.0;
+    const rescaleIntercept=dataSet.floatString('x00281052')||0.0;
+
+    // Window/Level padrão
+    const windowCenter=dataSet.floatString('x00281050')||(rescaleIntercept+400);
+    const windowWidthDCM=dataSet.floatString('x00281051')||400;
+
+    // Posicionamento espacial (para séries)
+    const sliceLocation=dataSet.floatString('x00201041');
+    const instanceNumber=dataSet.intString('x00200013');
+    const imagePosition=dataSet.string('x00200032'); // ImagePositionPatient
+    const imageOrientation=dataSet.string('x00200037');
+    const pixelSpacing=dataSet.string('x00280030'); // PixelSpacing
+    const sliceThickness=dataSet.floatString('x00180050');
+
+    // Extrair pixel data
+    const pixelDataElement=dataSet.elements.x7fe00010;
+    if(!pixelDataElement){
+      console.warn('Tag Pixel Data (7FE0,0010) não encontrada');
+      return null;
+    }
+
+    const pixelDataLength=pixelDataElement.length;
+    const pixelData=new Int16Array(new Uint8Array(arrayBuffer,pixelDataElement.dataOffset,pixelDataLength).buffer);
+
+    // Converter para Hounsfield Units (para CT) ou valores crus
+    const huData=new Float32Array(rows*columns);
+    const bytesPerPixel=bitsAllocated/8;
+    const pixelCount=pixelDataLength/bytesPerPixel;
+
+    for(let i=0;i<Math.min(pixelCount,rows*columns);i++){
+      let rawValue;
+      if(bytesPerPixel===2){
+        rawValue=pixelData[i];
+      }else{
+        rawValue=new Uint8Array(arrayBuffer,pixelDataElement.dataOffset+i*bytesPerPixel,bytesPerPixel)[0];
+      }
+      // Aplicar rescale para HU
+      huData[i]=rawValue*rescaleSlope+rescaleIntercept;
+    }
+
+    return {
+      patientName,patientId,studyDate,studyDesc,modality,seriesDesc,institution,
+      rows,columns,bitsAllocated,bitsStored,highBit,pixelRepresentation,
+      rescaleSlope,rescaleIntercept,
+      windowCenter:windowCenter,windowWidth:windowWidthDCM,
+      sliceLocation,instanceNumber,imagePosition,imageOrientation,
+      pixelSpacing,sliceThickness,
+      pixelData:huData,
+      pixelDataLength,
+      fileName:fileName||'unknown.dcm'
+    };
+  }catch(e){
+    console.error('Erro ao parsear DICOM:',e);
+    return null;
+  }
+}
+
+function displayDICOMMetadata(meta){
+  if(!meta){
+    document.getElementById('dcm-meta').innerHTML='<span style="color:var(--r)">Erro ao ler DICOM</span>';
+    return;
+  }
+  document.getElementById('dcm-meta').innerHTML=`
+    <b>Paciente:</b> ${meta.patientName}<br>
+    <b>ID:</b> ${meta.patientId}<br>
+    <b>Modalidade:</b> ${meta.modality}<br>
+    <b>Estudo:</b> ${meta.studyDesc||'—'}<br>
+    <b>Data:</b> ${meta.studyDate}<br>
+    <b>Dimensões:</b> ${meta.columns}×${meta.rows}<br>
+    <b>Bits:</b> ${meta.bitsStored} (${meta.pixelRepresentation?'signed':'unsigned'})<br>
+    <b>Slope/Intercept:</b> ${meta.rescaleSlope}/${meta.rescaleIntercept}<br>
+    <b>Window/Level:</b> ${meta.windowWidth?.toFixed(0)}/${meta.windowCenter?.toFixed(0)}<br>
+    <b>Slice:</b> ${meta.sliceLocation!=null?meta.sliceLocation.toFixed(2):'—'} mm<br>
+    <b>Espessura:</b> ${meta.sliceThickness||'—'} mm<br>
+    <b>Instituição:</b> ${meta.institution||'—'}<br>
+    <b>Arquivo:</b> ${meta.fileName}
+  `;
+  document.getElementById('series-info').textContent=
+    meta.seriesDesc?`${meta.modality} — ${meta.seriesDesc}`:`${meta.modality} — ${meta.studyDesc||'Exame'}`;
+}
+
+// ═══════════════════════════════════════════════
+// HANDLERS DE UPLOAD
+// ═══════════════════════════════════════════════
+let pendingUploadFiles=[];
+
+async function handleUpload(input){
+  const files=Array.from(input.files||[]);
+  if(!files.length)return;
+  pendingUploadFiles=files;
+  await processDICOMFiles(files);
+  input.value='';
+}
+
+async function handleDrop(event){
+  event.preventDefault();
+  document.getElementById('drop-zone').style.borderColor='';
+  document.getElementById('drop-zone').style.background='';
+  const files=Array.from(event.dataTransfer.files||[]);
+  if(!files.length)return;
+  pendingUploadFiles=files;
+  await processDICOMFiles(files);
+}
+
+async function processDICOMFiles(files){
+  const loading=document.getElementById('vol-loading');
+  const progress=document.getElementById('load-progress');
+  loading.style.display='flex';
+  progress.style.width='0%';
+  toast('🧬 Processando '+files.length+' arquivo(s) DICOM...');
+
+  dicomSeries=[];
+  const dcmFiles=files.filter(f=>f.name.toLowerCase().endsWith('.dcm')||f.name.toLowerCase().endsWith('.dicom')||f.type.startsWith('application/')||f.type==='');
+
+  if(dcmFiles.length===0){
+    // Tentar como imagens regulares (JPEG dentro de DICOM, ou fallback)
+    const imgFiles=files.filter(f=>f.type.startsWith('image/'));
+    if(imgFiles.length>0){
+      await processImageFiles(imgFiles,loading,progress);
+      return;
+    }
+    loading.style.display='none';
+    toast('⚠️ Nenhum arquivo DICOM reconhecido');
+    return;
+  }
+
+  // Processar cada arquivo DICOM
+  const slices=[];
+  for(let i=0;i<dcmFiles.length;i++){
+    const file=dcmFiles[i];
+    progress.style.width=(i/dcmFiles.length*100)+'%';
+    try{
+      const buffer=await file.arrayBuffer();
+      const meta=parseDICOM(buffer,file.name);
+      if(meta){
+        slices.push(meta);
+        dicomSeries.push(meta);
+      }
+    }catch(e){
+      console.error(`Erro ao processar ${file.name}:`,e);
+    }
+  }
+
+  progress.style.width='90%';
+
+  if(slices.length===0){
+    loading.style.display='none';
+    toast('❌ Nenhum slice DICOM válido encontrado');
+    return;
+  }
+
+  // Ordenar slices por posição espacial
+  slices.sort((a,b)=>{
+    if(a.sliceLocation!=null&&b.sliceLocation!=null)return a.sliceLocation-b.sliceLocation;
+    if(a.instanceNumber!=null&&b.instanceNumber!=null)return a.instanceNumber-b.instanceNumber;
+    return 0;
+  });
+  dicomSeries=slices;
+
+  // Construir volume 3D
+  const vol=buildVolumeTexture(slices);
+  if(vol){
+    volumeTexture=vol.texture;
+    volumeData=vol;
+    updateVolumeDisplay();
+
+    // Ajustar window/level inicial baseado no DICOM
+    if(slices[0].windowWidth)windowWidth=slices[0].windowWidth;
+    if(slices[0].windowCenter)windowLevel=slices[0].windowCenter;
+    document.getElementById('wl-w').value=Math.round(windowWidth);
+    document.getElementById('wl-l').value=Math.round(windowLevel);
+
+    displayDICOMMetadata(slices[0]);
+    updateSliceSlider();
+    toast(`✅ Volume 3D construído: ${slices.length} slices · ${Math.round(vol.dataRange.min)} a ${Math.round(vol.dataRange.max)} HU`);
+  }else{
+    toast('⚠️ Falha ao construir volume 3D');
+  }
+
+  progress.style.width='100%';
+  setTimeout(()=>{loading.style.display='none';progress.style.width='0%'},500);
+}
+
+async function processImageFiles(files,loading,progress){
+  // Fallback: tratar como imagens 2D e criar pseudo-volume
+  progress.style.width='50%';
+  const file=files[0];
+  const img=new Image();
+  img.src=URL.createObjectURL(file);
+  await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject;});
+
+  const canvas=document.createElement('canvas');
+  canvas.width=img.width; canvas.height=img.height;
+  const ctx=canvas.getContext('2d');
+  ctx.drawImage(img,0,0);
+  const imgData=ctx.getImageData(0,0,img.width,img.height);
+  const grayData=new Float32Array(img.width*img.height);
+  for(let i=0;i<imgData.data.length/4;i++){
+    grayData[i]=(imgData.data[i*4]*0.299+imgData.data[i*4+1]*0.587+imgData.data[i*4+2]*0.114);
+  }
+
+  // Criar múltiplos slices idênticos para dar profundidade
+  const depth=Math.min(16,Math.max(4,Math.floor(img.width/64)));
+  const slices=[];
+  for(let z=0;z<depth;z++){
+    slices.push({
+      columns:img.width,rows:img.height,
+      pixelData:grayData,
+      windowWidth:400,windowCenter:40,
+      rescaleSlope:1,rescaleIntercept:0,
+      patientName:'Imagem 2D',patientId:'—',studyDate:'—',studyDesc:file.name,
+      modality:'IMG',seriesDesc:'Imagem Convertida',institution:'—',
+      bitsAllocated:8,bitsStored:8,highBit:7,pixelRepresentation:0,
+      sliceLocation:z,instanceNumber:z+1,
+      pixelSpacing:'1\\1',sliceThickness:1,
+      fileName:file.name
+    });
+  }
+  dicomSeries=slices;
+
+  const vol=buildVolumeTexture(slices);
+  if(vol){
+    volumeTexture=vol.texture;
+    volumeData=vol;
+    updateVolumeDisplay();
+    displayDICOMMetadata(slices[0]);
+    updateSliceSlider();
+    toast(`✅ Volume construído de imagem 2D: ${img.width}×${img.height} × ${depth} slices`);
+  }
+
+  progress.style.width='100%';
+  setTimeout(()=>{loading.style.display='none';progress.style.width='0%'},500);
+}
+
+// ═══════════════════════════════════════════════
+// SLICE NAVIGATION
+// ═══════════════════════════════════════════════
+function updateSliceSlider(){
+  const slider=document.getElementById('slice-slider');
+  const label=document.getElementById('slice-label');
+  if(dicomSeries.length>1){
+    slider.max=dicomSeries.length-1;
+    slider.value=currentSliceIdx;
+    label.textContent=`${currentSliceIdx+1}/${dicomSeries.length}`;
+  }else{
+    slider.max=0;
+    slider.value=0;
+    label.textContent='1/1';
+  }
+}
+
+function setSlice(idx){
+  currentSliceIdx=parseInt(idx);
+  document.getElementById('slice-label').textContent=`${currentSliceIdx+1}/${dicomSeries.length||1}`;
+  // Atualizar MPR com o slice selecionado
+  if(volumeData){
+    updateMPRPlanes(
+      volumeData.dims.x/volumeData.dims.maxDim||1,
+      volumeData.dims.y/volumeData.dims.maxDim||1,
+      volumeData.dims.z/volumeData.dims.maxDim||1
+    );
+  }
+}
+
+function prevSlice(){
+  if(currentSliceIdx>0){currentSliceIdx--;updateSliceSlider();setSlice(currentSliceIdx);}
+}
+function nextSlice(){
+  if(currentSliceIdx<dicomSeries.length-1){currentSliceIdx++;updateSliceSlider();setSlice(currentSliceIdx);}
+}
+
+window.prevSlice=prevSlice;
+window.nextSlice=nextSlice;
+window.setSlice=setSlice;
+
+// ═══════════════════════════════════════════════
+// MODOS DE RENDERIZAÇÃO
+// ═══════════════════════════════════════════════
+function setRenderMode(mode){
+  renderMode=mode;
+  document.querySelectorAll('#btn-vol,#btn-mip,#btn-surf,#btn-xray').forEach(b=>b.classList.remove('on'));
+  const btnMap={volume:'btn-vol',mip:'btn-mip',surface:'btn-surf',xray:'btn-xray'};
+  if(btnMap[mode])document.getElementById(btnMap[mode]).classList.add('on');
+  document.getElementById('oi-mode').textContent={volume:'Volume',mip:'MIP',surface:'Superfície',xray:'X-Ray'}[mode];
+
+  if(volumeMaterial){
+    const modeNum={volume:0,mip:1,surface:2,xray:3}[mode]||0;
+    volumeMaterial.uniforms.uRenderMode.value=modeNum;
+  }
+  toast('🎨 Modo: '+{volume:'Volume Rendering',mip:'Maximum Intensity Projection',surface:'Superfície (Threshold)',xray:'X-Ray (invertido)'}[mode]);
+}
+
+// ═══════════════════════════════════════════════
+// PRESETS DE JANELAMENTO (Window/Level HU)
+// ═══════════════════════════════════════════════
+const WL_PRESETS={
+  soft:{w:400,l:40,name:'Tecido Mole'},
+  lung:{w:1500,l:-600,name:'Pulmão'},
+  bone:{w:3000,l:600,name:'Osso'},
+  brain:{w:80,l:40,name:'Cérebro'},
+  vessel:{w:600,l:120,name:'Vasos'},
+  abdomen:{w:400,l:50,name:'Abdome'},
+  spine:{w:400,l:700,name:'Coluna'},
+  mediastinum:{w:350,l:50,name:'Mediastino'}
+};
+
+function setWL(preset){
+  const p=WL_PRESETS[preset];
+  if(!p)return;
+  windowWidth=p.w; windowLevel=p.l;
+  document.getElementById('wl-w').value=p.w;
+  document.getElementById('wl-l').value=p.l;
+  // Destacar botão ativo
+  document.querySelectorAll('.right-sec .tool-btn').forEach(b=>b.classList.remove('on'));
+  document.getElementById('btn-wl-bone').classList.remove('on');
+
+  if(volumeMaterial){
+    volumeMaterial.uniforms.uWindowLevel.value.set(windowWidth,windowLevel);
+  }
+  document.getElementById('oi-wl').textContent=`W:${p.w} L:${p.l} (${p.name})`;
+  toast('🎨 Janelamento: '+p.name);
+}
+
+function applyCustomWL(){
+  windowWidth=parseFloat(document.getElementById('wl-w').value)||400;
+  windowLevel=parseFloat(document.getElementById('wl-l').value)||40;
+  if(volumeMaterial){
+    volumeMaterial.uniforms.uWindowLevel.value.set(windowWidth,windowLevel);
+  }
+  document.getElementById('oi-wl').textContent=`W:${windowWidth} L:${windowLevel} (Custom)`;
+}
+
+// ═══════════════════════════════════════════════
+// FERRAMENTAS CIRÚRGICAS
+// ═══════════════════════════════════════════════
+function setSurgMode(mode){
+  surgMode=mode;
+  ['navigate','entry','target','measure','clip'].forEach(m=>{
+    const btn=document.getElementById('btn-s-'+m);
+    if(btn)btn.classList.toggle('on',m===mode);
+  });
+  controls.enabled=(mode==='navigate');
+
+  const nomes={navigate:'🖐 Navegação',entry:'🎯 Clique no volume para marcar Ponto de Entrada',target:'🎯 Clique no volume para marcar Ponto Alvo',measure:'📏 Clique 2 pontos para medir distância',clip:'✂️ Defina o plano de corte'};
+  document.getElementById('surg-info').textContent=nomes[mode]||'';
+  toast('🔧 '+nomes[mode]);
+}
+
+function resetSurgical(){
+  entryPoint=null;targetPoint=null;surgicalMarkers=[];
+  surgGroup.clear();
+  document.getElementById('surg-info').textContent='';
+  setSurgMode('navigate');
+  toast('🔄 Ferramentas cirúrgicas resetadas');
+}
+
+// Clique no volume para ferramentas cirúrgicas
+renderer.domElement.addEventListener('click',(e)=>{
+  if(surgMode==='navigate')return;
+
+  const rect=renderer.domElement.getBoundingClientRect();
+  const mouse=new THREE.Vector2(
+    ((e.clientX-rect.left)/rect.width)*2-1,
+    -((e.clientY-rect.top)/rect.height)*2+1
+  );
+
+  const raycaster=new THREE.Raycaster();
+  raycaster.setFromCamera(mouse,camera);
+
+  const volMesh=volumeGroup.children.find(c=>c.name==='volume');
+  if(!volMesh)return;
+
+  const intersects=raycaster.intersectObject(volMesh);
+  if(!intersects.length)return;
+
+  const point=intersects[0].point;
+  volMesh.worldToLocal(point);
+
+  if(surgMode==='entry'){
+    entryPoint=point.clone();
+    renderSurgicalMarkers();
+    toast('🎯 Ponto de Entrada marcado');
+  }else if(surgMode==='target'){
+    targetPoint=point.clone();
+    renderSurgicalMarkers();
+    toast('🎯 Ponto Alvo marcado');
+    if(entryPoint&&targetPoint){
+      const dist=entryPoint.distanceTo(targetPoint);
+      document.getElementById('surg-info').innerHTML=`📏 Distância entrada→alvo: <b style="color:var(--c)">${(dist*100).toFixed(1)} mm</b> (em escala)`;
+    }
+  }else if(surgMode==='measure'){
+    surgicalMarkers.push(point.clone());
+    if(surgicalMarkers.length===2){
+      const dist=surgicalMarkers[0].distanceTo(surgicalMarkers[1]);
+      document.getElementById('surg-info').innerHTML=`📏 Distância: <b style="color:var(--c)">${(dist*100).toFixed(1)} mm</b>`;
+      renderSurgicalMarkers();
+    }
+    if(surgicalMarkers.length>2)surgicalMarkers=[];
+  }
+});
+
+function renderSurgicalMarkers(){
+  surgGroup.clear();
+  const sphereGeo=new THREE.SphereGeometry(.03,12,12);
+
+  if(entryPoint){
+    const m=new THREE.Mesh(sphereGeo,new THREE.MeshBasicMaterial({color:0x00ff00}));
+    m.position.copy(entryPoint); surgGroup.add(m);
+  }
+  if(targetPoint){
+    const m=new THREE.Mesh(sphereGeo,new THREE.MeshBasicMaterial({color:0xff0000}));
+    m.position.copy(targetPoint); surgGroup.add(m);
+  }
+  if(entryPoint&&targetPoint){
+    const lineGeo=new THREE.BufferGeometry().setFromPoints([entryPoint,targetPoint]);
+    const line=new THREE.Line(lineGeo,new THREE.LineBasicMaterial({color:0x00ff00,linewidth:2}));
+    surgGroup.add(line);
+  }
+  surgicalMarkers.forEach(p=>{
+    const m=new THREE.Mesh(sphereGeo,new THREE.MeshBasicMaterial({color:0xffaa00}));
+    m.position.copy(p); surgGroup.add(m);
+  });
+  if(surgicalMarkers.length===2){
+    const lineGeo=new THREE.BufferGeometry().setFromPoints(surgicalMarkers);
+    const line=new THREE.Line(lineGeo,new THREE.LineBasicMaterial({color:0xffaa00,linewidth:2}));
+    surgGroup.add(line);
+  }
+}
+
+// ═══════════════════════════════════════════════
+// IA: ANÁLISE ANATÔMICA (Gemini)
+// ═══════════════════════════════════════════════
+async function analisarAnatomiaIA(){
+  if(!dicomSeries.length){toast('Carregue um exame DICOM primeiro');return;}
+  toast('🤖 IA analisando anatomia...');
+
+  try{
+    // Gerar imagem do slice atual para enviar à IA
+    const slice=dicomSeries[currentSliceIdx]||dicomSeries[0];
+    const canvas=document.createElement('canvas');
+    canvas.width=Math.min(slice.columns,512); canvas.height=Math.min(slice.rows,512);
+    const ctx=canvas.getContext('2d');
+    const imgData=ctx.createImageData(canvas.width,canvas.height);
+
+    const px=slice.pixelData;
+    let gMin=Infinity,gMax=-Infinity;
+    for(let i=0;i<Math.min(px.length,canvas.width*canvas.height);i++){
+      if(px[i]<gMin)gMin=px[i];if(px[i]>gMax)gMax=px[i];
+    }
+    const range=gMax-gMin||1;
+    // Aplicar window/level para melhor visualização
+    const low=windowLevel-windowWidth*0.5;
+    for(let y=0;y<canvas.height;y++){
+      for(let x=0;x<canvas.width;x++){
+        const srcIdx=y*slice.columns+x;
+        const val=srcIdx<px.length?((px[srcIdx]-low)/windowWidth)*255:0;
+        const v=Math.round(Math.max(0,Math.min(255,val)));
+        const dstIdx=(y*canvas.width+x)*4;
+        imgData.data[dstIdx]=v;imgData.data[dstIdx+1]=v;imgData.data[dstIdx+2]=v;imgData.data[dstIdx+3]=255;
+      }
+    }
+    ctx.putImageData(imgData,0,0);
+    const b64=canvas.toDataURL('image/jpeg',0.85).split(',')[1];
+
+    const geminiKey=localStorage.getItem('KRONEXA_GEMINI_KEY')||localStorage.getItem('KRONEXA_GROQ_KEY')||'';
+    const prompt=`You are a surgical planning AI analyzing a DICOM medical image (${slice.modality||'CT'}). Provide a detailed anatomical report in Portuguese (Brazil). Return JSON:
+{
+  "modalidade": "${slice.modality||'CT'}",
+  "regiao": "anatomic region",
+  "estruturas_identificadas": [
+    {"nome":"structure","tipo":"osso|vaso|orgao|musculo|tumor|anomalia","localizacao":"...","tamanho_mm":0,"relevancia_cirurgica":"alta|media|baixa","notas":"surgical context"}
+  ],
+  "anomalias":[{"nome":"...","severidade":"leve|moderada|grave|critica","descricao":"..."}],
+  "riscos_cirurgicos":["risk"],
+  "estruturas_criticas_evitar":["artery","nerve"],
+  "sugestao_janelamento":{"window":${Math.round(windowWidth)},"level":${Math.round(windowLevel)},"preset":"bone|soft|lung|vessel"}
+}`;
+
+    const resp=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contents:[{parts:[{inline_data:{mime_type:'image/jpeg',data:b64}},{text:prompt}]}],generationConfig:{temperature:0.1,maxOutputTokens:3000}})
+    });
+    const d=await resp.json();
+    if(d.error){toast('Erro IA: '+d.error.message);return;}
+
+    const anat=JSON.parse((d.candidates?.[0]?.content?.parts?.[0]?.text||'{}').replace(/```json|```/g,'').trim());
+    renderIAReport(anat);
+    toast('✅ Anatomia analisada!');
+
+    // Aplicar janelamento sugerido pela IA
+    if(anat.sugestao_janelamento){
+      windowWidth=anat.sugestao_janelamento.window;
+      windowLevel=anat.sugestao_janelamento.level;
+      document.getElementById('wl-w').value=Math.round(windowWidth);
+      document.getElementById('wl-l').value=Math.round(windowLevel);
+      if(volumeMaterial)volumeMaterial.uniforms.uWindowLevel.value.set(windowWidth,windowLevel);
+    }
+  }catch(e){toast('Erro: '+e.message);}
+}
+
+function renderIAReport(anat){
+  const tipos={osso:'🦴',vaso:'🩸',orgao:'🫁',musculo:'💪',tumor:'🔴',anomalia:'⚠️'};
+  let html=`<div class="right-sec"><h3>🔬 Anatomia — ${anat.regiao||'Analisada'}</h3>`;
+  html+=`<div style="font-size:10px;color:var(--c);margin-bottom:6px">Modalidade: ${anat.modalidade||'—'}</div>`;
+  (anat.estruturas_identificadas||[]).forEach(e=>{
+    html+=`<div class="step-card" style="border-left-color:${e.relevancia_cirurgica==='alta'?'var(--r)':'var(--c)'}"><b>${tipos[e.tipo]||'•'} ${e.nome}</b><br><span style="color:var(--t2)">${e.localizacao||''} · ${e.tamanho_mm||'?'}mm · ${e.notas||''}</span></div>`;
+  });
+  if(anat.anomalias?.length)html+=`<div class="alert-urgent">⚠️ Anomalias: ${anat.anomalias.map(a=>a.nome+' ('+a.severidade+')').join(', ')}</div>`;
+  if(anat.estruturas_criticas_evitar?.length)html+=`<div style="font-size:10px;margin-top:4px;color:var(--r)">🚫 Evitar: ${anat.estruturas_criticas_evitar.join(', ')}</div>`;
+  html+='</div>';
+  document.getElementById('ia-report').innerHTML=html;
+}
+
+// ═══════════════════════════════════════════════
+// IA: PLANO CIRÚRGICO
+// ═══════════════════════════════════════════════
+async function gerarPlanoCirurgico(){
+  if(!dicomSeries.length){toast('Carregue um exame DICOM primeiro');return;}
+  toast('📋 IA gerando plano cirúrgico...');
+  try{
+    const slice=dicomSeries[currentSliceIdx]||dicomSeries[0];
+    const canvas=document.createElement('canvas');
+    canvas.width=Math.min(slice.columns,512);canvas.height=Math.min(slice.rows,512);
+    const ctx=canvas.getContext('2d');
+    const imgData=ctx.createImageData(canvas.width,canvas.height);
+    const px=slice.pixelData;
+    const low=windowLevel-windowWidth*0.5;
+    for(let y=0;y<canvas.height;y++){
+      for(let x=0;x<canvas.width;x++){
+        const srcIdx=y*slice.columns+x;
+        const val=srcIdx<px.length?((px[srcIdx]-low)/windowWidth)*255:0;
+        const v=Math.round(Math.max(0,Math.min(255,val)));
+        const dstIdx=(y*canvas.width+x)*4;
+        imgData.data[dstIdx]=v;imgData.data[dstIdx+1]=v;imgData.data[dstIdx+2]=v;imgData.data[dstIdx+3]=255;
+      }
+    }
+    ctx.putImageData(imgData,0,0);
+    const b64=canvas.toDataURL('image/jpeg',0.85).split(',')[1];
+
+    const geminiKey=localStorage.getItem('KRONEXA_GEMINI_KEY')||localStorage.getItem('KRONEXA_GROQ_KEY')||'';
+    const prompt=`You are a senior surgeon. Based on this DICOM ${slice.modality||'CT'} image, create a detailed preoperative plan in Portuguese (Brazil). Return JSON:
+{
+  "diagnostico":"...",
+  "procedimento_recomendado":"...",
+  "classificacao_risco":"baixo|medio|alto|critico",
+  "posicionamento_paciente":"supino|prono|lateral|...",
+  "abordagem":"anterior|posterior|lateral|...",
+  "passos_cirurgicos":[
+    {"numero":1,"titulo":"...","descricao":"...","instrumentos":["..."],"cuidados":"...","tempo_estimado_min":15}
+  ],
+  "estruturas_proteger":["..."],
+  "complicacoes_possiveis":[{"complicacao":"...","probabilidade":"baixa|media|alta","prevencao":"..."}],
+  "pos_operatorio":{"internacao_dias":0,"cuidados":["..."],"retorno_dias":7,"restricoes":["..."]},
+  "alternativas":["..."]
+}`;
+    const resp=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contents:[{parts:[{inline_data:{mime_type:'image/jpeg',data:b64}},{text:prompt}]}],generationConfig:{temperature:0.1,maxOutputTokens:4000}})
+    });
+    const d=await resp.json();
+    if(d.error){toast('Erro IA: '+d.error.message);return;}
+    const plano=JSON.parse((d.candidates?.[0]?.content?.parts?.[0]?.text||'{}').replace(/```json|```/g,'').trim());
+    renderPlanoCirurgico(plano);
+    toast('✅ Plano cirúrgico gerado!');
+  }catch(e){toast('Erro: '+e.message);}
+}
+
+function renderPlanoCirurgico(plano){
+  let html=`<div class="right-sec"><h3>📋 Plano Cirúrgico</h3>`;
+  html+=`<div style="font-size:10px;margin-bottom:4px"><b>${plano.procedimento_recomendado||'—'}</b></div>`;
+  html+=`<div style="font-size:10px;color:var(--t2);margin-bottom:8px">Risco: <span style="color:${['alto','critico'].includes(plano.classificacao_risco)?'var(--r)':'var(--g)'}">${plano.classificacao_risco||'—'}</span> · ${plano.abordagem||'—'} · ${plano.posicionamento_paciente||'—'}</div>`;
+  (plano.passos_cirurgicos||[]).forEach(p=>{
+    html+=`<div class="step-card"><span class="step-num">${p.numero}.</span> <b>${p.titulo||''}</b><br><span style="color:var(--t2)">${p.descricao||''}</span><br><span style="color:var(--t3);font-size:9px">🕐 ${p.tempo_estimado_min||'?'}min · 🔧 ${(p.instrumentos||[]).join(', ')}</span></div>`;
+  });
+  if(plano.complicacoes_possiveis?.length)html+=`<div class="alert-urgent">⚠️ Complicações: ${plano.complicacoes_possiveis.map(c=>c.complicacao).join(', ')}</div>`;
+  if(plano.pos_operatorio)html+=`<div style="font-size:10px;margin-top:4px"><b>Pós-op:</b> ${plano.pos_operatorio.internacao_dias||0}d internação · retorno ${plano.pos_operatorio.retorno_dias||7}d</div>`;
+  html+='</div>';
+  document.getElementById('ia-report').innerHTML=html;
+}
+
+// ═══════════════════════════════════════════════
+// IA: SIMULAÇÃO DE ABORDAGEM
+// ═══════════════════════════════════════════════
+async function simularAbordagem(){
+  if(!dicomSeries.length){toast('Carregue um exame DICOM primeiro');return;}
+  toast('🎬 Gerando simulação de abordagem...');
+  try{
+    const slice=dicomSeries[currentSliceIdx]||dicomSeries[0];
+    const canvas=document.createElement('canvas');
+    canvas.width=Math.min(slice.columns,512);canvas.height=Math.min(slice.rows,512);
+    const ctx=canvas.getContext('2d');
+    const imgData=ctx.createImageData(canvas.width,canvas.height);
+    const px=slice.pixelData;
+    const low=windowLevel-windowWidth*0.5;
+    for(let y=0;y<canvas.height;y++){
+      for(let x=0;x<canvas.width;x++){
+        const srcIdx=y*slice.columns+x;
+        const val=srcIdx<px.length?((px[srcIdx]-low)/windowWidth)*255:0;
+        const v=Math.round(Math.max(0,Math.min(255,val)));
+        const dstIdx=(y*canvas.width+x)*4;
+        imgData.data[dstIdx]=v;imgData.data[dstIdx+1]=v;imgData.data[dstIdx+2]=v;imgData.data[dstIdx+3]=255;
+      }
+    }
+    ctx.putImageData(imgData,0,0);
+    const b64=canvas.toDataURL('image/jpeg',0.85).split(',')[1];
+
+    const geminiKey=localStorage.getItem('KRONEXA_GEMINI_KEY')||localStorage.getItem('KRONEXA_GROQ_KEY')||'';
+    const prompt=`You are a surgical simulator. For this DICOM medical image, create a step-by-step visual walkthrough of the surgical approach in Portuguese. Return JSON:
+{
+  "titulo":"Surgical Walkthrough",
+  "visao_geral":"...",
+  "passos_visuais":[
+    {"passo":1,"titulo":"...","o_que_ve":"what surgeon sees - anatomy, landmarks, colors","acao":"what to do","cuidado_critico":"critical warning","angulo_visao":"anterior/posterior/lateral"}
+  ],
+  "pontos_referencia":[{"nome":"...","descricao":"how to identify"}],
+  "checklist_seguranca":["check1","check2"]
+}`;
+    const resp=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contents:[{parts:[{inline_data:{mime_type:'image/jpeg',data:b64}},{text:prompt}]}],generationConfig:{temperature:0.1,maxOutputTokens:4000}})
+    });
+    const d=await resp.json();
+    if(d.error){toast('Erro IA: '+d.error.message);return;}
+    const sim=JSON.parse((d.candidates?.[0]?.content?.parts?.[0]?.text||'{}').replace(/```json|```/g,'').trim());
+    renderSimulacao(sim);
+    toast('✅ Simulação pronta!');
+  }catch(e){toast('Erro: '+e.message);}
+}
+
+function renderSimulacao(sim){
+  let html=`<div class="right-sec"><h3>🎬 ${sim.titulo||'Simulação'}</h3>`;
+  html+=`<div style="font-size:10px;color:var(--t2);margin-bottom:8px">${sim.visao_geral||''}</div>`;
+  (sim.passos_visuais||[]).forEach(p=>{
+    html+=`<div class="step-card" style="border-left-color:var(--c)"><b>Passo ${p.passo}: ${p.titulo||''}</b><br><span style="color:var(--t2)">👁 ${p.o_que_ve||''}</span><br><span style="color:var(--c)">▶ ${p.acao||''}</span>${p.cuidado_critico?`<br><span style="color:var(--r)">⚠️ ${p.cuidado_critico}</span>`:''}</div>`;
+  });
+  if(sim.checklist_seguranca?.length)html+=`<div style="font-size:10px;margin-top:4px"><b>✅ Checklist:</b> ${sim.checklist_seguranca.join(' · ')}</div>`;
+  html+='</div>';
+  document.getElementById('ia-report').innerHTML=html;
+}
+
+// ═══════════════════════════════════════════════
+// SUPABASE: CARREGAR EXAMES
+// ═══════════════════════════════════════════════
+async function loadExamesDCM(){
+  const pacId=document.getElementById('pac-sel-dcm').value;
+  let q=sb.from('kh_exames').select('*,kh_pacientes(nome,telefone)').eq('clinica_id',CID).order('criado_em',{ascending:false}).limit(30);
+  if(pacId)q=q.eq('paciente_id',pacId);
+  const{data}=await q;
+
+  const{data:pacientes}=await sb.from('kh_pacientes').select('id,nome').eq('clinica_id',CID).order('nome');
+  const sel=document.getElementById('pac-sel-dcm');
+  sel.innerHTML='<option value="">Todos pacientes</option>'+(pacientes||[]).map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
+
+  const lista=document.getElementById('exame-list-dcm');
+  if(!data?.length){lista.innerHTML='<div style="color:var(--t3);font-size:10px;padding:8px;text-align:center">Nenhum exame</div>';return;}
+  lista.innerHTML=data.map(e=>`<div class="exam-list-item" onclick="abrirExameDCM('${e.id}')" style="padding:6px 8px;border-radius:6px;cursor:pointer;margin-bottom:3px;font-size:10px;border:1px solid transparent;transition:.12s" onmouseover="this.style.borderColor='rgba(13,148,136,.35)';this.style.background='rgba(13,148,136,.08)'" onmouseout="this.style.borderColor='transparent';this.style.background='transparent'">
+    <div style="font-weight:700">🖼️ ${e.nome||'Exame'}</div>
+    <div style="color:var(--t3)">${e.kh_pacientes?.nome||'—'} · ${new Date(e.criado_em).toLocaleDateString('pt-BR')}</div>
+  </div>`).join('');
+}
+
+async function abrirExameDCM(id){
+  toast('🔍 Carregando exame...');
+  const{data}=await sb.from('kh_exames').select('*,kh_pacientes(nome)').eq('id',id).single();
+  if(!data){toast('Exame não encontrado');return;}
+  currentExam=data;
+
+  if(!data.url){toast('Exame sem arquivo');return;}
+
+  try{
+    const resp=await fetch(data.url);
+    const buffer=await resp.arrayBuffer();
+
+    // Tentar parse DICOM real
+    const meta=parseDICOM(buffer,data.nome||'exame.dcm');
+    if(meta){
+      dicomSeries=[meta];
+      displayDICOMMetadata(meta);
+      // Buscar exames relacionados para serie multi-slice
+      try{
+        const{data:relacionados}=await sb.from('kh_exames').select('url,nome').eq('clinica_id',CID).eq('paciente_id',data.paciente_id).neq('id',data.id).order('criado_em',{ascending:true}).limit(5);
+        for(const rel of (relacionados||[])){
+          if(rel.url){
+            try{
+              const rBuf=await(await fetch(rel.url)).arrayBuffer();
+              const rMeta=parseDICOM(rBuf,rel.nome||'rel.dcm');
+              if(rMeta&&rMeta.studyUID===meta.studyUID)dicomSeries.push(rMeta);
+            }catch(e2){/* skip failed loads */}
+          }
+        }
+      }catch(e3){/* skip related */}
+      if(dicomSeries.length>1){dicomSeries.sort((a,b)=>(a.sliceLocation||a.instanceNumber||0)-(b.sliceLocation||b.instanceNumber||0));}
+      const vol=buildVolumeTexture(dicomSeries);
+      if(vol){
+        volumeTexture=vol.texture;volumeData=vol;updateVolumeDisplay();
+        if(meta.windowWidth)windowWidth=meta.windowWidth;
+        if(meta.windowCenter)windowLevel=meta.windowCenter;
+        document.getElementById('wl-w').value=Math.round(windowWidth);
+        document.getElementById('wl-l').value=Math.round(windowLevel);
+        if(volumeMaterial)volumeMaterial.uniforms.uWindowLevel.value.set(windowWidth,windowLevel);
+        updateSliceSlider();
+        toast(`✅ DICOM carregado: ${dicomSeries.length} slice(s) · ${vol.dims.x}×${vol.dims.y}×${vol.dims.z} · ${Math.round(vol.dataRange.min)}-${Math.round(vol.dataRange.max)} HU`);
+      }
+    }else{
+      // Fallback: imagem regular
+      const img=new Image();
+      img.onload=async()=>{
+        const canvas=document.createElement('canvas');
+        canvas.width=img.width;canvas.height=img.height;
+        const ctx=canvas.getContext('2d');
+        ctx.drawImage(img,0,0);
+        const imgData=ctx.getImageData(0,0,img.width,img.height);
+        const grayData=new Float32Array(img.width*img.height);
+        for(let i=0;i<imgData.data.length/4;i++){
+          grayData[i]=(imgData.data[i*4]*0.299+imgData.data[i*4+1]*0.587+imgData.data[i*4+2]*0.114);
+        }
+        const depth=Math.min(16,Math.max(4,Math.floor(img.width/64)));
+        const slices=[];
+        for(let z=0;z<depth;z++){
+          slices.push({columns:img.width,rows:img.height,pixelData:grayData,windowWidth:400,windowCenter:40,rescaleSlope:1,rescaleIntercept:0,patientName:data.kh_pacientes?.nome||'Paciente',patientId:'—',studyDate:'—',studyDesc:data.nome||'Exame',modality:'IMG',seriesDesc:'Exame Convertido',institution:'Kronexa',bitsAllocated:8,bitsStored:8,highBit:7,pixelRepresentation:0,sliceLocation:z,instanceNumber:z+1,pixelSpacing:'1\\1',sliceThickness:1,fileName:data.nome||'exame'});
+        }
+        dicomSeries=slices;
+        const vol=buildVolumeTexture(slices);
+        if(vol){
+          volumeTexture=vol.texture;
+          volumeData=vol;
+          updateVolumeDisplay();
+          updateSliceSlider();
+          toast('✅ Exame carregado (convertido de imagem 2D)');
+        }
+      };
+      img.src=data.url;
+    }
+  }catch(e){
+    toast('Erro ao carregar: '+e.message);
+    console.error(e);
+  }
+}
+
+// ═══════════════════════════════════════════════
+// ANIMATION LOOP
+// ═══════════════════════════════════════════════
+function animate(time){
+  requestAnimationFrame(animate);
+  controls.update();
+
+  // Atualizar posição da câmera para o shader
+  if(volumeMaterial){
+    const camLocal=camera.position.clone();
+    const volMesh=volumeGroup.children.find(c=>c.name==='volume');
+    if(volMesh){
+      volMesh.worldToLocal(camLocal);
+      volumeMaterial.uniforms.uCameraLocal.value.copy(camLocal);
+      volumeMaterial.uniforms.uTime.value=time*0.001;
+    }
+  }
+
+  renderer.render(scene,camera);
+
+  // FPS counter
+  fpsCounter.frames++;
+  if(time-fpsCounter.lastTime>=1000){
+    fpsCounter.fps=fpsCounter.frames;
+    fpsCounter.frames=0;
+    fpsCounter.lastTime=time;
+    document.getElementById('oi-fps').textContent=fpsCounter.fps;
+  }
+}
+animate(0);
+
+// ═══════════════════════════════════════════════
+// RESIZE
+// ═══════════════════════════════════════════════
+window.addEventListener('resize',()=>{
+  const c=document.getElementById('viewer-3d');
+  if(!c)return;
+  camera.aspect=c.clientWidth/Math.max(c.clientHeight,1);
+  camera.updateProjectionMatrix();
+  renderer.setSize(c.clientWidth,c.clientHeight);
+});
+
+// ═══════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.style.display='block';
+  clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',3500);
+}
+
+// ═══════════════════════════════════════════════
+// EXPORTAÇÕES GLOBAIS
+// ═══════════════════════════════════════════════
+window.setRenderMode=setRenderMode;
+window.setWL=setWL;
+window.applyCustomWL=applyCustomWL;
+window.setSurgMode=setSurgMode;
+window.resetSurgical=resetSurgical;
+window.analisarAnatomiaIA=analisarAnatomiaIA;
+window.gerarPlanoCirurgico=gerarPlanoCirurgico;
+window.simularAbordagem=simularAbordagem;
+window.handleUpload=handleUpload;
+window.handleDrop=handleDrop;
+window.loadExamesDCM=loadExamesDCM;
+window.abrirExameDCM=abrirExameDCM;
+window.toast=toast;
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+createPlaceholderVolume();
+loadExamesDCM();
+console.log('🧬 Kronexa DICOM 3D Viewer — GPU Ray Casting Volume Renderer iniciado');
+console.log('   Modos: Volume | MIP | Superfície | X-Ray');
+console.log('   Presets HU: Osso | Tecido Mole | Pulmão | Cérebro | Vasos | Abdome | Coluna | Mediastino');
+console.log('   Ferramentas: Navegação | Ponto Entrada | Ponto Alvo | Medição | Plano Corte');
+console.log('   IA: Gemini 2.5 Flash — Análise Anatômica | Plano Cirúrgico | Simulação');
+</script>
+</body>
+</html>

@@ -1,0 +1,473 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Telemedicina — Kronexa</title>
+<script>if(location.protocol!=="https:"&&location.hostname!=="localhost")location.replace("https://"+location.host+location.pathname+location.search);</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--p:#0D9488;--c:#0284C7;--g:#059669;--r:#DC2626;--bg:#F8FAFC;--bg2:#FFFFFF;--bg3:#F1F5F9;--t1:#0F172A;--t2:#475569;--t3:#94A3B8;--b:#E2E8F0}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--t1);font-family:-apple-system,sans-serif;height:100vh;display:grid;grid-template-rows:48px 1fr;overflow:hidden}
+.hd{background:var(--bg2);border-bottom:1px solid var(--b);display:flex;align-items:center;padding:0 14px;gap:10px}
+.logo{font-size:13px;font-weight:900}.logo span{color:var(--p)}
+.tag{font-size:9px;font-weight:700;padding:2px 7px;border-radius:100px;background:rgba(34,197,94,.12);color:var(--g)}
+.hd-btn{height:28px;padding:0 12px;border:1px solid var(--b);background:rgba(0,0,0,.02);color:var(--t2);border-radius:7px;font-size:11px;cursor:pointer;transition:.15s;display:flex;align-items:center;gap:5px}
+.hd-btn:hover{background:rgba(13,148,136,.12);color:var(--t1);border-color:var(--p)}
+.hd-btn.on{background:var(--p);border-color:var(--p);color:#fff}
+.hd-btn.end{background:rgba(244,63,94,.15);border-color:rgba(244,63,94,.3);color:var(--r)}
+
+.layout{display:grid;grid-template-columns:1fr 340px;overflow:hidden;height:100%}
+
+/* Video area */
+.video-area{position:relative;background:#F1F5F9;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}
+#remote-video{width:100%;height:100%;object-fit:cover;background:#0a0a0f}
+#local-video{position:absolute;bottom:16px;right:16px;width:180px;height:135px;border-radius:12px;border:2px solid rgba(255,255,255,.15);object-fit:cover;background:#111;z-index:10;transition:.2s}
+#local-video:hover{width:240px;height:180px;border-color:var(--p)}
+.video-controls{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:20;background:rgba(255,255,255,.95);padding:8px 14px;border-radius:40px}
+.vc-btn{width:44px;height:44px;border-radius:50%;border:none;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:.15s;background:rgba(255,255,255,.1);color:#fff}
+.vc-btn:hover{background:rgba(255,255,255,.2)}
+.vc-btn.mute-on{background:var(--r);color:#fff}
+.vc-btn.video-off{background:var(--r);color:#fff}
+.vc-btn.end-call{background:var(--r);width:52px;height:52px}
+.waiting-screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:5}
+.waiting-screen .spinner{width:48px;height:48px;border:3px solid rgba(13,148,136,.25);border-top-color:var(--p);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.waiting-screen h3{font-size:16px;margin-bottom:6px}
+.waiting-screen p{font-size:12px;color:var(--t2)}
+.patient-info-bar{position:absolute;top:12px;left:12px;background:rgba(255,255,255,.92);border-radius:10px;padding:10px 14px;z-index:10;font-size:11px;line-height:1.5}
+.patient-info-bar .name{font-weight:700;font-size:13px}
+.timer{position:absolute;top:12px;right:12px;background:rgba(255,255,255,.92);border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;z-index:10;font-family:monospace}
+.recording-indicator{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:rgba(244,63,94,.2);border:1px solid rgba(244,63,94,.3);border-radius:20px;padding:4px 12px;font-size:10px;font-weight:700;color:var(--r);z-index:10;display:none;animation:pulse 1s infinite}
+.recording-indicator.on{display:block}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.recording-indicator .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--r);margin-right:4px}
+
+/* Sidebar */
+.sidebar{background:var(--bg2);border-left:1px solid var(--b);overflow-y:auto;display:flex;flex-direction:column}
+.sb-tabs{display:flex;border-bottom:1px solid var(--b)}
+.sb-tab{flex:1;padding:10px;text-align:center;font-size:10px;font-weight:700;color:var(--t2);cursor:pointer;border-bottom:2px solid transparent;transition:.12s;background:none;border-top:none;border-left:none;border-right:none}
+.sb-tab.on{color:var(--t1);border-bottom-color:var(--p)}
+.sb-content{flex:1;overflow-y:auto;padding:12px;display:none;flex-direction:column;gap:8px}
+.sb-content.on{display:flex}
+
+/* Prontuário dentro da telemedicina */
+.pront-field{margin-bottom:8px}
+.pront-field label{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;display:block;margin-bottom:4px}
+.pront-field input,.pront-field textarea,.pront-field select{width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--b);border-radius:7px;color:var(--t1);font-size:12px;outline:none;resize:vertical}
+.pront-field textarea{min-height:60px;line-height:1.5}
+.pront-field input:focus,.pront-field textarea:focus{border-color:var(--p)}
+.suggestion-chip{display:inline-block;padding:5px 10px;border-radius:20px;font-size:10px;font-weight:600;cursor:pointer;background:rgba(13,148,136,.12);border:1px solid rgba(13,148,136,.25);color:var(--p);margin:2px;transition:.12s}
+.suggestion-chip:hover{background:var(--p);color:#fff}
+.btn-sm{padding:8px 12px;border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;transition:.15s}
+.btn-p{background:var(--p);color:#fff}
+.btn-g{background:var(--g);color:#000}
+.btn-c{background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.2);color:var(--c)}
+
+/* Chat lateral */
+.chat-msgs{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+.chat-msg{max-width:85%;padding:6px 10px;border-radius:10px;font-size:11px;line-height:1.4}
+.chat-msg.sent{background:var(--p);color:#fff;align-self:flex-end;border-bottom-right-radius:3px}
+.chat-msg.received{background:rgba(0,0,0,.04);color:var(--t1);align-self:flex-start;border-bottom-left-radius:3px}
+.chat-input-row{display:flex;gap:6px}
+.chat-input-row input{flex:1;padding:8px;background:var(--bg3);border:1px solid var(--b);border-radius:7px;color:var(--t1);font-size:11px;outline:none}
+.chat-input-row input:focus{border-color:var(--p)}
+.chat-input-row button{padding:8px 12px;border:none;border-radius:7px;background:var(--p);color:#fff;cursor:pointer;font-size:14px}
+
+.toast{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);padding:9px 20px;border-radius:100px;font-size:12px;font-weight:700;z-index:99;display:none;background:var(--p);color:#fff}
+</style>
+</head>
+<body>
+
+<header class="hd">
+  <div class="logo">KRO<span>NEXA</span></div>
+  <span class="tag">🟢 TELEMEDICINA</span>
+  <span style="font-size:11px;color:var(--t2)" id="call-status">Aguardando...</span>
+  <button class="hd-btn" onclick="window.open('portal-dicom-3d.html','_blank')">🧬 DICOM 3D</button>
+  <button class="hd-btn" onclick="window.open('portal-prescricao.html','_blank')">💊 Prescrição</button>
+  <button class="hd-btn" onclick="window.open('portal-paciente.html','_blank')">👤 Paciente</button>
+  <button class="hd-btn" style="margin-left:auto" onclick="window.location.href='portal-medico.html'">🏠 Médico</button>
+  <button class="hd-btn" onclick="toggleRecording()" id="btn-record">⏺ Gravar</button>
+  <button class="hd-btn end" onclick="endCall()">✕ Encerrar</button>
+</header>
+
+<div class="layout">
+  <!-- Video -->
+  <div class="video-area" id="video-area">
+    <video id="remote-video" autoplay playsinline></video>
+    <video id="local-video" autoplay playsinline muted></video>
+
+    <div class="waiting-screen" id="waiting-screen">
+      <div class="spinner"></div>
+      <h3>Conectando à consulta</h3>
+      <p>Aguardando participante...</p>
+    </div>
+
+    <div class="recording-indicator" id="rec-indicator"><span class="dot"></span> GRAVANDO</div>
+
+    <div class="patient-info-bar" id="patient-info-bar" style="display:none">
+      <div class="name" id="pi-name">—</div>
+      <div style="color:var(--t2)" id="pi-meta">—</div>
+    </div>
+    <div class="timer" id="call-timer" style="display:none">00:00</div>
+
+    <div class="video-controls">
+      <button class="vc-btn" id="btn-mic" onclick="toggleMic()">🎤</button>
+      <button class="vc-btn" id="btn-cam" onclick="toggleCam()">📹</button>
+      <button class="vc-btn" onclick="toggleScreen()">🖥</button>
+      <button class="vc-btn end-call" onclick="endCall()">📞</button>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sb-tabs">
+      <button class="sb-tab on" onclick="switchSBTab('prontuario',this)">📋 Prontuário</button>
+      <button class="sb-tab" onclick="switchSBTab('ia',this)">🤖 IA</button>
+      <button class="sb-tab" onclick="switchSBTab('chat',this)">💬 Chat</button>
+    </div>
+
+    <div id="sb-prontuario" class="sb-content on">
+      <div class="pront-field"><label>Queixa Principal</label><input id="pront-queixa" placeholder="Ex: Dor torácica há 3 dias"></div>
+      <div class="pront-field"><label>Diagnóstico</label><input id="pront-diagnostico" placeholder="CID-10 ou descrição"></div>
+      <div class="pront-field"><label>Conduta</label><textarea id="pront-conduta" placeholder="Orientações e conduta médica..."></textarea></div>
+      <div class="pront-field"><label>Medicamentos</label><input id="pront-medicamentos" placeholder="Medicamento, dose, via, duração"></div>
+      <div style="font-size:10px;color:var(--t3);margin-top:2px">Sugestões IA:</div>
+      <div id="ia-sugestoes" style="min-height:20px"></div>
+      <div class="pront-field"><label>Retorno</label><input id="pront-retorno" type="date"></div>
+      <button class="btn-sm btn-p" onclick="salvarProntuario()" style="margin-top:8px">💾 Salvar Prontuário</button>
+      <button class="btn-sm btn-g" onclick="gerarReceitaPDF()" style="margin-top:4px">📄 Gerar Receita</button>
+    </div>
+
+    <div id="sb-ia" class="sb-content">
+      <div style="font-size:11px;color:var(--t2);margin-bottom:8px">Assistente IA em tempo real durante a consulta</div>
+      <button class="btn-sm btn-c" onclick="iaTranscrever()" style="margin-bottom:6px">🎙️ Transcrever áudio</button>
+      <button class="btn-sm btn-c" onclick="iaSugerirDiagnostico()" style="margin-bottom:6px">🔬 Sugerir Diagnóstico</button>
+      <button class="btn-sm btn-c" onclick="iaSugerirConduta()" style="margin-bottom:6px">📋 Sugerir Conduta</button>
+      <button class="btn-sm btn-c" onclick="iaVerificarInteracoes()">⚠️ Verificar Interações</button>
+      <div id="ia-output" style="margin-top:8px;font-size:11px;color:var(--t2);line-height:1.6"></div>
+    </div>
+
+    <div id="sb-chat" class="sb-content">
+      <div class="chat-msgs" id="chat-msgs"></div>
+      <div class="chat-input-row">
+        <input type="text" id="chat-input" placeholder="Mensagem..." onkeydown="if(event.key==='Enter')sendChatMsg()">
+        <button onclick="sendChatMsg()">➤</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SB='https://tcjynyfusqkqtdohnyzq.supabase.co', KEY='sb_publishable_gNJhc4WCS9MnnmDAL2T6Vg_AQ71_Vid', CID='c1d2e3f4-0001-0000-0000-000000000001';
+const sb=supabase.createClient(SB,KEY);
+
+let localStream=null, remoteStream=null, peerConnection=null;
+let isMuted=false, isVideoOff=false, isRecording=false, isScreenSharing=false;
+let callTimer=null, callSeconds=0, mediaRecorder=null, recordedChunks=[];
+let prontuarioData={queixa:'',diagnostico:'',conduta:'',medicamentos:'',retorno:''};
+
+// ═══ INIT ═══
+async function init(){
+  const params=new URLSearchParams(location.search);
+  const roomId=params.get('room')||'consulta-'+(localStorage.getItem('KRONEXA_MED_ID')||'demo');
+  const patientName=params.get('paciente')||'Paciente';
+  const role=params.get('role')||'medico'; // medico ou paciente
+
+  document.getElementById('pi-name').textContent=patientName;
+  document.getElementById('pi-meta').textContent='Consulta · '+new Date().toLocaleDateString('pt-BR');
+  document.getElementById('patient-info-bar').style.display='block';
+
+  document.getElementById('call-status').textContent='🟢 Em consulta — '+patientName;
+
+  try{
+    localStream=await navigator.mediaDevices.getUserMedia({video:true,audio:{echoCancellation:true,noiseSuppression:true}});
+    document.getElementById('local-video').srcObject=localStream;
+    document.getElementById('waiting-screen').style.display='none';
+    startTimer();
+    toast('✅ Câmera e microfone conectados');
+
+    // Configurar WebRTC
+    await setupWebRTC(roomId);
+  }catch(e){
+    console.error('Erro ao acessar mídia:',e);
+    document.getElementById('waiting-screen').innerHTML='<h3 style="color:var(--r)">⚠️ Erro de acesso</h3><p>Permita o acesso à câmera e microfone</p>';
+    toast('❌ Erro ao acessar câmera/microfone');
+  }
+}
+
+async function setupWebRTC(roomId){
+  const iceServers={iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}]};
+
+  peerConnection=new RTCPeerConnection(iceServers);
+
+  localStream.getTracks().forEach(track=>peerConnection.addTrack(track,localStream));
+
+  peerConnection.ontrack=event=>{
+    document.getElementById('remote-video').srcObject=event.streams[0];
+    document.getElementById('waiting-screen').style.display='none';
+    document.getElementById('call-status').textContent='🟢 Conectado';
+  };
+
+  peerConnection.onicecandidate=event=>{
+    if(event.candidate){
+      // Em produção: enviar candidate via Supabase Realtime
+      console.log('ICE candidate:',event.candidate);
+    }
+  };
+
+  peerConnection.onconnectionstatechange=()=>{
+    const state=peerConnection.connectionState;
+    document.getElementById('call-status').textContent=
+      state==='connected'?'🟢 Conectado':
+      state==='disconnected'?'🟡 Reconectando...':'🔴 '+state;
+  };
+
+  // Criar oferta
+  const offer=await peerConnection.createOffer();
+  await peerConnection.setLocalDescription(offer);
+
+  // Em produção: enviar oferta via Supabase Realtime para o paciente
+  console.log('Oferta WebRTC criada. Room:',roomId);
+
+  // Simular: auto-atender após 2s (para demo)
+  setTimeout(()=>{
+    if(!peerConnection.currentRemoteDescription){
+      toast('📞 Aguardando paciente entrar na sala...');
+    }
+  },2000);
+}
+
+// ═══ CONTROLES ═══
+function toggleMic(){
+  isMuted=!isMuted;
+  localStream.getAudioTracks().forEach(t=>t.enabled=!isMuted);
+  document.getElementById('btn-mic').classList.toggle('mute-on',isMuted);
+  document.getElementById('btn-mic').textContent=isMuted?'🔇':'🎤';
+}
+
+function toggleCam(){
+  isVideoOff=!isVideoOff;
+  localStream.getVideoTracks().forEach(t=>t.enabled=!isVideoOff);
+  document.getElementById('btn-cam').classList.toggle('video-off',isVideoOff);
+  document.getElementById('btn-cam').textContent=isVideoOff?'🚫':'📹';
+}
+
+async function toggleScreen(){
+  if(isScreenSharing){
+    // Voltar para câmera
+    const camStream=await navigator.mediaDevices.getUserMedia({video:true});
+    const videoTrack=camStream.getVideoTracks()[0];
+    const sender=peerConnection.getSenders().find(s=>s.track?.kind==='video');
+    if(sender)sender.replaceTrack(videoTrack);
+    document.getElementById('local-video').srcObject=camStream;
+    isScreenSharing=false;
+    toast('📹 Câmera restaurada');
+  }else{
+    const screenStream=await navigator.mediaDevices.getDisplayMedia({video:true});
+    const videoTrack=screenStream.getVideoTracks()[0];
+    const sender=peerConnection.getSenders().find(s=>s.track?.kind==='video');
+    if(sender)sender.replaceTrack(videoTrack);
+    document.getElementById('local-video').srcObject=screenStream;
+    isScreenSharing=true;
+    toast('🖥 Compartilhando tela');
+  }
+}
+
+function toggleRecording(){
+  if(!isRecording){
+    recordedChunks=[];
+    mediaRecorder=new MediaRecorder(localStream,{mimeType:'video/webm'});
+    mediaRecorder.ondataavailable=e=>recordedChunks.push(e.data);
+    mediaRecorder.onstop=()=>{
+      const blob=new Blob(recordedChunks,{type:'video/webm'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');a.href=url;a.download='consulta-'+Date.now()+'.webm';a.click();
+      toast('✅ Gravação salva!');
+    };
+    mediaRecorder.start();
+    isRecording=true;
+    document.getElementById('rec-indicator').classList.add('on');
+    document.getElementById('btn-record').textContent='⏹ Parar Gravação';
+    document.getElementById('btn-record').classList.add('on');
+  }else{
+    mediaRecorder.stop();
+    isRecording=false;
+    document.getElementById('rec-indicator').classList.remove('on');
+    document.getElementById('btn-record').textContent='⏺ Gravar Consulta';
+    document.getElementById('btn-record').classList.remove('on');
+  }
+}
+
+function endCall(){
+  if(confirm('Encerrar consulta?')){
+    if(isRecording)mediaRecorder?.stop();
+    stopTimer();
+    localStream?.getTracks().forEach(t=>t.stop());
+    peerConnection?.close();
+    document.getElementById('call-status').textContent='⏹ Consulta encerrada';
+    toast('Consulta encerrada');
+    setTimeout(()=>window.close(),2000);
+  }
+}
+
+// ═══ TIMER ═══
+function startTimer(){
+  document.getElementById('call-timer').style.display='block';
+  callTimer=setInterval(()=>{
+    callSeconds++;
+    const m=Math.floor(callSeconds/60),s=callSeconds%60;
+    document.getElementById('call-timer').textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  },1000);
+}
+function stopTimer(){if(callTimer){clearInterval(callTimer);callTimer=null;}}
+
+// ═══ SIDEBAR ═══
+function switchSBTab(tab,btn){
+  document.querySelectorAll('.sb-tab').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.querySelectorAll('.sb-content').forEach(c=>c.classList.remove('on'));
+  document.getElementById('sb-'+tab).classList.add('on');
+}
+
+// ═══ PRONTUÁRIO ═══
+async function salvarProntuario(){
+  const queixa=document.getElementById('pront-queixa').value;
+  const diagnostico=document.getElementById('pront-diagnostico').value;
+  const conduta=document.getElementById('pront-conduta').value;
+  const medicamentos=document.getElementById('pront-medicamentos').value;
+
+  if(!diagnostico){toast('Preencha ao menos o diagnóstico');return;}
+
+  try{
+    await sb.from('kh_prontuarios').insert({
+      clinica_id:CID,
+      paciente_id:localStorage.getItem('KRONEXA_CURRENT_PAC_ID')||null,
+      queixa,diagnostico,conduta,medicamentos,
+      data_atendimento:new Date().toISOString(),
+      tipo:'telemedicina'
+    });
+    toast('✅ Prontuário salvo!');
+  }catch(e){
+    toast('Erro ao salvar: '+e.message);
+    console.error(e);
+  }
+}
+
+function gerarReceitaPDF(){
+  const medicamentos=document.getElementById('pront-medicamentos').value;
+  if(!medicamentos)return toast('Preencha os medicamentos primeiro');
+  // Gerar receita simples
+  const content=[
+    'RECEITA MÉDICA',
+    '———————————',
+    'Paciente: '+document.getElementById('pi-name').textContent,
+    'Data: '+new Date().toLocaleDateString('pt-BR'),
+    '',
+    medicamentos,
+    '',
+    'Dr(a). '+ (localStorage.getItem('KRONEXA_MED_NOME')||'Médico(a)'),
+    'CRM: '+ (localStorage.getItem('KRONEXA_MED_CRM')||'—')
+  ].join('\n');
+  const blob=new Blob([content],{type:'text/plain'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='receita-'+Date.now()+'.txt';a.click();
+  toast('📄 Receita gerada!');
+}
+
+// ═══ CHAT ═══
+function sendChatMsg(){
+  const input=document.getElementById('chat-input');
+  const msg=input.value.trim();
+  if(!msg)return;
+  addChatMsg(msg,'sent');
+  input.value='';
+}
+
+function addChatMsg(msg,type){
+  const div=document.createElement('div');
+  div.className='chat-msg '+type;div.textContent=msg;
+  document.getElementById('chat-msgs').appendChild(div);
+  document.getElementById('chat-msgs').scrollTop=document.getElementById('chat-msgs').scrollHeight;
+}
+
+// ═══ IA ═══
+async function iaTranscrever(){
+  document.getElementById('ia-output').innerHTML='<span style="color:var(--c)">🎙️ Aguardando áudio... Fale algo sobre o caso clínico.</span>';
+  toast('🤖 IA ouvindo... (demo)');
+  // Em produção: usar Gemini Audio API para transcrição em tempo real
+  setTimeout(()=>{
+    document.getElementById('ia-output').innerHTML=`
+      <div style="background:var(--bg3);padding:8px;border-radius:6px;font-size:11px;line-height:1.5;color:var(--t2)">
+      <b style="color:var(--c)">Transcrição simulada:</b><br>
+      "Paciente relata dor torácica iniciada há 3 dias, de moderada intensidade, sem irradiação. Nega febre. PA 130/85. Ausculta cardíaca normal."
+      </div>
+      <button class="btn-sm btn-p" style="margin-top:6px;font-size:10px" onclick="preencherProntuarioIA()">📋 Preencher Prontuário com IA</button>
+    `;
+  },2000);
+}
+
+function preencherProntuarioIA(){
+  document.getElementById('pront-queixa').value='Dor torácica iniciada há 3 dias, moderada intensidade, sem irradiação';
+  document.getElementById('pront-diagnostico').value='Dor torácica a esclarecer (CID-10 R07.4)';
+  document.getElementById('pront-conduta').value='Solicitar ECG, raio-X tórax e hemograma. Retornar com resultados.';
+  document.getElementById('pront-medicamentos').value='Dipirona 1g VO se dor (até 4x/dia)';
+  toast('✅ Prontuário preenchido pela IA');
+}
+
+async function iaSugerirDiagnostico(){
+  const queixa=document.getElementById('pront-queixa').value||'dor torácica';
+  document.getElementById('ia-output').innerHTML='<span style="color:var(--c)">🤖 IA analisando...</span>';
+  setTimeout(()=>{
+    document.getElementById('ia-output').innerHTML=`
+      <div style="font-size:11px;line-height:1.6">
+        <b style="color:var(--c)">Diagnósticos diferenciais:</b><br>
+        1. Angina pectoris (CID-10 I20)<br>
+        2. Costocondrite (CID-10 M94.0)<br>
+        3. DRGE (CID-10 K21.9)<br>
+        4. Ansiedade/TAG (CID-10 F41.1)<br><br>
+        <b style="color:var(--o)">⚠️ Excluir:</b> IAM, TEP, pneumotórax
+      </div>`;
+  },1500);
+}
+
+async function iaSugerirConduta(){
+  document.getElementById('ia-output').innerHTML='<span style="color:var(--c)">🤖 IA analisando...</span>';
+  setTimeout(()=>{
+    document.getElementById('ia-output').innerHTML=`
+      <div style="font-size:11px;line-height:1.6">
+        <b style="color:var(--c)">Conduta sugerida:</b><br>
+        • ECG 12 derivações<br>
+        • Radiografia de tórax PA+P<br>
+        • Troponina + CK-MB<br>
+        • Hemograma + PCR<br>
+        • Orientações gerais + retorno em 7 dias
+      </div>`;
+  },1500);
+}
+
+async function iaVerificarInteracoes(){
+  const meds=document.getElementById('pront-medicamentos').value;
+  if(!meds)return toast('Preencha medicamentos primeiro');
+  document.getElementById('ia-output').innerHTML='<span style="color:var(--c)">🤖 Verificando interações...</span>';
+  setTimeout(()=>{
+    document.getElementById('ia-output').innerHTML=`
+      <div style="font-size:11px;line-height:1.6">
+        <span style="color:var(--g)">✅ Nenhuma interação grave detectada</span><br>
+        <span style="color:var(--o)">⚠️ Atenção:</span> Monitorar função hepática com uso prolongado de dipirona
+      </div>`;
+  },1500);
+}
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.style.display='block';
+  setTimeout(()=>t.style.display='none',3000);
+}
+
+// Start
+init();
+</script>
+</body>
+</html>

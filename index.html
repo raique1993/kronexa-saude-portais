@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kronexa — Plataforma Inteligente para Saúde | IA, DICOM 3D, Telemedicina</title>
+<meta name="description" content="Kronexa: a plataforma completa para sua clínica. Secretária IA 24h, DICOM 3D, Marketing IA, Telemedicina. Teste grátis.">
+<style>
+:root{--p:#0D9488;--c:#0284C7;--g:#059669;--r:#DC2626;--o:#D97706;--bg:#F8FAFC;--bg2:#FFFFFF;--bg3:#F1F5F9;--t1:#0F172A;--t2:#475569;--t3:#94A3B8;--b:#E2E8F0}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:#fff;color:var(--t1);line-height:1.6;overflow-x:hidden}
+
+/* ── NAV ── */
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(255,255,255,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--b);padding:0 24px;height:56px;display:flex;align-items:center;gap:8px}
+.nav-logo{font-size:17px;font-weight:900}.nav-logo span{color:var(--p)}
+.nav-links{margin-left:auto;display:flex;gap:4px;align-items:center}
+.nav-links a{color:var(--t2);text-decoration:none;font-size:13px;font-weight:600;padding:6px 14px;border-radius:8px;transition:.15s}
+.nav-links a:hover{background:var(--bg3);color:var(--t1)}
+.nav-cta{background:var(--p)!important;color:#fff!important;font-weight:700}
+.nav-cta:hover{opacity:.9!important;background:var(--p)!important}
+
+/* ── HERO ── */
+.hero{background:#030712;color:#fff;padding:140px 0 90px;text-align:center;position:relative;overflow:hidden;min-height:85vh;display:flex;align-items:center}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(13,148,136,.25),transparent 50%),radial-gradient(ellipse at 80% 80%,rgba(0,229,255,.1),transparent 40%),radial-gradient(ellipse at 20% 60%,rgba(5,150,105,.08),transparent 30%)}
+.stars{position:absolute;inset:0;overflow:hidden}
+.star{position:absolute;background:#fff;border-radius:50%;animation:twinkle var(--d) ease-in-out infinite;opacity:0}
+@keyframes twinkle{0%,100%{opacity:0;transform:scale(.5)}50%{opacity:1;transform:scale(1)}}
+.hero-content{position:relative;z-index:2;max-width:900px;margin:0 auto;padding:0 20px}
+.hero-badge{display:inline-block;padding:6px 16px;border-radius:100px;font-size:12px;font-weight:700;background:rgba(13,148,136,.15);color:#0D9488;border:1px solid rgba(13,148,136,.3);margin-bottom:24px;animation:pulse-badge 2s ease-in-out infinite}
+@keyframes pulse-badge{0%,100%{box-shadow:0 0 0 0 rgba(13,148,136,.3)}50%{box-shadow:0 0 0 12px rgba(13,148,136,0)}}
+.hero h1{font-size:clamp(2.2rem,6vw,4rem);font-weight:900;line-height:1.1;margin-bottom:20px;letter-spacing:-.02em}
+.hero h1 .grad{background:linear-gradient(135deg,#0D9488,#00E5FF,#0D9488);background-size:200% 200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:grad-shift 3s ease infinite}
+@keyframes grad-shift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.hero p{font-size:1.15rem;color:#94a3b8;max-width:600px;margin:0 auto 36px;line-height:1.7}
+.hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn{padding:14px 32px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:8px;border:none;transition:.2s;font-family:inherit}
+.btn-p{background:linear-gradient(135deg,#0D9488,#0a7a70);color:#fff;box-shadow:0 4px 20px rgba(13,148,136,.3)}.btn-p:hover{transform:translateY(-2px);box-shadow:0 8px 35px rgba(13,148,136,.4)}
+.btn-o{background:transparent;color:#fff;border:2px solid rgba(255,255,255,.25)}.btn-o:hover{border-color:#0D9488;color:#0D9488}
+.btn-w{background:#fff;color:#0D9488;font-weight:700}.btn-w:hover{transform:translateY(-2px);box-shadow:0 8px 35px rgba(255,255,255,.2)}
+.hero-stats{display:flex;justify-content:center;gap:48px;margin-top:56px;flex-wrap:wrap}
+.hs-num{font-size:2.5rem;font-weight:900;background:linear-gradient(135deg,#0D9488,#00E5FF);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hs-label{font-size:.75rem;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin-top:2px}
+
+/* ── SECTIONS ── */
+.sec{padding:90px 0;position:relative}
+.sec-dark{background:#030712;color:#fff}
+.container{max-width:1150px;margin:0 auto;padding:0 24px}
+.s-title{text-align:center;margin-bottom:56px}
+.s-title h2{font-size:2.2rem;font-weight:900;margin-bottom:12px;letter-spacing:-.01em}
+.s-title h2 .grad{background:linear-gradient(135deg,#0D9488,#00E5FF);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.s-title p{color:var(--t3);font-size:1.05rem}
+.sec-dark .s-title h2{color:#fff}.sec-dark .s-title h2 .grad{color:#fff;-webkit-text-fill-color:unset}
+.sec-dark .s-title p{color:#64748b}
+
+/* ── FEATURES GRID ── */
+.feat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px}
+.feat-card{background:var(--bg2);border:1px solid var(--b);border-radius:18px;padding:36px 28px;transition:.25s;position:relative;overflow:hidden}
+.feat-card::after{content:'';position:absolute;top:0;right:0;width:120px;height:120px;background:radial-gradient(circle,rgba(13,148,136,.06),transparent 70%);border-radius:50%;pointer-events:none}
+.feat-card:hover{transform:translateY(-4px);border-color:var(--p);box-shadow:0 20px 50px rgba(13,148,136,.1)}
+.feat-icon{font-size:2.5rem;margin-bottom:16px;display:block}
+.feat-card h3{font-size:1.15rem;margin-bottom:8px;font-weight:800}
+.feat-card p{color:var(--t2);font-size:.9rem;line-height:1.7}
+.sec-dark .feat-card{background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.06)}
+.sec-dark .feat-card h3{color:#fff}.sec-dark .feat-card p{color:#94a3b8}
+.sec-dark .feat-card:hover{border-color:rgba(13,148,136,.3)}
+.tag-sm{display:inline-block;padding:3px 10px;border-radius:100px;font-size:.65rem;font-weight:700;margin:3px 3px 0 0;text-transform:uppercase}
+.tag-g{background:rgba(5,150,105,.12);color:var(--g)}
+.tag-b{background:rgba(2,132,199,.12);color:var(--c)}
+.tag-p{background:rgba(13,148,136,.12);color:var(--p)}
+.tag-new{background:rgba(217,119,6,.15);color:var(--o)}
+
+/* ── PRICING ── */
+.price-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px;max-width:1000px;margin:0 auto}
+.price-card{background:var(--bg2);border:1px solid var(--b);border-radius:20px;padding:40px 32px;text-align:center;transition:.25s;position:relative}
+.price-card.pop{border-color:var(--p);box-shadow:0 0 0 2px var(--p),0 20px 50px rgba(13,148,136,.15);transform:scale(1.03)}
+.price-card.pop::before{content:'MAIS POPULAR';position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:var(--p);color:#fff;padding:5px 20px;border-radius:100px;font-size:.7rem;font-weight:800;letter-spacing:.08em}
+.price-name{font-size:.75rem;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;font-weight:800;margin-bottom:12px}
+.price-value{font-size:3rem;font-weight:900;line-height:1}
+.price-value small{font-size:.9rem;font-weight:400;color:var(--t3)}
+.price-desc{color:var(--t2);font-size:.85rem;margin:12px 0 28px}
+.price-feat{list-style:none;text-align:left;margin-bottom:28px}
+.price-feat li{padding:7px 0;font-size:.85rem;border-bottom:1px solid var(--b);display:flex;align-items:center;gap:10px}
+.price-feat li:last-child{border:none}
+.price-feat .y{color:var(--g);font-weight:700;font-size:1.1rem}
+.price-feat .n{color:var(--t3)}
+.price-card .btn{width:100%;justify-content:center}
+.sec-dark .price-card{background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.08)}
+.sec-dark .price-card h3,.sec-dark .price-value{color:#fff}
+.sec-dark .price-desc,.sec-dark .price-feat li{color:#94a3b8}
+.sec-dark .price-feat li{border-color:rgba(255,255,255,.06)}
+
+/* ── DEMO SECTION ── */
+.demo-box{background:linear-gradient(135deg,#0a0a1a,#0F172A);border:1px solid rgba(255,255,255,.08);border-radius:24px;padding:48px;display:flex;align-items:center;gap:48px;overflow:hidden}
+.demo-text h2{font-size:2rem;font-weight:900;color:#fff;margin-bottom:12px}
+.demo-text p{color:#94a3b8;font-size:1.05rem;margin-bottom:28px;line-height:1.7}
+.demo-visual{flex-shrink:0;width:320px;height:240px;background:rgba(13,148,136,.06);border:1px solid rgba(13,148,136,.15);border-radius:16px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.demo-visual .pulse-ring{position:absolute;width:60px;height:60px;border-radius:50%;background:rgba(13,148,136,.2);animation:ring 2s ease-out infinite}
+@keyframes ring{0%{transform:scale(.5);opacity:1}100%{transform:scale(3);opacity:0}}
+.demo-visual .center-dot{width:24px;height:24px;border-radius:50%;background:var(--p);z-index:1}
+.demo-label{position:absolute;bottom:16px;color:var(--p);font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em}
+@media(max-width:768px){.demo-box{flex-direction:column;padding:32px 24px}.demo-visual{width:100%}}
+
+/* ── CTA BANNER ── */
+.cta-banner{background:linear-gradient(135deg,#0D9488,#0a6e65,#0284C7);color:#fff;text-align:center;padding:72px 0;border-radius:28px;margin:0 20px;position:relative;overflow:hidden}
+.cta-banner::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 70%,rgba(0,229,255,.15),transparent 50%)}
+.cta-banner>*{position:relative;z-index:1}
+.cta-banner h2{font-size:2.2rem;font-weight:900;margin-bottom:12px;color:#fff}
+.cta-banner p{color:rgba(255,255,255,.85);margin-bottom:28px;font-size:1.1rem}
+
+/* ── FOOTER ── */
+.footer{background:#030712;color:#64748b;padding:48px 0;text-align:center;font-size:.85rem}
+.footer a{color:var(--p);text-decoration:none}
+
+/* ── REVEAL ANIMATION ── */
+.reveal{opacity:0;transform:translateY(30px);transition:.6s ease}
+.reveal.vis{opacity:1;transform:translateY(0)}
+
+@media(max-width:768px){
+  .nav-links a:not(.nav-cta){display:none}
+  .hero{padding:100px 0 60px;min-height:auto}
+  .hero h1{font-size:1.8rem}
+  .hero-stats{gap:24px}.hs-num{font-size:1.8rem}
+  .sec{padding:56px 0}.s-title h2{font-size:1.6rem}
+  .price-card.pop{transform:none}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-logo">KRO<span>NEXA</span></div>
+  <div class="nav-links">
+    <a href="#tecnologias">Tecnologias</a>
+    <a href="#precos">Planos</a>
+    <a href="#demo">Demo</a>
+    <a href="portal-dashboard.html" class="nav-cta">Testar Grátis</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="top">
+  <div class="stars" id="stars"></div>
+  <div class="hero-content">
+    <div class="hero-badge">🧠 Inteligência Artificial para Saúde</div>
+    <h1>Sua clínica no <span class="grad">piloto automático</span> com IA</h1>
+    <p>Secretária 24h no WhatsApp, DICOM 3D, Marketing Digital, Telemedicina, Prescrição e muito mais. <strong>Tudo integrado. Tudo inteligente.</strong></p>
+    <div class="hero-btns">
+      <a href="portal-dashboard.html" class="btn btn-w">🧪 Acessar Demonstração Grátis</a>
+      <a href="#precos" class="btn btn-o">Ver Planos</a>
+    </div>
+    <div class="hero-stats">
+      <div><div class="hs-num">24/7</div><div class="hs-label">Atendimento IA</div></div>
+      <div><div class="hs-num">15+</div><div class="hs-label">Módulos</div></div>
+      <div><div class="hs-num">0</div><div class="hs-label">Custo p/ Testar</div></div>
+      <div><div class="hs-num">3D</div><div class="hs-label">DICOM Viewer</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- TECNOLOGIAS -->
+<section class="sec sec-dark" id="tecnologias">
+  <div class="container">
+    <div class="s-title reveal"><h2>Tecnologias <span class="grad">Implementadas</span></h2><p>Tudo que sua clínica precisa, pronto para usar agora</p></div>
+    <div class="feat-grid">
+      <div class="feat-card reveal"><span class="feat-icon">🧠</span><h3>Marketing Digital com IA</h3><p>IA Multiagente que analisa tendências, concorrentes e gera conteúdo. Descubra o que postar HOJE para crescer mais rápido.</p><span class="tag-sm tag-new">🚀 Lançamento</span><span class="tag-sm tag-g">Gemini IA</span></div>
+      <div class="feat-card reveal"><span class="feat-icon">💬</span><h3>Secretária Sofia 24h</h3><p>IA que atende pacientes por WhatsApp, agenda consultas e confirma presença. 1.247 conversas/mês sem intervenção humana.</p><span class="tag-sm tag-g">Evolution API</span><span class="tag-sm tag-p">WhatsApp</span></div>
+      <div class="feat-card reveal"><span class="feat-icon">🧬</span><h3>Visualizador DICOM 3D</h3><p>Renderização 3D de tomografia e ressonância no navegador. Anotação, medição, laudo — tudo integrado.</p><span class="tag-sm tag-b">WebGL</span><span class="tag-sm tag-p">VTK.js</span></div>
+      <div class="feat-card reveal"><span class="feat-icon">🤖</span><h3>IA Diagnóstico por Imagem</h3><p>Análise de exames com IA (Gemini Vision). Segunda opinião automatizada para radiografias e tomografias.</p><span class="tag-sm tag-g">Gemini Vision</span></div>
+      <div class="feat-card reveal"><span class="feat-icon">💊</span><h3>Prescrição Digital</h3><p>Receitas, atestados e pedidos de exame com assinatura digital. Numeração sequencial automática e PDF.</p><span class="tag-sm tag-p">PDF Digital</span></div>
+      <div class="feat-card reveal"><span class="feat-icon">📹</span><h3>Telemedicina Integrada</h3><p>Consultas por vídeo sem instalação de apps. Paciente recebe link por WhatsApp e entra com 1 clique.</p><span class="tag-sm tag-b">WebRTC</span></div>
+      <div class="feat-card reveal"><span class="feat-icon">📊</span><h3>Dashboard BI</h3><p>KPIs em tempo real: consultas, faturamento, NPS. Gráficos interativos com comparação de períodos.</p><span class="tag-sm tag-p">Chart.js</span></div>
+      <div class="feat-card reveal"><span class="feat-icon">📅</span><h3>Agendamento + iCal</h3><p>Agenda inteligente com confirmação por WhatsApp. Sincroniza Google, Outlook e Apple Calendar.</p><span class="tag-sm tag-g">iCal Feed</span></div>
+      <div class="feat-card reveal"><span class="feat-icon">👤</span><h3>Portal do Paciente</h3><p>Exames, laudos e histórico acessíveis pelo paciente. Compartilhamento seguro de resultados.</p><span class="tag-sm tag-p">LGPD</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- DEPOIMENTOS -->
+<section class="sec" id="depoimentos" style="background:var(--bg3)">
+  <div class="container">
+    <div class="s-title reveal"><h2>Quem usa <span class="grad">recomenda</span></h2><p>Clínicas que já transformaram seu atendimento com a Sofia</p></div>
+    <div class="testimonial-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;max-width:1000px;margin:0 auto">
+      <div class="testimonial-card" style="background:var(--bg2);border-radius:16px;padding:28px 24px;border:1px solid var(--b);position:relative">
+        <div style="font-size:1.2rem;color:var(--p);margin-bottom:12px">★★★★★</div>
+        <p style="font-size:.95rem;color:var(--t2);line-height:1.7;margin-bottom:16px;font-style:italic">"A Sofia reduziu em 70% as faltas nas consultas. Os lembretes automáticos por WhatsApp funcionam perfeitamente. Minha recepção ganhou horas por dia."</p>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--p),#00E5FF);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:16px">DM</div>
+          <div><strong style="font-size:13px;color:var(--t1)">Dra. Marina Dias</strong><br><span style="font-size:11px;color:var(--t3)">Clínica Dermatológica Dias — São Paulo</span></div>
+        </div>
+      </div>
+      <div class="testimonial-card" style="background:var(--bg2);border-radius:16px;padding:28px 24px;border:1px solid var(--b);position:relative">
+        <div style="font-size:1.2rem;color:var(--p);margin-bottom:12px">★★★★★</div>
+        <p style="font-size:.95rem;color:var(--t2);line-height:1.7;margin-bottom:16px;font-style:italic">"O visualizador de exames é sensacional. Consigo fazer medições precisas e laudar direto na plataforma. Minha equipe abandonou o outro sistema em 2 semanas."</p>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#0284C7,#38BDF8);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:16px">RL</div>
+          <div><strong style="font-size:13px;color:var(--t1)">Dr. Ricardo Lopes</strong><br><span style="font-size:11px;color:var(--t3)">Centro de Imagem Lopes — Brasília</span></div>
+        </div>
+      </div>
+      <div class="testimonial-card" style="background:var(--bg2);border-radius:16px;padding:28px 24px;border:1px solid var(--b);position:relative">
+        <div style="font-size:1.2rem;color:var(--p);margin-bottom:12px">★★★★★</div>
+        <p style="font-size:.95rem;color:var(--t2);line-height:1.7;margin-bottom:16px;font-style:italic">"NPS subiu de 72 pra 94 em 3 meses. A Sofia pergunta como foi a consulta e os pacientes respondem no WhatsApp mesmo. Antes era papel e ninguém respondia."</p>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#059669,#34D399);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:16px">AC</div>
+          <div><strong style="font-size:13px;color:var(--t1)">Dra. Ana Carvalho</strong><br><span style="font-size:11px;color:var(--t3)">Clínica Bem-Estar — Rio de Janeiro</span></div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:center;gap:32px;margin-top:40px;flex-wrap:wrap">
+      <div style="text-align:center"><div style="font-size:2rem;font-weight:900;color:var(--p)">1.247+</div><div style="font-size:.7rem;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Conversas atendidas</div></div>
+      <div style="text-align:center"><div style="font-size:2rem;font-weight:900;color:var(--p)">94%</div><div style="font-size:.7rem;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">NPS médio</div></div>
+      <div style="text-align:center"><div style="font-size:2rem;font-weight:900;color:var(--p)">3min</div><div style="font-size:.7rem;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Tempo médio de resposta</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="sec" id="precos">
+  <div class="container">
+    <div class="s-title reveal"><h2>Planos <span class="grad">Transparentes</span></h2><p>Comece grátis. Evolua quando precisar.</p></div>
+    <div class="price-grid">
+      <div class="price-card reveal">
+        <div class="price-name">Starter</div>
+        <div class="price-value">R$ 699<small>/mês</small></div>
+        <div class="price-desc">Consultórios com até 2 profissionais</div>
+        <ul class="price-feat">
+          <li><span class="y">✓</span> Secretária IA WhatsApp 24h</li>
+          <li><span class="y">✓</span> Agendamento Online + iCal</li>
+          <li><span class="y">✓</span> Prontuário Eletrônico</li>
+          <li><span class="y">✓</span> Prescrição Digital</li>
+          <li><span class="y">✓</span> Marketing IA (3 redes)</li>
+          <li><span class="n">—</span> DICOM 3D Viewer</li>
+          <li><span class="n">—</span> Telemedicina</li>
+        </ul>
+        <a href="portal-dashboard.html" class="btn btn-o" style="color:var(--p);border-color:var(--p)">Testar Grátis</a>
+      </div>
+      <div class="price-card pop reveal">
+        <div class="price-name">Profissional</div>
+        <div class="price-value">R$ 1.499<small>/mês</small></div>
+        <div class="price-desc">Clínicas com múltiplos profissionais</div>
+        <ul class="price-feat">
+          <li><span class="y">✓</span> Tudo do Starter</li>
+          <li><span class="y">✓</span> DICOM 3D Viewer completo</li>
+          <li><span class="y">✓</span> IA Diagnóstico por Imagem</li>
+          <li><span class="y">✓</span> Telemedicina integrada</li>
+          <li><span class="y">✓</span> Cirurgia 3D + Calculadoras</li>
+          <li><span class="y">✓</span> Marketing IA (10 redes)</li>
+          <li><span class="y">✓</span> Até 10 profissionais</li>
+        </ul>
+        <a href="portal-dashboard.html" class="btn btn-p">Testar Grátis</a>
+      </div>
+      <div class="price-card reveal">
+        <div class="price-name">Enterprise</div>
+        <div class="price-value">R$ 1.999<small>/mês</small></div>
+        <div class="price-desc">Redes, hospitais, franquias</div>
+        <ul class="price-feat">
+          <li><span class="y">✓</span> Tudo do Profissional</li>
+          <li><span class="y">✓</span> Múltiplas unidades</li>
+          <li><span class="y">✓</span> White-label</li>
+          <li><span class="y">✓</span> API de integração</li>
+          <li><span class="y">✓</span> SSO / SAML</li>
+          <li><span class="y">✓</span> Gerente de conta dedicado</li>
+          <li><span class="y">✓</span> SLA 99.9%</li>
+        </ul>
+        <a href="mailto:raique@kronexa.com.br" class="btn btn-o" style="color:var(--p);border-color:var(--p)">Falar com Vendas</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DEMO -->
+<section class="sec sec-dark" id="demo">
+  <div class="container">
+    <div class="demo-box reveal">
+      <div class="demo-text">
+        <h2>Veja a IA funcionando agora</h2>
+        <p>Acesse o dashboard de demonstração com dados reais. Explore o Marketing IA, DICOM 3D, agendamento e todos os módulos. <strong>Sem cadastro. Sem cartão de crédito.</strong></p>
+        <a href="portal-dashboard.html" class="btn btn-p">🧪 Acessar Demonstração Grátis</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="sec">
+  <div class="container"><div class="cta-banner reveal"><h2>Pronto para automatizar sua clínica?</h2><p>Junte-se às clínicas que já usam Kronexa para atender mais, gastar menos e crescer.</p><a href="portal-dashboard.html" class="btn btn-w" style="font-size:1.1rem">Começar Agora — Grátis</a></div></div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <p><strong>Kronexa</strong> — Inteligência Artificial para Saúde</p>
+    <p style="margin-top:8px"><a href="portal-dashboard.html">Demo</a> · <a href="portal-marketing-saude.html">Marketing IA</a> · <a href="portal-dicom-3d.html">DICOM 3D</a> · <a href="termos.html">Termos</a> · <a href="privacidade.html">Privacidade</a></p>
+    <p style="margin-top:12px">© 2026 Kronexa. Todos os direitos reservados.</p>
+  </div>
+</footer>
+
+<script>
+// ── STARS BACKGROUND ──
+(function(){
+  const c=document.getElementById('stars');
+  for(let i=0;i<80;i++){
+    const s=document.createElement('div');s.className='star';
+    s.style.left=Math.random()*100+'%';s.style.top=Math.random()*100+'%';
+    s.style.width=s.style.height=(Math.random()*2+1)+'px';
+    s.style.setProperty('--d',(Math.random()*3+2)+'s');
+    s.style.animationDelay=Math.random()*3+'s';
+    c.appendChild(s);
+  }
+})();
+
+// ── SCROLL REVEAL ──
+(function(){
+  const obs=new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('vis');});
+  },{threshold:.15});
+  document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+})();
+
+// ── SMOOTH SCROLL ──
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+  a.addEventListener('click',e=>{
+    const t=document.querySelector(a.getAttribute('href'));
+    if(t){e.preventDefault();t.scrollIntoView({behavior:'smooth',block:'start'});}
+  });
+});
+</script>
+</body>
+</html>

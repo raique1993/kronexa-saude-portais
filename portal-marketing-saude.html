@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Marketing IA — Kronexa BI</title>
+<style>
+:root{--p:#0D9488;--c:#0284C7;--g:#059669;--r:#DC2626;--o:#D97706;--bg:#F8FAFC;--bg2:#FFFFFF;--bg3:#F1F5F9;--t1:#0F172A;--t2:#475569;--t3:#94A3B8;--b:#E2E8F0}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--t1);font-family:-apple-system,sans-serif}
+.hd{background:var(--bg2);border-bottom:1px solid var(--b);display:flex;align-items:center;padding:0 16px;gap:12px;height:48px;position:sticky;top:0;z-index:10}
+.logo{font-size:14px;font-weight:900}.logo span{color:var(--p)}
+.tag{font-size:9px;font-weight:700;padding:2px 7px;border-radius:100px;background:rgba(13,148,136,.15);color:var(--p)}
+.hd-right{margin-left:auto;display:flex;gap:8px}
+.hd-btn{height:28px;padding:0 14px;border:1px solid var(--b);background:var(--bg2);color:var(--t2);border-radius:7px;font-size:11px;cursor:pointer;transition:.15s;display:flex;align-items:center;gap:5px;font-family:inherit}
+.hd-btn:hover{background:rgba(13,148,136,.12);color:var(--t1);border-color:var(--p)}
+.hd-btn.active{background:rgba(13,148,136,.18);color:var(--p);border-color:var(--p);font-weight:700}
+.container{max-width:1300px;margin:0 auto;padding:16px 20px;display:flex;flex-direction:column;gap:16px}
+
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.kpi-card{background:var(--bg2);border:1px solid var(--b);border-radius:12px;padding:16px;display:flex;align-items:center;gap:12px;transition:.2s}
+.kpi-card:hover{border-color:rgba(13,148,136,.35);box-shadow:0 4px 16px rgba(13,148,136,.08)}
+.kpi-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.kpi-icon.purple{background:rgba(13,148,136,.18)}.kpi-icon.cyan{background:rgba(2,132,199,.1)}
+.kpi-icon.green{background:rgba(34,197,94,.1)}.kpi-icon.orange{background:rgba(245,158,11,.1)}
+.kpi-icon.red{background:rgba(244,63,94,.1)}
+.kpi-info{flex:1}.kpi-value{font-size:22px;font-weight:900}.kpi-label{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px}
+.kpi-delta{font-size:10px;font-weight:700;margin-top:2px}
+.kpi-delta.up{color:var(--g)}.kpi-delta.down{color:var(--r)}
+
+/* Cards */
+.chart-card{background:var(--bg2);border:1px solid var(--b);border-radius:12px;padding:16px}
+.chart-card h4{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:900px){.grid-2{grid-template-columns:1fr}}
+
+/* NBA */
+.nba-card{background:linear-gradient(135deg,rgba(13,148,136,.08),rgba(2,132,199,.04));border:1px solid var(--p);border-radius:12px;padding:20px;position:relative}
+.nba-badge{display:inline-block;padding:3px 10px;border-radius:100px;font-size:9px;font-weight:700;text-transform:uppercase;margin-bottom:8px}
+.nba-badge.urgent{background:var(--r);color:#fff;animation:pulse 2s infinite}
+.nba-badge.high{background:var(--o);color:#fff}
+.nba-badge.medium{background:rgba(13,148,136,.15);color:var(--p)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
+.nba-title{font-size:1.1rem;font-weight:700;margin:4px 0}
+.nba-desc{font-size:12px;color:var(--t2);line-height:1.6;margin:6px 0}
+.nba-rationale{background:rgba(2,132,199,.06);padding:10px 14px;border-radius:8px;font-size:11px;color:var(--c);border-left:3px solid var(--c);margin:10px 0}
+
+/* Buttons */
+.btn{padding:8px 16px;border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;margin:2px}
+.btn-primary{background:var(--p);color:#fff}.btn-primary:hover{opacity:.9}
+.btn-secondary{background:var(--bg3);color:var(--t1);border:1px solid var(--b)}
+.btn-ghost{background:transparent;color:var(--t2);border:1px solid var(--b)}.btn-ghost:hover{border-color:var(--p)}
+.btn-sm{padding:4px 10px;font-size:10px}
+
+/* Form */
+input,select,textarea{width:100%;padding:8px 10px;border:1px solid var(--b);border-radius:7px;font-size:11px;font-family:inherit;background:var(--bg2);color:var(--t1)}
+textarea{resize:vertical;min-height:70px}
+.form-row{display:flex;gap:8px;margin-bottom:6px}
+
+/* Tabs */
+.tab{padding:8px 16px;border:none;background:transparent;color:var(--t2);font-size:12px;font-weight:600;cursor:pointer;border-radius:6px;font-family:inherit;transition:.15s}
+.tab:hover{color:var(--t1)}
+.tab.active{background:var(--bg2);color:var(--p);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+
+/* Result */
+.result-box{background:var(--bg3);border-radius:8px;padding:14px;font-size:11px;white-space:pre-wrap;line-height:1.7;max-height:400px;overflow-y:auto;margin-top:8px}
+.result-box.loading{color:var(--p);text-align:center;padding:30px}
+
+/* Tag */
+.tag-sm{display:inline-block;padding:2px 7px;border-radius:100px;font-size:9px;font-weight:700;margin:2px}
+.tag-green{background:rgba(34,197,94,.12);color:var(--g)}
+.tag-red{background:rgba(244,63,94,.12);color:var(--r)}
+.tag-blue{background:rgba(2,132,199,.12);color:var(--c)}
+.tag-teal{background:rgba(13,148,136,.15);color:var(--p)}
+.tag-orange{background:rgba(245,158,11,.15);color:var(--o)}
+
+/* Tabs */
+.tabs{display:flex;gap:4px;background:var(--bg3);padding:3px;border-radius:8px;margin-bottom:12px}
+.tab{padding:7px 14px;border:none;background:transparent;color:var(--t2);font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;font-family:inherit}
+.tab.active{background:var(--bg2);color:var(--p);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+
+.toast{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);padding:9px 20px;border-radius:100px;font-size:12px;font-weight:700;z-index:99;background:var(--p);color:#fff;display:none}
+</style>
+</head>
+<body>
+
+<header class="hd">
+  <div class="logo">KRO<span>NEXA</span> <span style="font-size:10px;color:var(--t3);font-weight:400">| Marketing Intelligence</span></div>
+  <span class="tag">IA MULTIAGENTE</span>
+  <button class="hd-btn" onclick="switchTab('nba')">🎯 Ações</button>
+  <button class="hd-btn" onclick="switchTab('conteudo')">✍️ Criar</button>
+  <button class="hd-btn" onclick="switchTab('auditoria')">🔍 Auditoria</button>
+  <button class="hd-btn" onclick="switchTab('tendencias')">🔥 Trends</button>
+  <div class="hd-right">
+    <button class="hd-btn" onclick="window.location.href='portal-dashboard.html'">← Voltar ao Dashboard</button>
+  </div>
+</header>
+
+<div class="container" id="main">
+  <div style="text-align:center;padding:60px;color:var(--t3)" id="loading-msg">
+    <div style="font-size:40px;margin-bottom:12px">🧠</div>
+    Carregando Inteligência de Marketing...
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// CONFIG — Chave Gemini protegida pelo proxy Cloudflare
+// ============================================================
+const API_PROXY = "https://kronexa-api.kronexa-api.workers.dev";
+let currentClinica = null;
+let currentTab = "nba";
+
+// ============================================================
+// HELPERS
+// ============================================================
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.style.display = "block";
+  setTimeout(() => t.style.display = "none", 3000);
+}
+
+// Cache simples para evitar chamadas repetidas
+const cache = {};
+
+async function callGemini(prompt, temp = 0.7) {
+  // Cache: evita refazer a mesma chamada em 5 minutos
+  const cacheKey = temp + ":" + prompt.substring(0, 200);
+  if (cache[cacheKey] && (Date.now() - cache[cacheKey].time < 300000)) {
+    return cache[cacheKey].data;
+  }
+
+  async function tentar(tentativa) {
+    const res = await fetch(API_PROXY, {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ contents:[{parts:[{text:prompt}]}], generationConfig:{temperature:temp,topP:0.95,maxOutputTokens:4096,responseMimeType:"application/json"} })
+    });
+    const d = await res.json();
+
+    // Rate limit: espera e retry
+    if (d.error && d.error.message && d.error.message.includes("quota")) {
+      if (tentativa < 3) {
+        const espera = (tentativa + 1) * 3000;
+        await new Promise(r => setTimeout(r, espera));
+        return tentar(tentativa + 1);
+      }
+      throw new Error("Limite de requisicoes atingido. Aguarde 1 minuto e tente novamente.");
+    }
+
+    if (d.error) throw new Error(d.error.message);
+    const txt = d.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+    const data = JSON.parse(txt.replace(/```json\n?/g,"").replace(/```\n?/g,"").trim());
+
+    // Salva no cache
+    cache[cacheKey] = { data, time: Date.now() };
+    return data;
+  }
+
+  return tentar(0);
+}
+
+function showLoading(msg) {
+  document.getElementById("main").innerHTML = `<div style="text-align:center;padding:60px;color:var(--t3)"><div style="font-size:40px;margin-bottom:12px">🧠</div>${msg}</div>`;
+}
+
+// ============================================================
+// INIT
+// ============================================================
+async function init() {
+  currentClinica = { nome: "Sua Clínica" };
+  switchTab("nba");
+}
+
+// ============================================================
+// TABS
+// ============================================================
+window.switchTab = function(tab) {
+  currentTab = tab;
+  // Destaca botao ativo no header
+  document.querySelectorAll(".hd-btn").forEach(b => b.classList.remove("active"));
+  const btn = document.querySelector(".hd-btn[onclick*=\"switchTab('" + tab + "')\"]");
+  if (btn) btn.classList.add("active");
+  // Esconde loading
+  var loading = document.getElementById("loading-msg");
+  if (loading) loading.style.display = "none";
+  // Renderiza
+  if (tab === "nba") renderNBA();
+  else if (tab === "conteudo") renderConteudo();
+  else if (tab === "auditoria") renderAuditoria();
+  else if (tab === "tendencias") renderTendencias();
+};
+
+// ============================================================
+// NBA — Próxima Melhor Ação (CORE)
+// ============================================================
+async function renderNBA() {
+  showLoading("Analisando o que sua clínica deve fazer HOJE para crescer...");
+
+  const nome = currentClinica?.nome || "Clínica";
+  const prompt = `Voce e um DIRETOR DE MARKETING para profissionais de saude.
+
+Cliente: ${nome}
+Nicho: Saude (clinica medica/odontologica)
+Mercado: Brasil, Junho 2026
+
+Responda: "O QUE ESTA CLINICA DEVE FAZER HOJE PARA ATRAIR MAIS PACIENTES?"
+
+Considere: Instagram e WhatsApp sao os canais principais para saude. Conteudo educativo converte mais que promocional. Pacientes confiam em autoridade medica.
+
+Gere 5-7 acoes ESPECIFICAS. NADA generico. Seja pratico e acionavel.
+
+Retorne APENAS JSON: {"acoes":[{"prioridade":"urgente|alta|media|baixa","tipo_acao":"criar_reel|criar_post|criar_carrossel|engajar|otimizar_perfil|gravacao_video|depoimento","titulo":"...","descricao":"passo a passo","justificativa":"por que AGORA (dados de mercado)","score":0-100,"confianca":0-1,"impacto":"alto|medio|baixo","esforco":"baixo|medio|alto","prazo":"hoje|esta_semana|este_mes","dados_execucao":{"legenda_sugerida":"...","hashtags":[...],"horario":"...","formato":"..."}}],"resumo":"...","urgencias":"..."}`;
+
+  let d;
+  try { d = await callGemini(prompt, 0.5); } catch(e) { document.getElementById("main").innerHTML = `<div style="text-align:center;padding:60px"><h3 style="color:var(--r)">Erro na IA</h3><p style="color:var(--t2)">${e.message}</p><button class="btn btn-primary" onclick="renderNBA()">Tentar Novamente</button></div>`; return; }
+  const acoes = d.acoes || [];
+  const urgent = acoes.find(a => a.prioridade === "urgente") || acoes[0];
+
+  document.getElementById("main").innerHTML = `
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-icon purple">🎯</div><div class="kpi-info"><div class="kpi-value">${acoes.length}</div><div class="kpi-label">Ações Recomendadas</div></div></div>
+      <div class="kpi-card"><div class="kpi-icon red">⚡</div><div class="kpi-info"><div class="kpi-value">${acoes.filter(a=>a.prioridade==='urgente').length}</div><div class="kpi-label">Ações Urgentes</div></div></div>
+      <div class="kpi-card"><div class="kpi-icon green">📊</div><div class="kpi-info"><div class="kpi-value">${(acoes.reduce((s,a)=>s+(a.score||0),0)/(acoes.length||1)).toFixed(0)}</div><div class="kpi-label">Score Médio</div></div></div>
+      <div class="kpi-card"><div class="kpi-icon cyan">🧠</div><div class="kpi-info"><div class="kpi-label">Estratégia</div><div class="kpi-delta up">${d.resumo||'IA Multiagente ativa'}</div></div></div>
+    </div>
+
+    ${urgent ? `
+    <div class="nba-card">
+      <span class="nba-badge ${urgent.prioridade==='urgente'?'urgent':urgent.prioridade==='alta'?'high':'medium'}">${urgent.prioridade==='urgente'?'⚡ ':''}${(urgent.prioridade||'media').toUpperCase()}</span>
+      <div class="nba-title">${urgent.titulo}</div>
+      <div class="nba-desc">${urgent.descricao}</div>
+      <div class="nba-rationale">🧠 ${urgent.justificativa}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0">
+        <span class="tag-sm tag-green">Score ${urgent.score}/100</span>
+        <span class="tag-sm tag-blue">Confiança ${(urgent.confianca*100).toFixed(0)}%</span>
+        <span class="tag-sm tag-teal">Impacto ${urgent.impacto}</span>
+        <span class="tag-sm">Esforço ${urgent.esforco}</span>
+        ${urgent.prazo?`<span class="tag-sm tag-orange">⏰ ${urgent.prazo}</span>`:''}
+      </div>
+      ${urgent.dados_execucao?.legenda_sugerida?`<div style="background:var(--bg3);padding:10px;border-radius:6px;font-size:11px;margin:8px 0">📝 ${urgent.dados_execucao.legenda_sugerida}</div>`:''}
+      ${(urgent.dados_execucao?.hashtags||[]).length>0?`<div style="font-size:10px;color:var(--c)">🏷️ ${urgent.dados_execucao.hashtags.map(h=>'#'+h).join(' ')}</div>`:''}
+      <div style="margin-top:10px">
+        <button class="btn btn-primary" onclick="renderConteudo()">✅ Criar Conteúdo</button>
+        <button class="btn btn-secondary">📋 Copiar</button>
+      </div>
+    </div>
+    ` : ''}
+
+    <h4 style="margin-top:16px;margin-bottom:8px;font-size:11px;color:var(--t3);text-transform:uppercase">TODAS AS AÇÕES RECOMENDADAS</h4>
+    ${acoes.slice(urgent?1:0).map(a => `
+      <div class="chart-card" style="margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:start">
+          <div>
+            <span class="nba-badge ${a.prioridade==='urgente'?'urgent':a.prioridade==='alta'?'high':'medium'}">${a.prioridade}</span>
+            <strong style="font-size:13px">${a.titulo}</strong>
+          </div>
+          <span class="tag-sm tag-green">${a.score}/100</span>
+        </div>
+        <div class="nba-desc">${a.descricao}</div>
+        <div style="font-size:10px;color:var(--c);margin-top:4px">💡 ${a.justificativa}</div>
+        <div style="margin-top:6px">
+          <span class="tag-sm tag-teal">${a.impacto}</span>
+          <span class="tag-sm">${a.esforco}</span>
+          ${a.prazo?`<span class="tag-sm tag-orange">${a.prazo}</span>`:''}
+        </div>
+      </div>
+    `).join("")}
+
+    <button class="btn btn-primary" onclick="renderNBA()">🔄 Recalcular Estratégia</button>
+  `;
+}
+
+// ============================================================
+// CONTEÚDO
+// ============================================================
+async function renderConteudo() {
+  document.getElementById("main").innerHTML = `
+    <div class="grid-2">
+      <div>
+        <div class="chart-card">
+          <h4>✍️ Gerar Conteúdo para Saúde</h4>
+          <div class="form-row">
+            <select id="ctipo" style="flex:1">
+              <option value="post">📷 Post</option>
+              <option value="carrossel">🖼️ Carrossel</option>
+              <option value="reel">🎬 Reel curto</option>
+              <option value="story">📱 Stories</option>
+              <option value="artigo">📝 Artigo educativo</option>
+            </select>
+            <select id="ctom" style="flex:1">
+              <option value="profissional">Profissional</option>
+              <option value="acolhedor">Acolhedor</option>
+              <option value="educativo">Educativo</option>
+            </select>
+          </div>
+          <input id="ctema" placeholder="Tema (ex: cuidados com a saúde bucal, importância do check-up...)" value="dicas de saúde e prevenção">
+          <div style="margin-top:8px">
+            <button class="btn btn-primary" onclick="gerarConteudoSaude()">🚀 Gerar com IA</button>
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('ctema').value='cuidados preventivos para a saúde'">💡 Sugerir tema</button>
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('ctema').value='depoimento de paciente satisfeito'">💡 Depoimento</button>
+          </div>
+        </div>
+        <div id="cresultados" style="margin-top:10px"></div>
+      </div>
+      <div>
+        <div class="chart-card">
+          <h4>📊 Melhores Formatos para Saúde</h4>
+          <div style="font-size:11px;color:var(--t2);line-height:1.8">
+            <p>🏥 <strong>Posts educativos</strong> — 3-4x/semana<br>Conteúdo que explica condições, tratamentos e prevenção. Gera confiança e autoridade.</p>
+            <p style="margin-top:8px">🎬 <strong>Reels curtos (30s)</strong> — 2x/semana<br>Dicas rápidas do médico, bastidores, antes/depois. Maior alcance orgânico.</p>
+            <p style="margin-top:8px">⭐ <strong>Depoimentos de pacientes</strong> — 1x/semana<br>Prova social. Pacientes felizes geram novos pacientes.</p>
+            <p style="margin-top:8px">📱 <strong>Stories interativos</strong> — Diário<br>Enquetes, perguntas, dia a dia da clínica. Humaniza a marca.</p>
+          </div>
+        </div>
+        <div class="chart-card" style="margin-top:10px">
+          <h4>⏰ Melhores Horários (Saúde)</h4>
+          <div style="font-size:11px;color:var(--t2)">
+            <p>🌅 <strong>8h-9h</strong> — Pessoas no transporte/espera</p>
+            <p>☀️ <strong>12h-13h</strong> — Horário de almoço</p>
+            <p>🌙 <strong>19h-21h</strong> — Pós-expediente (melhor engajamento)</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+window.gerarConteudoSaude = async function() {
+  const tipo = document.getElementById("ctipo").value;
+  const tom = document.getElementById("ctom").value;
+  const tema = document.getElementById("ctema").value;
+  const div = document.getElementById("cresultados");
+  div.innerHTML = `<div class="result-box loading">⏳ Gerando ${tipo} sobre "${tema}"...</div>`;
+
+  const prompt = `Voce e um Social Media especializado em SAUDE (clinicas, consultorios, dentistas).
+
+Crie 2 variacoes de ${tipo} sobre "${tema}" com tom ${tom}.
+
+REGRAS PARA SAUDE:
+- NUNCA prometa resultados garantidos
+- Use linguagem etica e profissional
+- Inclua disclaimer quando necessario
+- Foco em educacao e prevencao
+- Humanize o medico/dentista
+
+${tipo==='carrossel'?'Crie 5 slides com titulo e texto curto cada.':''}
+${tipo==='reel'?'Script 30s com hook forte nos primeiros 3 segundos.':''}
+
+Inclua legenda, 8-12 hashtags, CTA.
+Retorne APENAS JSON: {"variacoes":[{"numero":1,"abordagem":"...","legenda":"...","hashtags":[...],"cta":"...","score":0-100}]}`;
+
+  try {
+    const d = await callGemini(prompt, 0.8);
+    div.innerHTML = (d.variacoes||[]).map(v => `
+      <div class="chart-card" style="margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between"><strong>#${v.numero}: ${v.abordagem}</strong><span class="tag-sm tag-green">${v.score}/100</span></div>
+        <div style="background:var(--bg3);padding:12px;border-radius:6px;margin:8px 0;font-size:11px;white-space:pre-wrap;line-height:1.7">${v.legenda}</div>
+        <div style="font-size:10px;color:var(--c)">🏷️ ${(v.hashtags||[]).map(h=>'#'+h).join(' ')}</div>
+        <div style="font-size:10px;color:var(--t2);margin-top:4px">📢 ${v.cta||''}</div>
+        <button class="btn btn-ghost btn-sm" style="margin-top:6px" onclick="navigator.clipboard.writeText(this.dataset.text);toast('Copiado!')" data-text="${v.legenda.replace(/"/g,'&quot;')}">📋 Copiar</button>
+      </div>
+    `).join("");
+  } catch(e) {
+    div.innerHTML = `<div class="result-box" style="color:var(--r)">Erro: ${e.message}</div>`;
+  }
+};
+
+// ============================================================
+// AUDITORIA
+// ============================================================
+async function renderAuditoria() {
+  showLoading("Auditando presença digital da clínica...");
+
+  const nome = currentClinica?.nome || "Sua Clínica";
+  const prompt = `Voce e um Auditor de Marketing Digital para saude.
+
+Clinica: ${nome}
+Nicho: Saude
+
+Simule uma auditoria REALISTA de uma clinica tipica brasileira:
+- Instagram com ~800 seguidores
+- Posta 2x/semana (fotos do consultorio)
+- Nao usa Reels
+- Bio basica: "Clinica ${nome} - Sua saude em primeiro lugar"
+- Nao responde comentarios
+- Usa sempre as mesmas hashtags (#saude #bemestar #clinica)
+- Nao tem Google Meu Negocio otimizado
+- Site basico sem blog
+
+Gere: Score 0-100, SWOT, e Top 5 acoes.
+
+Retorne APENAS JSON: {"score":0-100,"dimensoes":{"bio":{"score":0-100,"problemas":[],"sugestoes":[]},"conteudo":{"score":0-100,"problemas":[],"sugestoes":[]},"engajamento":{"score":0-100,"problemas":[],"sugestoes":[]},"google_meu_negocio":{"score":0-100,"problemas":[],"sugestoes":[]},"consistencia":{"score":0-100,"problemas":[],"sugestoes":[]}},"swot":{"forcas":[],"fraquezas":[],"oportunidades":[],"ameacas":[]},"top5":[{"titulo":"...","impacto":"alto|medio|baixo","esforco":"baixo|medio|alto"}],"resumo":"..."}`;
+
+  let d_audit;
+  try { d_audit = await callGemini(prompt, 0.3); } catch(e) { document.getElementById("main").innerHTML = `<div style="text-align:center;padding:60px"><h3 style="color:var(--r)">Erro na IA</h3><p style="color:var(--t2)">${e.message}</p><button class="btn btn-primary" onclick="renderAuditoria()">Tentar Novamente</button></div>`; return; }
+  const d = d_audit;
+  const sc = d.score >= 80 ? "var(--g)" : d.score >= 60 ? "var(--o)" : "var(--r)";
+
+  document.getElementById("main").innerHTML = `
+    <div class="kpi-grid">
+      <div class="kpi-card" style="text-align:center;flex-direction:column">
+        <div style="font-size:56px;font-weight:900;color:${sc}">${d.score}</div>
+        <div class="kpi-label">Score de Marketing Digital</div>
+        <div style="font-size:10px;color:var(--t2);margin-top:4px">${d.resumo||''}</div>
+      </div>
+      ${Object.entries(d.dimensoes||{}).map(([k,v])=>`
+        <div class="kpi-card">
+          <div class="kpi-info">
+            <div style="display:flex;justify-content:space-between"><span style="font-size:11px;font-weight:600;text-transform:capitalize">${k.replace(/_/g,' ')}</span><span style="font-weight:900;color:${v.score>=80?'var(--g)':v.score>=60?'var(--o)':'var(--r)'}">${v.score}</span></div>
+            <div style="height:4px;background:var(--b);border-radius:2px;margin:4px 0"><div style="width:${v.score}%;height:100%;background:${v.score>=80?'var(--g)':v.score>=60?'var(--o)':'var(--r)'};border-radius:2px"></div></div>
+            ${(v.problemas||[]).slice(0,1).map(p=>`<div style="font-size:9px;color:var(--r)">⚠️ ${p}</div>`).join('')}
+          </div>
+        </div>
+      `).join("")}
+    </div>
+
+    <div class="grid-2">
+      <div class="chart-card"><h4 style="color:var(--g)">🟢 Forças</h4>${(d.swot?.forcas||[]).map(f=>`<p style="font-size:11px;margin:4px 0">✅ ${f}</p>`).join('')}<h4 style="color:var(--c);margin-top:10px">🔵 Oportunidades</h4>${(d.swot?.oportunidades||[]).map(o=>`<p style="font-size:11px;margin:4px 0">💡 ${o}</p>`).join('')}</div>
+      <div class="chart-card"><h4 style="color:var(--r)">🔴 Fraquezas</h4>${(d.swot?.fraquezas||[]).map(f=>`<p style="font-size:11px;margin:4px 0">⚠️ ${f}</p>`).join('')}<h4 style="color:var(--o);margin-top:10px">🟠 Ameaças</h4>${(d.swot?.ameacas||[]).map(a=>`<p style="font-size:11px;margin:4px 0">🚨 ${a}</p>`).join('')}</div>
+    </div>
+
+    <h4 style="margin-top:12px;font-size:11px;color:var(--t3);text-transform:uppercase">TOP 5 AÇÕES PRIORITÁRIAS</h4>
+    ${(d.top5||[]).map((a,i)=>`
+      <div class="chart-card" style="margin-bottom:6px;display:flex;align-items:center;gap:12px">
+        <span style="font-size:18px;font-weight:900;color:var(--p)">#${i+1}</span>
+        <div style="flex:1"><strong style="font-size:12px">${a.titulo}</strong></div>
+        <span class="tag-sm tag-green">${a.impacto}</span>
+        <span class="tag-sm tag-teal">${a.esforco}</span>
+      </div>
+    `).join("")}
+
+    <button class="btn btn-primary" onclick="renderAuditoria()">🔄 Re-auditar</button>
+  `;
+}
+
+// ============================================================
+// TENDÊNCIAS
+// ============================================================
+async function renderTendencias() {
+  showLoading("Detectando tendências de marketing para saúde...");
+
+  const prompt = `Voce e um Trend Hunter especializado em SAUDE. Detecte tendencias de marketing digital para clinicas e consultorios.
+
+Brasil, Junho 2026.
+
+Identifique: tendencias atuais (com relevancia e timing), tendencias emergentes, e de um resumo.
+
+Retorne APENAS JSON: {"tendencias":[{"titulo":"...","relevancia":0-1,"timing":"adotar_agora|monitorar|ignorar","justificativa":"..."}],"novas":[{"titulo":"...","categoria":"...","por_que":"...","acao":"..."}],"resumo":"..."}`;
+
+  let d_trend;
+  try { d_trend = await callGemini(prompt, 0.6); } catch(e) { document.getElementById("main").innerHTML = `<div style="text-align:center;padding:60px"><h3 style="color:var(--r)">Erro na IA</h3><p style="color:var(--t2)">${e.message}</p><button class="btn btn-primary" onclick="renderTendencias()">Tentar Novamente</button></div>`; return; }
+  const d = d_trend;
+
+  document.getElementById("main").innerHTML = `
+    <h4 style="font-size:11px;color:var(--t3);text-transform:uppercase;margin-bottom:12px">🔥 TENDÊNCIAS PARA SAÚDE</h4>
+    <p style="color:var(--c);margin-bottom:12px;font-size:12px">${d.resumo||''}</p>
+
+    <div class="grid-2">
+      ${(d.tendencias||[]).map(t=>`
+        <div class="chart-card">
+          <div style="display:flex;justify-content:space-between">
+            <strong style="font-size:12px">${t.titulo}</strong>
+            <span class="nba-badge ${t.timing==='adotar_agora'?'urgent':'medium'}">${t.timing}</span>
+          </div>
+          <div style="height:4px;background:var(--b);border-radius:2px;margin:6px 0"><div style="width:${(t.relevancia*100).toFixed(0)}%;height:100%;background:var(--p);border-radius:2px"></div></div>
+          <div style="font-size:10px;color:var(--t2)">Relevância: ${(t.relevancia*100).toFixed(0)}%</div>
+          <div style="font-size:10px;color:var(--t2);margin-top:4px">${t.justificativa}</div>
+        </div>
+      `).join("")}
+    </div>
+
+    <h4 style="margin-top:16px;font-size:11px;color:var(--t3);text-transform:uppercase;margin-bottom:8px">💡 TENDÊNCIAS EMERGENTES</h4>
+    <div class="grid-2">
+      ${(d.novas||[]).map(t=>`
+        <div class="chart-card">
+          <strong style="font-size:12px">${t.titulo}</strong>
+          <div style="font-size:10px;color:var(--t3)">${t.categoria}</div>
+          <div style="font-size:10px;color:var(--t2);margin-top:4px">${t.por_que}</div>
+          <div style="font-size:10px;color:var(--p);margin-top:4px">🎯 ${t.acao}</div>
+        </div>
+      `).join("")||'<p style="font-size:11px;color:var(--t3)">Nenhuma tendência emergente</p>'}
+    </div>
+
+    <button class="btn btn-primary" onclick="renderTendencias()" style="margin-top:12px">🔄 Atualizar Tendências</button>
+  `;
+}
+
+// ============================================================
+// START
+// ============================================================
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

@@ -1,0 +1,1199 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Visualizador de Exames Médicos — Kronexa</title>
+<script>if(location.protocol!=="https:"&&location.hostname!=="localhost")location.replace("https://"+location.host+location.pathname+location.search);</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.149.0/examples/js/controls/OrbitControls.js"></script>
+<style>
+:root{--p:#0D9488;--c:#0284C7;--g:#059669;--r:#DC2626;--o:#D97706;--y:#eab308;--bg:#F8FAFC;--bg2:#FFFFFF;--bg3:#F1F5F9;--t1:#0F172A;--t2:#475569;--t3:#94A3B8;--border:#E2E8F0}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--t1);font-family:-apple-system,'SF Pro Text',sans-serif;display:grid;grid-template-rows:48px 1fr}
+
+/* ── TOP BAR ── */
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 12px;gap:8px}
+.logo{font-size:12px;font-weight:900;flex-shrink:0}.logo span{color:var(--p)}
+.topbar-sep{width:1px;height:22px;background:var(--border);flex-shrink:0}
+/* Ferramentas */
+.tools{display:flex;gap:1px;background:rgba(0,0,0,.3);border-radius:7px;padding:3px;flex-shrink:0}
+.tool-group{display:flex;gap:1px}
+.tool-sep{width:1px;background:var(--border);margin:0 4px}
+.tb{width:30px;height:30px;border:none;border-radius:6px;background:transparent;color:var(--t2);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:.12s;position:relative;flex-shrink:0}
+.tb:hover{background:rgba(0,0,0,.05);color:var(--t1)}
+.tb.on{background:rgba(13,148,136,.30);color:var(--p);box-shadow:inset 0 0 0 1px rgba(13,148,136,.3)}
+.tb[title]:hover::after{content:attr(title);position:absolute;bottom:-28px;left:50%;transform:translateX(-50%);background:#F1F5F9;color:var(--t1);font-size:10px;padding:3px 7px;border-radius:5px;white-space:nowrap;pointer-events:none;z-index:100;border:1px solid rgba(255,255,255,.1)}
+/* Calibração */
+.calib-area{display:flex;align-items:center;gap:6px;margin-left:6px;background:rgba(0,0,0,.04);border-radius:7px;padding:3px 8px}
+.calib-area label{font-size:10px;color:var(--t3)}
+.calib-area input{width:50px;background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--t1);font-size:11px;padding:3px 6px;outline:none;text-align:center}
+.calib-area input:focus{border-color:var(--p)}
+.calib-area select{background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--t1);font-size:11px;padding:3px 5px;outline:none}
+/* Cor da anotação */
+.color-picker{display:flex;gap:4px;margin-left:4px}
+.cp-dot{width:16px;height:16px;border-radius:50%;cursor:pointer;border:2px solid transparent;flex-shrink:0;transition:.1s}
+.cp-dot.on{border-color:var(--t1);transform:scale(1.2)}
+/* Espessura */
+.sz-ctrl{display:flex;align-items:center;gap:4px;margin-left:4px}
+.sz-btn{width:22px;height:22px;border:1px solid var(--border);background:transparent;color:var(--t2);border-radius:5px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center}
+.sz-val{font-size:11px;color:var(--t2);width:16px;text-align:center}
+/* Info e ações direita */
+.topbar-right{margin-left:auto;display:flex;gap:6px;align-items:center}
+.hb{height:28px;padding:0 12px;border:1px solid var(--border);background:rgba(0,0,0,.03);color:var(--t2);border-radius:7px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap;transition:.15s}
+.hb:hover{background:rgba(13,148,136,.12);color:var(--t1);border-color:var(--p)}
+.hb.gre{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.3);color:var(--g)}
+.hb.pri{background:var(--p);border-color:var(--p);color:#fff}
+.wl-ctrl{display:flex;align-items:center;gap:4px;background:rgba(0,0,0,.04);border-radius:7px;padding:3px 8px}
+.wl-ctrl label{font-size:10px;color:var(--t3)}
+.wl-input{width:44px;background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--t1);font-size:11px;padding:3px 5px;outline:none;text-align:center}
+.wl-input:focus{border-color:var(--c)}
+
+/* ── LAYOUT PRINCIPAL ── */
+.layout{display:grid;grid-template-columns:220px 1fr 280px;height:100%;overflow:hidden}
+
+/* ── PAINEL ESQUERDO ── */
+.left{background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.left-hd{padding:10px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.left-hd span{font-size:11px;font-weight:700;color:var(--t2)}
+.pac-sel{padding:7px 8px;border-bottom:1px solid var(--border)}
+.pac-sel select{width:100%;padding:5px 7px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--t1);font-size:11px;outline:none}
+.exame-list{flex:1;overflow-y:auto;padding:4px}
+.ei{padding:8px 9px;border-radius:8px;cursor:pointer;margin-bottom:3px;border:1px solid transparent;transition:.12s}
+.ei:hover{background:rgba(108,63,232,.07);border-color:rgba(13,148,136,.18)}
+.ei.on{background:rgba(13,148,136,.15);border-color:var(--p)}
+.ei-thumb-wrap{width:100%;height:56px;background:#F1F5F9;border-radius:5px;overflow:hidden;margin-bottom:5px;display:flex;align-items:center;justify-content:center}
+.ei-thumb{width:100%;height:100%;object-fit:contain}
+.ei-name{font-size:11px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px}
+.ei-meta{font-size:9px;color:var(--t3);display:flex;gap:5px}
+.badge{padding:1px 5px;border-radius:100px;font-size:8px;font-weight:800}
+.b-pend{background:rgba(234,179,8,.12);color:var(--y)}
+.b-ok{background:rgba(34,197,94,.12);color:var(--g)}
+.uzone{margin:6px;border:2px dashed rgba(255,255,255,.1);border-radius:8px;padding:10px;text-align:center;cursor:pointer;transition:.2s;font-size:11px}
+.uzone:hover{border-color:var(--p);background:rgba(13,148,136,.06)}
+
+/* ── 3D VIEWER ── */
+.view-toggle{position:absolute;top:10px;right:10px;z-index:20;display:flex;gap:4px;background:rgba(255,255,255,.92);border-radius:8px;padding:3px}
+.vt-btn{padding:6px 12px;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;color:var(--t2);background:transparent;transition:.15s}
+.vt-btn.on{background:var(--p);color:#fff}
+#view-3d{position:absolute;inset:0;display:none;background:#000}
+#view-3d canvas{width:100%;height:100%}
+.surg-tools{position:absolute;top:50px;left:10px;z-index:20;display:flex;flex-direction:column;gap:3px;background:rgba(255,255,255,.95);border-radius:8px;padding:6px}
+.st-btn{padding:5px 10px;border:1px solid rgba(255,255,255,.1);border-radius:5px;cursor:pointer;font-size:10px;font-weight:700;color:var(--t2);background:rgba(0,0,0,.03);transition:.15s;text-align:left}
+.st-btn:hover{background:rgba(13,148,136,.25);border-color:var(--p);color:var(--t1)}
+.st-btn.on{background:rgba(13,148,136,.35);border-color:var(--p);color:var(--p)}
+.seg-legend{position:absolute;bottom:50px;left:10px;z-index:20;background:rgba(255,255,255,.95);border-radius:8px;padding:8px 10px;font-size:9px;display:none}
+.seg-legend .item{display:flex;align-items:center;gap:6px;margin:2px 0}
+.seg-legend .dot{width:8px;height:8px;border-radius:50%}
+
+/* ── CANVAS CENTRAL ── */
+.canvas-wrap{position:relative;overflow:hidden;background:#F8FAFC;display:flex;align-items:center;justify-content:center;cursor:crosshair}
+.canvas-wrap.tool-hand{cursor:grab}
+.canvas-wrap.tool-hand.panning{cursor:grabbing}
+.canvas-wrap.tool-text{cursor:text}
+/* Timeline strip */
+.timeline-strip{position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:10;display:flex;gap:6px;background:rgba(8,8,26,.85);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:6px 12px;backdrop-filter:blur(8px);max-width:95%;overflow-x:auto;white-space:nowrap}
+.tl-dot{display:flex;flex-direction:column;align-items:center;gap:1px;padding:4px 8px;border-radius:8px;cursor:pointer;transition:.15s;border:1px solid transparent;min-width:48px}
+.tl-dot:hover{background:rgba(13,148,136,.18);border-color:rgba(13,148,136,.35)}
+.tl-dot.on{background:rgba(13,148,136,.25);border-color:var(--p);box-shadow:0 0 8px rgba(13,148,136,.35)}
+.loader{position:absolute;display:flex;flex-direction:column;align-items:center;gap:10px;color:var(--t2)}
+.spinner{width:32px;height:32px;border:2px solid rgba(13,148,136,.25);border-top-color:var(--p);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.err-view{text-align:center;color:var(--r);padding:20px;pointer-events:none}
+#main-img{display:none;transform-origin:center;max-width:100%;max-height:100%;user-select:none;pointer-events:none;image-rendering:auto}
+#pdf-frame{display:none;width:100%;height:100%;border:none}
+#annot-canvas,#draw-canvas{position:absolute;left:0;top:0}
+#annot-canvas{pointer-events:none}
+.txt-popup{position:absolute;z-index:20;background:var(--bg2);border:1px solid var(--p);border-radius:10px;padding:10px;width:200px;display:none;box-shadow:0 4px 20px rgba(0,0,0,.6)}
+.txt-popup textarea{width:100%;background:var(--bg3);border:1px solid rgba(255,255,255,.1);border-radius:7px;color:var(--t1);font-size:11px;padding:5px;outline:none;resize:none;min-height:48px;margin-bottom:5px}
+.txt-popup .btns{display:flex;gap:5px;justify-content:flex-end}
+.txt-popup .btns button{padding:3px 9px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;border:none}
+/* HUD info de medição em tempo real */
+.measure-hud{position:absolute;bottom:14px;right:14px;background:rgba(255,255,255,.95);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:8px 12px;font-size:11px;color:var(--t1);display:none;min-width:160px;backdrop-filter:blur(6px)}
+.measure-hud .mh-row{display:flex;justify-content:space-between;gap:12px;padding:2px 0}
+.measure-hud .mh-k{color:var(--t2)}
+.measure-hud .mh-v{font-weight:700;color:var(--c)}
+.zoom-hud{position:absolute;bottom:14px;left:14px;background:rgba(0,0,0,.65);color:var(--t1);font-size:11px;padding:4px 10px;border-radius:6px;pointer-events:none}
+/* Ângulo — 3 pontos */
+.angle-pts{display:none}
+
+/* ── PAINEL DIREITO ── */
+.right{background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.rt{display:flex;border-bottom:1px solid var(--border)}
+.rt-tab{flex:1;padding:9px 4px;text-align:center;font-size:10px;font-weight:700;cursor:pointer;color:var(--t2);border-bottom:2px solid transparent;transition:.12s;white-space:nowrap}
+.rt-tab.on{color:var(--t1);border-bottom-color:var(--p)}
+.rp{display:none;flex:1;overflow-y:auto;padding:12px;flex-direction:column;gap:8px}
+.rp.on{display:flex}
+lbl{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:3px}
+.fi{width:100%;padding:8px 10px;background:var(--bg3);border:1px solid rgba(255,255,255,.09);border-radius:8px;color:var(--t1);font-size:12px;outline:none;transition:.15s}
+.fi:focus{border-color:var(--p)}
+textarea.fi{resize:vertical;min-height:78px;line-height:1.5}
+.btn{padding:8px 12px;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:5px;transition:.15s}
+.btn-p{background:var(--p);color:#fff}
+.btn-g{background:var(--g);color:#000}
+.btn-c{background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.2);color:var(--c)}
+.btn-o{background:rgba(0,0,0,.03);border:1px solid var(--border);color:var(--t2)}
+/* Medições salvas */
+.med-row{display:flex;gap:7px;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:11px}
+.med-row:last-child{border:none}
+.med-ico{font-size:14px;flex-shrink:0}
+.med-label{flex:1;color:var(--t2);line-height:1.4}
+.med-val{font-weight:700;color:var(--c);white-space:nowrap}
+.med-del{background:none;border:none;color:var(--r);cursor:pointer;font-size:14px;padding:0;flex-shrink:0}
+.annot-row{display:flex;gap:6px;align-items:flex-start;padding:6px 0;border-bottom:rgba(255,255,255,.04) 1px solid}
+.annot-row:last-child{border:none}
+.annot-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:3px}
+.annot-txt{flex:1;font-size:11px;color:var(--t2);line-height:1.4}
+.annot-del{background:none;border:none;color:var(--r);cursor:pointer;font-size:13px;padding:0}
+.info-r{display:flex;justify-content:space-between;padding:4px 0;border-bottom:rgba(255,255,255,.04) 1px solid;font-size:11px}
+.info-r:last-child{border:none}
+.info-k{color:var(--t3)}
+.info-v{font-weight:600;color:var(--t1);text-align:right;max-width:150px;word-break:break-all}
+.share-box{background:rgba(0,229,255,.04);border:1px solid rgba(0,229,255,.12);border-radius:9px;padding:10px}
+.share-url{font-size:10px;background:var(--bg3);border-radius:6px;padding:5px 8px;color:var(--c);cursor:pointer;word-break:break-all;margin-top:4px}
+/* Modal */
+.modal{position:fixed;inset:0;background:rgba(255,255,255,.95);z-index:50;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal-box{background:var(--bg2);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:20px;width:100%;max-width:400px}
+.modal-box h3{font-size:14px;font-weight:800;margin-bottom:12px}
+.toast{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);padding:9px 20px;border-radius:100px;font-size:12px;font-weight:700;z-index:99;display:none;white-space:nowrap}
+.toast.ok{background:rgba(34,197,94,.9);color:#000}
+.toast.err{background:rgba(244,63,94,.9);color:#fff}
+/* Janelamento HU */
+.wl-preset{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.wl-pr{padding:3px 8px;border-radius:100px;font-size:9px;font-weight:700;border:1px solid var(--border);cursor:pointer;color:var(--t2);background:transparent;transition:.12s}
+.wl-pr:hover{border-color:var(--c);color:var(--c)}
+@media(max-width:768px){body{grid-template-columns:1fr;grid-template-rows:auto 1fr auto}.sidebar{position:fixed;z-index:50;display:none}.sidebar.open{display:flex;top:0;left:0;width:85vw;max-width:280px;height:100vh}.viewer-tools{flex-wrap:wrap;gap:4px}.viewer-tools button{padding:4px 6px;font-size:10px}.main{padding:6px}}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="logo">KRO<span>NEXA</span></div>
+  <div class="topbar-sep"></div>
+
+  <!-- FERRAMENTAS DE ANOTAÇÃO -->
+  <div class="tools">
+    <div class="tool-group">
+      <button class="tb on" id="t-text" onclick="setTool('text')" title="Texto/Anotação (T)">💬</button>
+      <button class="tb" id="t-draw" onclick="setTool('draw')" title="Desenho livre (D)">✏️</button>
+    </div>
+    <div class="tool-sep"></div>
+    <!-- Ferramentas de MEDIÇÃO -->
+    <div class="tool-group">
+      <button class="tb" id="t-line" onclick="setTool('line')" title="Linha (L)">╱</button>
+      <button class="tb" id="t-arrow" onclick="setTool('arrow')" title="Seta (A)">➤</button>
+      <button class="tb" id="t-rect" onclick="setTool('rect')" title="Retângulo (R)">▭</button>
+      <button class="tb" id="t-ellipse" onclick="setTool('ellipse')" title="Elipse/ROI (E)">⭕</button>
+      <button class="tb" id="t-measure" onclick="setTool('measure')" title="Régua/Distância (M)">📏</button>
+      <button class="tb" id="t-angle" onclick="setTool('angle')" title="Ângulo/Goniômetro (G)">∠</button>
+      <button class="tb" id="t-area" onclick="setTool('area')" title="Área (polígono) (P)">⬟</button>
+    </div>
+    <div class="tool-sep"></div>
+    <!-- Ajustes de imagem -->
+    <div class="tool-group">
+      <button class="tb" id="t-hand" onclick="setTool('hand')" title="Mover (espaço)">✋</button>
+      <button class="tb" onclick="zoom(1.25)" title="Zoom + (+)">🔍</button>
+      <button class="tb" onclick="zoom(0.8)" title="Zoom - (-)">🔎</button>
+      <button class="tb" onclick="resetView()" title="Resetar vista (0)">⟲</button>
+      <button class="tb" id="t-fliph" onclick="flipImg('h')" title="Espelhar horizontal">↔</button>
+      <button class="tb" id="t-flipv" onclick="flipImg('v')" title="Espelhar vertical">↕</button>
+      <button class="tb" id="t-inv" onclick="invertImg()" title="Inverter/Negativo">◑</button>
+      <button class="tb" id="t-rot" onclick="rotateImg(90)" title="Rotacionar 90°">↻</button>
+    </div>
+    <div class="tool-sep"></div>
+    <button class="tb" onclick="undo()" title="Desfazer (Ctrl+Z)">↩</button>
+    <button class="tb" onclick="clearAll()" style="color:var(--r)" title="Limpar tudo">🗑</button>
+  </div>
+
+  <!-- CALIBRAÇÃO DA RÉGUA -->
+  <div class="calib-area">
+    <label>Calibrar régua:</label>
+    <input type="number" id="calib-px" value="100" min="1" title="Pixels de referência">
+    <label style="margin:0 2px">=</label>
+    <input type="number" id="calib-real" value="1" min="0.01" step="0.01" title="Medida real">
+    <select id="calib-unit"><option value="cm">cm</option><option value="mm">mm</option><option value="μm">μm</option></select>
+    <button class="sz-btn" onclick="calibrar()" style="width:auto;padding:2px 7px;font-size:10px;color:var(--c)">✓</button>
+  </div>
+
+  <!-- COR E ESPESSURA -->
+  <div class="color-picker">
+    <div class="cp-dot on" style="background:#a855f7" onclick="setColor('#a855f7',this)"></div>
+    <div class="cp-dot" style="background:#ef4444" onclick="setColor('#ef4444',this)"></div>
+    <div class="cp-dot" style="background:#eab308" onclick="setColor('#eab308',this)"></div>
+    <div class="cp-dot" style="background:#22c55e" onclick="setColor('#22c55e',this)"></div>
+    <div class="cp-dot" style="background:#06b6d4" onclick="setColor('#06b6d4',this)"></div>
+    <div class="cp-dot" style="background:#fff" onclick="setColor('#fff',this)"></div>
+    <div class="cp-dot" style="background:#f97316" onclick="setColor('#f97316',this)"></div>
+  </div>
+  <div class="sz-ctrl">
+    <button class="sz-btn" onclick="changeSize(-1)">−</button>
+    <span class="sz-val" id="sz-val">2</span>
+    <button class="sz-btn" onclick="changeSize(1)">+</button>
+  </div>
+
+  <!-- JANELAMENTO (HU) -->
+  <div class="wl-ctrl" id="wl-ctrl" style="margin-left:8px">
+    <label>W:</label><input class="wl-input" id="wl-w" value="400" type="number" oninput="applyWL()" title="Window width (HU)">
+    <label>L:</label><input class="wl-input" id="wl-l" value="40" type="number" oninput="applyWL()" title="Window level (HU)">
+  </div>
+
+  <div class="topbar-right">
+    <span id="cur-coord" style="font-size:10px;color:var(--t3);min-width:80px;text-align:right"></span>
+    <button class="hb" id="hb-share" onclick="compartilhar()" style="display:none">📤 Compartilhar</button>
+    <button class="hb gre" id="hb-laudo" onclick="salvarLaudo()" style="display:none">💾 Laudo</button>
+    <button class="hb" onclick="window.open('portal-ia-clinica.html','_blank')">🤖 IA</button>
+    <button class="hb" onclick="history.back()">←</button>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- LISTA ESQUERDA -->
+  <div class="left">
+    <div class="left-hd">
+      <span>📁 Exames</span>
+      <button class="hb" style="height:22px;font-size:10px;padding:0 7px" onclick="loadExames(document.getElementById('pac-sel').value||null)">↺</button>
+    </div>
+    <div class="pac-sel">
+      <select id="pac-sel" onchange="filtrarPac()">
+        <option value="">— Todos —</option>
+      </select>
+    </div>
+    <div class="exame-list" id="exame-list"><div style="color:var(--t3);font-size:11px;padding:10px;text-align:center">Carregando...</div></div>
+    <div class="uzone" onclick="document.getElementById('fi').click()"
+      ondragover="ev.preventDefault();this.classList.add('drag')"
+      ondragleave="this.classList.remove('drag')"
+      ondrop="drop(event)">
+      📎 Enviar exame
+    </div>
+    <input type="file" id="fi" accept="image/*,.pdf,.mp4,.webm" multiple style="display:none" onchange="upload(this)">
+  </div>
+
+  <!-- CANVAS CENTRAL -->
+  <div class="canvas-wrap" id="cw"
+    onmousedown="startDraw(event)" onmousemove="moveDraw(event)" onmouseup="endDraw(event)"
+    onclick="clickCanvas(event)"
+    onwheel="onWheel(event)"
+    ontouchstart="tStart(event)" ontouchmove="tMove(event)" ontouchend="tEnd(event)">
+
+    <!-- Toggle 2D/3D -->
+    <div class="view-toggle" id="view-toggle" style="display:none">
+      <button class="vt-btn on" onclick="setView('2d')">📷 2D</button>
+      <button class="vt-btn" onclick="setView('3d')">🧊 3D</button>
+    </div>
+
+    <!-- Modo 3D -->
+    <div id="view-3d"></div>
+
+    <!-- Ferramentas cirúrgicas 3D -->
+    <div class="surg-tools" id="surg-tools" style="display:none">
+      <button class="st-btn" onclick="setSurgTool('entry')">🎯 Ponto Entrada</button>
+      <button class="st-btn" onclick="setSurgTool('target')">🎯 Ponto Alvo</button>
+      <button class="st-btn" onclick="setSurgTool('trajectory')">📏 Trajetória</button>
+      <button class="st-btn" onclick="setSurgTool('clip')">✂️ Plano Corte</button>
+      <button class="st-btn" onclick="segmentarIA()">🤖 IA Segmentar</button>
+      <button class="st-btn" onclick="reset3DView()">🔄 Reset</button>
+    </div>
+
+    <!-- Legenda segmentação -->
+    <div class="seg-legend" id="seg-legend">
+      <div class="item"><span class="dot" style="background:#ff6b6b"></span> Vasos/Artérias</div>
+      <div class="item"><span class="dot" style="background:#ffd93d"></span> Ossos</div>
+      <div class="item"><span class="dot" style="background:#6bcb77"></span> Órgãos</div>
+      <div class="item"><span class="dot" style="background:#4d96ff"></span> Lesões/Anomalias</div>
+    </div>
+
+    <!-- Timeline strip — mostra exames do mesmo paciente -->
+    <div class="timeline-strip" id="timeline-strip" style="display:none"></div>
+
+    <div class="loader" id="loader" style="display:none">
+      <div class="spinner"></div>
+      <span style="font-size:11px">Carregando...</span>
+    </div>
+    <div class="err-view" id="err-view" style="display:none">
+      <div style="font-size:36px;margin-bottom:8px">🔬</div>
+      <div id="err-msg" style="font-weight:700;margin-bottom:4px">Sem imagem</div>
+      <div id="err-sub" style="font-size:11px;opacity:.6"></div>
+    </div>
+
+    <div id="empty-view" style="color:var(--t3);text-align:center;pointer-events:none">
+      <div style="font-size:48px;margin-bottom:10px;opacity:.3">🔬</div>
+      <div style="font-size:13px;font-weight:600">Selecione um exame</div>
+      <div style="font-size:11px;margin-top:4px;opacity:.6">ou arraste um arquivo aqui</div>
+    </div>
+
+    <!-- Toolbar do topo -->
+    <div id="toolbar" style="display:none">
+      <!-- removida toolbar duplicada — toolbars ficam no topbar -->
+    </div>
+
+    <img id="main-img" crossorigin="anonymous" alt="Exame">
+    <iframe id="pdf-frame" sandbox="allow-scripts allow-same-origin" title="PDF"></iframe>
+    <canvas id="annot-canvas"></canvas>
+    <canvas id="draw-canvas"></canvas>
+
+    <!-- HUD de medição em tempo real -->
+    <div class="measure-hud" id="measure-hud">
+      <div class="mh-row"><span class="mh-k">Distância</span><span class="mh-v" id="hud-dist">—</span></div>
+      <div class="mh-row" id="hud-ang-row" style="display:none"><span class="mh-k">Ângulo</span><span class="mh-v" id="hud-ang">—</span></div>
+      <div class="mh-row" id="hud-area-row" style="display:none"><span class="mh-k">Área</span><span class="mh-v" id="hud-area">—</span></div>
+      <div class="mh-row"><span class="mh-k">Pixels</span><span class="mh-v" id="hud-px">—</span></div>
+    </div>
+
+    <div class="zoom-hud" id="zoom-hud" style="display:none">100%</div>
+
+    <!-- Popup texto -->
+    <div class="txt-popup" id="txt-popup">
+      <textarea id="popup-txt" placeholder="Anotação..." rows="2"></textarea>
+      <div class="btns">
+        <button style="background:rgba(255,255,255,.1);color:#fff" onclick="cancelPop()">✕</button>
+        <button style="background:var(--p);color:#fff" onclick="confirmPop()">✓</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAINEL DIREITO -->
+  <div class="right">
+    <div class="rt">
+      <div class="rt-tab on" onclick="setRTab('laudo',this)">📝 Laudo</div>
+      <div class="rt-tab" onclick="setRTab('medicoes',this)">📐 Medições</div>
+      <div class="rt-tab" onclick="setRTab('notas',this)">💬 Notas</div>
+      <div class="rt-tab" onclick="setRTab('info',this)">ℹ️</div>
+    </div>
+
+    <!-- LAUDO -->
+    <div id="rp-laudo" class="rp on">
+      <div><lbl>Laudo</lbl><textarea class="fi" id="laudo-txt" rows="9" placeholder="Laudar o exame..."></textarea></div>
+      <div><lbl>Laudado por</lbl><input class="fi" id="laudo-prof" placeholder="Dr(a). Nome — CRM"></div>
+      <button class="btn btn-p" onclick="salvarLaudo()">💾 Salvar laudo e medições</button>
+      <div class="share-box" id="share-box" style="display:none">
+        <div style="font-size:11px;font-weight:700;margin-bottom:5px">📤 Compartilhar com paciente</div>
+        <button class="btn btn-c" onclick="gerarLink()">Gerar link</button>
+        <div id="share-url-wrap" style="display:none">
+          <div class="share-url" id="share-url-val" onclick="copiarLink()">clique para copiar</div>
+          <button class="btn btn-g" style="margin-top:5px" onclick="enviarWpp()">📱 WhatsApp</button>
+        </div>
+      </div>
+      <button class="btn btn-g" id="btn-final" onclick="abrirFinalizar()" style="display:none">✅ Finalizar e salvar no prontuário</button>
+    </div>
+
+    <!-- MEDIÇÕES -->
+    <div id="rp-medicoes" class="rp">
+      <div style="font-size:11px;color:var(--t2);margin-bottom:8px;line-height:1.6">
+        Use as ferramentas de medição na imagem. Calibre a régua para obter medidas reais (cm/mm).
+      </div>
+
+      <!-- Presets de janelamento HU para radiologia -->
+      <div>
+        <lbl>Presets de janelamento (HU)</lbl>
+        <div class="wl-preset">
+          <button class="wl-pr" onclick="setWL(400,40)">Tecidos moles</button>
+          <button class="wl-pr" onclick="setWL(1500,-600)">Pulmão</button>
+          <button class="wl-pr" onclick="setWL(3000,600)">Ósseo</button>
+          <button class="wl-pr" onclick="setWL(80,40)">Cérebro</button>
+          <button class="wl-pr" onclick="setWL(200,60)">Abdome</button>
+          <button class="wl-pr" onclick="setWL(350,60)">Mediastino</button>
+          <button class="wl-pr" onclick="setWL(400,700)">Coluna</button>
+        </div>
+      </div>
+
+      <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-top:8px;margin-bottom:5px">Medições desta imagem</div>
+      <div id="meds-lista"><div style="color:var(--t3);font-size:11px;text-align:center;padding:10px">Nenhuma medição</div></div>
+
+      <div style="background:rgba(0,229,255,.04);border:1px solid rgba(0,229,255,.1);border-radius:8px;padding:10px;font-size:11px;color:var(--t2);margin-top:6px;line-height:1.6">
+        <strong style="color:var(--c)">Como usar:</strong><br>
+        📏 Régua → clique e arraste → mostra distância em pixels e em cm/mm (após calibrar)<br>
+        ∠ Ângulo → 3 cliques (início, vértice, fim) → calcula o ângulo<br>
+        ⬟ Área → múltiplos cliques → duplo-clique para fechar o polígono<br>
+        ⭕ ROI → arraste → mostra área da elipse
+      </div>
+    </div>
+
+    <!-- NOTAS -->
+    <div id="rp-notas" class="rp">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:11px;font-weight:700">Anotações (<span id="ann-count">0</span>)</span>
+        <button class="btn-o" style="padding:2px 7px;font-size:10px;border-radius:5px;cursor:pointer;border:1px solid var(--border);background:none;color:var(--t2)" onclick="clearAll()">Limpar</button>
+      </div>
+      <div id="annots-lista"><div style="color:var(--t3);font-size:11px;text-align:center;padding:10px">Clique na imagem para anotar</div></div>
+    </div>
+
+    <!-- INFO -->
+    <div id="rp-info" class="rp">
+      <div id="info-panel"><div style="color:var(--t3);font-size:11px;text-align:center;padding:12px">Selecione um exame</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL UPLOAD -->
+<div id="modal-up" class="modal" style="display:none">
+  <div class="modal-box">
+    <h3>📋 Vincular exame</h3>
+    <div style="display:flex;flex-direction:column;gap:9px">
+      <div><lbl>Paciente</lbl><select class="fi" id="mu-pac"><option value="">— Sem paciente —</option></select></div>
+      <div><lbl>Nome</lbl><input class="fi" id="mu-nome" placeholder="Ex: Raio-X Tórax"></div>
+      <div><lbl>Tipo</lbl><select class="fi" id="mu-tipo"><option value="imagem">Imagem</option><option value="pdf">PDF</option><option value="laboratorio">Laboratório</option><option value="ecografia">Ecografia</option><option value="video">Vídeo</option><option value="outro">Outro</option></select></div>
+      <div><lbl>Origem</lbl><select class="fi" id="mu-origem"><option value="upload_recepcao">Consultório</option><option value="whatsapp">WhatsApp</option></select></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
+        <button class="btn btn-o" style="width:auto;padding:7px 12px" onclick="document.getElementById('modal-up').style.display='none'">Cancelar</button>
+        <button class="btn btn-p" style="width:auto;padding:7px 14px" onclick="confirmarUpload()">✅ Enviar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL FINALIZAR -->
+<div id="modal-final" class="modal" style="display:none">
+  <div class="modal-box">
+    <h3>✅ Finalizar exame</h3>
+    <div id="final-checks" style="display:flex;flex-direction:column;gap:5px;margin-bottom:12px"></div>
+    <div style="margin-bottom:10px"><lbl>Ação</lbl><select class="fi" id="acao-final"><option value="salvar">Salvar (sem compartilhar)</option><option value="compartilhar">Salvar e compartilhar com paciente</option></select></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-o" style="width:auto;padding:7px 12px" onclick="document.getElementById('modal-final').style.display='none'">Cancelar</button>
+      <button class="btn btn-g" style="width:auto;padding:7px 14px" onclick="confirmarFinalizar()">✅ Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SB_URL='https://tcjynyfusqkqtdohnyzq.supabase.co';
+const SB_KEY='sb_publishable_gNJhc4WCS9MnnmDAL2T6Vg_AQ71_Vid';
+const CID='c1d2e3f4-0001-0000-0000-000000000001';
+const sb=supabase.createClient(SB_URL,SB_KEY);
+
+// ─── ESTADO ─────────────────────────────────────────────────
+let cur=null, annotations=[], measurements=[], pendingFiles=[], currentPatientId=null, timelineExames=[];
+let tool='text', color='#a855f7', lineSize=2;
+let zoomLvl=1, panX=0, panY=0, rot=0, flipH=false, flipV=false, inverted=false;
+let isDrawing=false, drawPath=[], startPt=null, panStart=null;
+let popColor='#a855f7', popPos={x:0,y:0};
+// Calibração da régua
+let calibPx=100, calibReal=1, calibUnit='cm';
+// Para ângulo (3 pontos)
+let anglePts=[], angleMode=false;
+// Para área (polígono)
+let areaPts=[], areaMode=false;
+// Window/Level
+let wlW=400, wlL=40;
+// Estado de imagem
+let imgW=0, imgH=0;
+
+// ─── UTILS ──────────────────────────────────────────────────
+const toast=(m,t='ok')=>{const el=document.getElementById('toast');el.textContent=m;el.className='toast '+t;el.style.display='block';setTimeout(()=>el.style.display='none',3000);};
+const setRTab=(id,el)=>{document.querySelectorAll('.rp').forEach(p=>p.classList.remove('on'));document.getElementById('rp-'+id).classList.add('on');document.querySelectorAll('.rt-tab').forEach(t=>t.classList.remove('on'));el?.classList.add('on');};
+const pxToReal=(px)=>{const r=px*(calibReal/calibPx);return r<1?r.toFixed(3)+' '+calibUnit:r.toFixed(2)+' '+calibUnit;};
+const dist=(a,b)=>Math.sqrt(Math.pow(b.x-a.x,2)+Math.pow(b.y-a.y,2));
+const angleDeg=(v1,vertex,v2)=>{const a1=Math.atan2(v1.y-vertex.y,v1.x-vertex.x);const a2=Math.atan2(v2.y-vertex.y,v2.x-vertex.x);return Math.abs((a2-a1)*180/Math.PI)%360;};
+const polyArea=(pts)=>{let a=0;for(let i=0;i<pts.length;i++){const j=(i+1)%pts.length;a+=pts[i].x*pts[j].y;a-=pts[j].x*pts[i].y;}return Math.abs(a/2);};
+function calibrar(){calibPx=+document.getElementById('calib-px').value||100;calibReal=+document.getElementById('calib-real').value||1;calibUnit=document.getElementById('calib-unit').value;toast('✅ Calibração salva: '+calibPx+'px = '+calibReal+calibUnit);}
+
+// ─── INIT ────────────────────────────────────────────────────
+async function init(){
+  await loadPacientes();
+  // NUNCA mostrar todos exames — privacidade!
+  document.getElementById('exame-list').innerHTML='<div style="color:var(--t3);font-size:10px;padding:20px;text-align:center">🔍 Selecione um paciente<br>para ver os exames</div>';
+  document.getElementById('main-img').style.display='none';
+  document.getElementById('empty-view').style.display='flex';
+  const p=new URLSearchParams(location.search);
+  if(p.get('exame'))setTimeout(()=>loadExById(p.get('exame')),600);
+}
+async function loadPacientes(){
+  const{data}=await sb.from('kh_pacientes').select('id,nome').eq('clinica_id',CID).order('nome').limit(200).catch(()=>({data:[]}));
+  const s=document.getElementById('pac-sel');
+  const mu=document.getElementById('mu-pac');
+  (data||[]).forEach(p=>{s.add(new Option(p.nome,p.id));mu.add(new Option(p.nome,p.id));});
+}
+async function loadExames(pacId=null){
+  let q=sb.from('kh_exames').select('*,kh_pacientes(nome,telefone)').eq('clinica_id',CID).order('criado_em',{ascending:false}).limit(60);
+  if(pacId)q=q.eq('paciente_id',pacId);
+  const{data,error}=await q;
+  if(error){document.getElementById('exame-list').innerHTML=`<div style="color:var(--r);font-size:10px;padding:8px;text-align:center">Erro: ${error.message}</div>`;return;}
+  renderLista(data||[]);
+}
+async function filtrarPac(){await loadExames(document.getElementById('pac-sel').value||null);}
+async function loadExById(id){const{data}=await sb.from('kh_exames').select('*,kh_pacientes(nome,telefone)').eq('id',id).single().catch(()=>({data:null}));if(data)openExame(JSON.stringify(data));}
+
+function renderLista(arr){
+  const el=document.getElementById('exame-list');
+  if(!arr.length){el.innerHTML='<div style="color:var(--t3);font-size:10px;padding:10px;text-align:center">Nenhum exame</div>';return;}
+  const icons={imagem:'🖼️',pdf:'📄',video:'🎬',laboratorio:'🧪',ecografia:'🫁',outro:'📁'};
+  el.innerHTML=arr.map(e=>`<div class="ei" id="ei-${e.id}" onclick='openExame(${JSON.stringify(JSON.stringify(e))})'>
+    <div class="ei-thumb-wrap">${e.url&&e.tipo!=='pdf'?`<img class="ei-thumb" src="${thumbUrl(e.url, 200)}" crossorigin="anonymous" loading="lazy" onerror="this.style.display='none'">`:`<span style="font-size:24px;opacity:.5">${icons[e.tipo||'outro']||'📁'}</span>`}</div>
+    <div class="ei-name">${icons[e.tipo||'outro']||'📁'} ${e.nome||'Exame'}</div>
+    <div class="ei-meta"><span>${new Date(e.criado_em).toLocaleDateString('pt-BR')}</span><span>${e.kh_pacientes?.nome||'—'}</span><span class="badge ${e.laudo?'b-ok':'b-pend'}">${e.laudo?'✓ Laudo':'Pendente'}</span>${e.origem==='whatsapp'?'<span class="badge b-ok">📱</span>':''}</div>
+  </div>`).join('');
+}
+
+// ─── ABRIR EXAME ─────────────────────────────────────────────
+function openExame(jsonStr){
+  const e=typeof jsonStr==='string'?JSON.parse(jsonStr):jsonStr;
+  const pacienteId = e.paciente_id;
+  const mudouPaciente = currentPatientId && pacienteId && currentPatientId !== pacienteId;
+
+  // Se mudou de paciente, limpa tudo
+  if(mudouPaciente){
+    timelineExames=[];
+    const ac=document.getElementById('annot-canvas');
+    const dc=document.getElementById('draw-canvas');
+    if(ac){const ctx=ac.getContext('2d');ctx.clearRect(0,0,ac.width,ac.height);ac.style.display='none';}
+    if(dc){const ctx=dc.getContext('2d');ctx.clearRect(0,0,dc.width,dc.height);dc.style.display='none';}
+    document.getElementById('main-img').style.display='none';
+    document.getElementById('pdf-frame').style.display='none';
+    document.getElementById('info-panel').innerHTML='';
+    document.getElementById('timeline-strip').innerHTML='';
+    document.getElementById('timeline-strip').style.display='none';
+  }
+
+  currentPatientId = pacienteId || null;
+
+  // Adiciona à timeline do paciente (evita duplicatas)
+  if(!timelineExames.find(x=>x.id===e.id)){
+    timelineExames.push(e);
+  }
+
+  cur=e;
+  annotations=Array.isArray(e.anotacoes)?[...e.anotacoes]:[];
+  measurements=annotations.filter(a=>a.medida);
+  anglePts=[];areaPts=[];angleMode=false;areaMode=false;
+
+  document.querySelectorAll('.ei').forEach(x=>x.classList.remove('on'));
+  document.getElementById('ei-'+e.id)?.classList.add('on');
+  document.getElementById('empty-view').style.display='none';
+  document.getElementById('err-view').style.display='none';
+  document.getElementById('loader').style.display='none';
+  document.getElementById('hb-laudo').style.display='inline-flex';
+  document.getElementById('hb-share').style.display='inline-flex';
+  document.getElementById('share-box').style.display='block';
+  document.getElementById('btn-final').style.display='flex';
+
+  document.getElementById('laudo-txt').value=e.laudo||'';
+  document.getElementById('laudo-prof').value=e.laudado_por||'';
+
+  const img=document.getElementById('main-img');
+  const pdf=document.getElementById('pdf-frame');
+  img.style.display='none';pdf.style.display='none';
+  document.getElementById('annot-canvas').style.display='none';
+  document.getElementById('draw-canvas').style.display='none';
+  rot=0;flipH=false;flipV=false;inverted=false;
+
+  const origens={upload_recepcao:'📋 Consultório',whatsapp:'📱 WhatsApp',upload_paciente:'👤 Portal Paciente'};
+  renderInfo(e);renderAnnotsList();renderMedsList();
+  renderTimeline(); // atualiza a strip da timeline
+
+  if(!e.url){showErr('Sem imagem disponível','Este exame não possui arquivo.');return;}
+  const isPdf=e.tipo==='pdf'||e.nome?.toLowerCase().endsWith('.pdf');
+
+  if(isPdf){
+    document.getElementById('loader').style.display='flex';
+    pdf.onload=()=>document.getElementById('loader').style.display='none';
+    pdf.src=e.url+'#toolbar=0&navpanes=0';
+    pdf.style.display='block';
+  } else {
+    // Limpa canvas antes de carregar
+    const ac=document.getElementById('annot-canvas');
+    const dc=document.getElementById('draw-canvas');
+    const actx=ac.getContext('2d');const dctx=dc.getContext('2d');
+    actx.clearRect(0,0,ac.width,ac.height);
+    dctx.clearRect(0,0,dc.width,dc.height);
+    img.style.display='none';
+    document.getElementById('loader').style.display='flex';
+    img.onload=()=>{
+      document.getElementById('loader').style.display='none';
+      imgW=img.naturalWidth;imgH=img.naturalHeight;
+      zoomLvl=1;panX=0;panY=0;
+      img.style.display='block';
+      document.getElementById('zoom-hud').style.display='block';
+      ac.style.display='block';dc.style.display='block';
+      resizeCanvases();renderAnnotations();updateZoom();
+    };
+    img.onerror=()=>{document.getElementById('loader').style.display='none';showErr('Erro ao carregar imagem',e.url?.substring(0,60));};
+    const cacheBuster = e.url.includes('?') ? '&_t='+Date.now() : '?_t='+Date.now();
+    img.src=e.url+cacheBuster;img.style.transform='';img.style.filter='';
+  }
+  toast(mudouPaciente?`🆕 Novo paciente — ${e.kh_pacientes?.nome||'—'}`:`📂 ${e.nome}`);
+}
+
+// Renderiza a strip de timeline no topo da área de imagem
+function renderTimeline(){
+  const strip = document.getElementById('timeline-strip');
+  if(!timelineExames.length || timelineExames.length < 2){
+    strip.style.display='none';
+    return;
+  }
+  strip.style.display='flex';
+  const icons={imagem:'🖼️',pdf:'📄',video:'🎬',laboratorio:'🧪',outro:'📁'};
+  strip.innerHTML = timelineExames.map((ex,i)=>{
+    const isActive = ex.id === cur?.id;
+    return `<div class="tl-dot ${isActive?'on':''}" onclick="openExame(${JSON.stringify(JSON.stringify(ex))})" title="${ex.nome||'Exame'} — ${new Date(ex.criado_em).toLocaleDateString('pt-BR')}">
+      <span style="font-size:14px">${icons[ex.tipo||'outro']||'📁'}</span>
+      <span style="font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60px">${ex.nome||'Exame'}</span>
+      <span style="font-size:7px;color:var(--t3)">${new Date(ex.criado_em).toLocaleDateString('pt-BR')}</span>
+      ${ex.laudo?'<span style="font-size:7px;color:var(--g)">✓</span>':'<span style="font-size:7px;color:var(--y)">●</span>'}
+    </div>`;
+  }).join('');
+}
+function showErr(msg,sub=''){const v=document.getElementById('err-view');document.getElementById('err-msg').textContent=msg;document.getElementById('err-sub').textContent=sub;v.style.display='block';}
+function renderInfo(e){
+  document.getElementById('info-panel').innerHTML=`
+    <div class="info-r"><span class="info-k">Nome</span><span class="info-v">${e.nome||'—'}</span></div>
+    <div class="info-r"><span class="info-k">Tipo</span><span class="info-v">${e.tipo||'—'}</span></div>
+    <div class="info-r"><span class="info-k">Tamanho</span><span class="info-v">${e.tamanho_bytes?Math.round(e.tamanho_bytes/1024)+' KB':'—'}</span></div>
+    <div class="info-r"><span class="info-k">Paciente</span><span class="info-v">${e.kh_pacientes?.nome||'—'}</span></div>
+    <div class="info-r"><span class="info-k">Data</span><span class="info-v">${new Date(e.criado_em).toLocaleString('pt-BR')}</span></div>
+    <div class="info-r"><span class="info-k">Laudado</span><span class="info-v" style="color:${e.laudo?'var(--g)':'var(--t3)'}">${e.laudado_por||'Pendente'}</span></div>
+    ${e.url?`<div class="info-r"><span class="info-k">URL</span><a href="${e.url}" target="_blank" style="color:var(--c);font-size:10px">Abrir ↗</a></div>`:''}`;
+}
+
+// ─── CANVAS & FERRAMENTAS ────────────────────────────────────
+function resizeCanvases(){
+  const img=document.getElementById('main-img');
+  if(!img.naturalWidth)return;
+  const r=img.getBoundingClientRect();
+  const wr=document.getElementById('cw').getBoundingClientRect();
+  [document.getElementById('annot-canvas'),document.getElementById('draw-canvas')].forEach(c=>{
+    c.width=r.width;c.height=r.height;
+    c.style.left=(r.left-wr.left)+'px';c.style.top=(r.top-wr.top)+'px';
+    c.style.width=r.width+'px';c.style.height=r.height+'px';
+  });
+}
+window.addEventListener('resize',()=>{if(cur)resizeCanvases();});
+
+function setTool(t){
+  tool=t;
+  if(t==='angle'){angleMode=true;anglePts=[];}else{angleMode=false;}
+  if(t==='area'){areaMode=true;areaPts=[];}else{areaMode=false;}
+  ['text','draw','line','arrow','rect','ellipse','measure','angle','area','hand'].forEach(id=>{
+    const el=document.getElementById('t-'+id);if(el)el.classList.toggle('on',id===t);
+  });
+  const cw=document.getElementById('cw');
+  const dc=document.getElementById('draw-canvas');
+  cw.className='canvas-wrap'+(t==='hand'?' tool-hand':t==='text'?' tool-text':'');
+  dc.style.cursor=t==='hand'?'grab':t==='text'?'text':'crosshair';
+  document.getElementById('measure-hud').style.display='none';
+}
+function setColor(c,btn){color=c;document.querySelectorAll('.cp-dot').forEach(d=>d.classList.remove('on'));btn?.classList.add('on');}
+function changeSize(d){lineSize=Math.min(10,Math.max(1,lineSize+d));document.getElementById('sz-val').textContent=lineSize;}
+function zoom(f){zoomLvl=Math.min(10,Math.max(.1,zoomLvl*f));applyTransform();}
+function resetView(){zoomLvl=1;panX=0;panY=0;rot=0;flipH=false;flipV=false;inverted=false;applyTransform();document.getElementById('main-img').style.filter='';}
+function updateZoom(){document.getElementById('zoom-hud').textContent=Math.round(zoomLvl*100)+'%';}
+function flipImg(dir){if(dir==='h')flipH=!flipH;else flipV=!flipV;applyTransform();}
+function invertImg(){inverted=!inverted;const img=document.getElementById('main-img');img.style.filter=inverted?'invert(100%)':'';}
+function rotateImg(deg){rot=(rot+deg)%360;applyTransform();}
+function applyTransform(){
+  const img=document.getElementById('main-img');
+  const transforms=[`scale(${zoomLvl})`,`translate(${panX}px,${panY}px)`,`rotate(${rot}deg)`];
+  if(flipH)transforms.push('scaleX(-1)');if(flipV)transforms.push('scaleY(-1)');
+  img.style.transform=transforms.join(' ');
+  resizeCanvases();renderAnnotations();updateZoom();
+}
+function applyWL(){wlW=+document.getElementById('wl-w').value;wlL=+document.getElementById('wl-l').value;}
+function setWL(w,l){document.getElementById('wl-w').value=w;document.getElementById('wl-l').value=l;wlW=w;wlL=l;}
+function onWheel(e){e.preventDefault();zoom(e.deltaY<0?1.1:0.91);}
+
+// ─── CLIQUE ──────────────────────────────────────────────────
+function clickCanvas(e){
+  const dc=document.getElementById('draw-canvas');
+  const r=dc.getBoundingClientRect();
+  const pos={x:e.clientX-r.left,y:e.clientY-r.top};
+  // Atualizar coordenadas
+  document.getElementById('cur-coord').textContent=`${Math.round(pos.x)}, ${Math.round(pos.y)} px`;
+
+  if(tool==='text'){
+    popPos=pos;
+    const pop=document.getElementById('txt-popup');
+    const wr=document.getElementById('cw').getBoundingClientRect();
+    let px=e.clientX-wr.left+10,py=e.clientY-wr.top-10;
+    if(px+205>wr.width)px=e.clientX-wr.left-215;
+    pop.style.left=px+'px';pop.style.top=py+'px';pop.style.display='block';
+    document.getElementById('popup-txt').value='';document.getElementById('popup-txt').focus();
+    return;
+  }
+  // Ângulo: acumular 3 pontos
+  if(tool==='angle'){
+    anglePts.push(pos);
+    if(anglePts.length===3){
+      const ang=angleDeg(anglePts[0],anglePts[1],anglePts[2]);
+      const d1=dist(anglePts[0],anglePts[1]),d2=dist(anglePts[1],anglePts[2]);
+      const ann={id:Date.now(),type:'angle',cor:color,size:lineSize,
+        x1:anglePts[0].x,y1:anglePts[0].y,x2:anglePts[2].x,y2:anglePts[2].y,
+        vertices:[...anglePts],medida:ang.toFixed(1)+'°',
+        texto:`Ângulo: ${ang.toFixed(1)}°`};
+      annotations.push(ann);measurements.push(ann);anglePts=[];
+      renderAnnotations();renderAnnotsList();renderMedsList();autoSave();
+    } else {
+      // Preview interim — desenhar pontos intermediários
+      renderAnnotations();const ac=document.getElementById('annot-canvas');const ctx=ac.getContext('2d');
+      ctx.fillStyle=color;anglePts.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,4,0,Math.PI*2);ctx.fill();});
+    }
+    return;
+  }
+  // Área: acumular pontos (fechar com duplo-clique)
+  if(tool==='area'){
+    areaPts.push(pos);
+    renderAnnotations();const ac=document.getElementById('annot-canvas');const ctx=ac.getContext('2d');
+    ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=lineSize;
+    if(areaPts.length>1){ctx.beginPath();ctx.moveTo(areaPts[0].x,areaPts[0].y);areaPts.forEach(p=>ctx.lineTo(p.x,p.y));ctx.stroke();}
+    areaPts.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,3,0,Math.PI*2);ctx.fill();});
+    return;
+  }
+}
+
+// Duplo-clique para fechar área
+document.getElementById('cw').addEventListener('dblclick',e=>{
+  if(tool!=='area'||areaPts.length<3)return;
+  const pxArea=polyArea(areaPts);
+  const realArea=(pxArea*(calibReal/calibPx)*(calibReal/calibPx)).toFixed(2);
+  const ann={id:Date.now(),type:'area',cor:color,size:lineSize,
+    points:[...areaPts],medida:`${pxArea.toFixed(0)}px² ≈${realArea} ${calibUnit}²`,
+    texto:`Área: ${realArea} ${calibUnit}²`};
+  annotations.push(ann);measurements.push(ann);areaPts=[];
+  renderAnnotations();renderAnnotsList();renderMedsList();autoSave();
+});
+
+// ─── DESENHO ─────────────────────────────────────────────────
+function startDraw(e){
+  if(['text','angle','area'].includes(tool))return;
+  if(tool==='hand'){panStart={x:e.clientX-panX*zoomLvl,y:e.clientY-panY*zoomLvl};document.getElementById('cw').classList.add('panning');return;}
+  isDrawing=true;drawPath=[];
+  const r=document.getElementById('draw-canvas').getBoundingClientRect();
+  startPt={x:e.clientX-r.left,y:e.clientY-r.top};drawPath.push({...startPt});
+  // Mostrar HUD de medição
+  if(['measure','rect','ellipse','line'].includes(tool)){document.getElementById('measure-hud').style.display='block';document.getElementById('hud-ang-row').style.display='none';document.getElementById('hud-area-row').style.display='none';}
+}
+function moveDraw(e){
+  const r=document.getElementById('draw-canvas').getBoundingClientRect();
+  const pos={x:e.clientX-r.left,y:e.clientY-r.top};
+  document.getElementById('cur-coord').textContent=`${Math.round(pos.x)}, ${Math.round(pos.y)} px`;
+  if(tool==='hand'&&panStart){panX=(e.clientX-panStart.x)/zoomLvl;panY=(e.clientY-panStart.y)/zoomLvl;applyTransform();return;}
+  if(!isDrawing)return;
+  drawPath.push(pos);
+  if(tool==='draw')previewDraw();else previewShape(startPt,pos);
+  // HUD em tempo real
+  if(['measure','line','rect','ellipse'].includes(tool)){
+    const d=dist(startPt,pos);
+    document.getElementById('hud-dist').textContent=pxToReal(d);
+    document.getElementById('hud-px').textContent=Math.round(d)+' px';
+    if(tool==='rect'||tool==='ellipse'){
+      const w=Math.abs(pos.x-startPt.x),h=Math.abs(pos.y-startPt.y);
+      const a=tool==='ellipse'?Math.PI*w/2*h/2:w*h;
+      document.getElementById('hud-area-row').style.display='flex';
+      document.getElementById('hud-area').textContent=Math.round(a)+' px²';
+    }
+  }
+}
+function endDraw(e){
+  document.getElementById('cw').classList.remove('panning');
+  if(tool==='hand'){panStart=null;return;}
+  if(!isDrawing)return;isDrawing=false;
+  const r=document.getElementById('draw-canvas').getBoundingClientRect();
+  const end={x:e.clientX-r.left,y:e.clientY-r.top};
+  clearPreview();
+  if(dist(startPt,end)<4)return;
+  const ann={id:Date.now(),type:tool,cor:color,size:lineSize};
+  if(tool==='draw'){ann.points=[...drawPath];}
+  else{
+    ann.x1=startPt.x;ann.y1=startPt.y;ann.x2=end.x;ann.y2=end.y;
+    const d=dist(startPt,end);
+    if(['measure','line'].includes(tool))ann.medida=`${pxToReal(d)} (${Math.round(d)}px)`;
+    else if(tool==='rect'){const w=Math.abs(end.x-startPt.x),h=Math.abs(end.y-startPt.y);ann.medida=`${pxToReal(w)} × ${pxToReal(h)}`;}
+    else if(tool==='ellipse'){const rx=Math.abs(end.x-startPt.x)/2,ry=Math.abs(end.y-startPt.y)/2;ann.medida=`∅ ${pxToReal(rx*2)} × ${pxToReal(ry*2)}`;}
+    if(ann.medida){ann.texto=ann.medida;measurements.push(ann);}
+  }
+  annotations.push(ann);
+  renderAnnotations();renderAnnotsList();renderMedsList();autoSave();
+}
+function tStart(e){e.preventDefault();startDraw(e.touches[0]);}
+function tMove(e){e.preventDefault();moveDraw(e.touches[0]);}
+function tEnd(e){e.preventDefault();endDraw(e.changedTouches[0]);}
+function clearPreview(){const dc=document.getElementById('draw-canvas');dc.getContext('2d').clearRect(0,0,dc.width,dc.height);}
+function previewDraw(){const dc=document.getElementById('draw-canvas');const ctx=dc.getContext('2d');ctx.clearRect(0,0,dc.width,dc.height);if(drawPath.length<2)return;ctx.strokeStyle=color;ctx.lineWidth=lineSize;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(drawPath[0].x,drawPath[0].y);drawPath.forEach(p=>ctx.lineTo(p.x,p.y));ctx.stroke();}
+function previewShape(s,e){const dc=document.getElementById('draw-canvas');const ctx=dc.getContext('2d');ctx.clearRect(0,0,dc.width,dc.height);ctx.strokeStyle=color;ctx.lineWidth=lineSize;ctx.lineCap='round';drawShapeOnCtx(ctx,tool,s,e);}
+
+function drawShapeOnCtx(ctx,t,s,e){
+  const angle=Math.atan2(e.y-s.y,e.x-s.x);
+  switch(t){
+    case'line':ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(e.x,e.y);ctx.stroke();break;
+    case'arrow':ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(e.x,e.y);ctx.stroke();
+      const al=14;ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(e.x,e.y);ctx.lineTo(e.x-al*Math.cos(angle-.4),e.y-al*Math.sin(angle-.4));ctx.lineTo(e.x-al*Math.cos(angle+.4),e.y-al*Math.sin(angle+.4));ctx.closePath();ctx.fill();break;
+    case'rect':ctx.globalAlpha=.12;ctx.fillStyle=color;ctx.fillRect(s.x,s.y,e.x-s.x,e.y-s.y);ctx.globalAlpha=1;ctx.strokeRect(s.x,s.y,e.x-s.x,e.y-s.y);break;
+    case'ellipse':ctx.beginPath();ctx.ellipse(s.x+(e.x-s.x)/2,s.y+(e.y-s.y)/2,Math.abs(e.x-s.x)/2,Math.abs(e.y-s.y)/2,0,0,Math.PI*2);ctx.globalAlpha=.1;ctx.fillStyle=color;ctx.fill();ctx.globalAlpha=1;ctx.stroke();break;
+    case'measure':
+      ctx.setLineDash([6,4]);ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(e.x,e.y);ctx.stroke();ctx.setLineDash([]);
+      [[s.x,s.y],[e.x,e.y]].forEach(([px,py])=>{ctx.beginPath();ctx.moveTo(px-8*Math.sin(angle),py+8*Math.cos(angle));ctx.lineTo(px+8*Math.sin(angle),py-8*Math.cos(angle));ctx.stroke();});
+      break;
+  }
+}
+
+function renderAnnotations(){
+  const ac=document.getElementById('annot-canvas');const ctx=ac.getContext('2d');
+  ctx.clearRect(0,0,ac.width,ac.height);
+  annotations.forEach(a=>{
+    ctx.strokeStyle=a.cor||'#a855f7';ctx.fillStyle=a.cor||'#a855f7';ctx.lineWidth=a.size||2;ctx.lineCap='round';ctx.lineJoin='round';
+    if(a.type==='text'&&a.x!=null){
+      ctx.font='bold 12px sans-serif';
+      const txt=(a.texto||'').substring(0,28);const tw=ctx.measureText(txt).width;
+      const pw=tw+20,ph=22;const bx=Math.min(a.x,ac.width-pw-4),by=Math.max(a.y-ph-8,4);
+      ctx.globalAlpha=.9;const r=5;ctx.beginPath();ctx.moveTo(bx+r,by);ctx.lineTo(bx+pw-r,by);ctx.arcTo(bx+pw,by,bx+pw,by+r,r);ctx.lineTo(bx+pw,by+ph-r);ctx.arcTo(bx+pw,by+ph,bx+pw-r,by+ph,r);ctx.lineTo(bx+r,by+ph);ctx.arcTo(bx,by+ph,bx,by+ph-r,r);ctx.lineTo(bx,by+r);ctx.arcTo(bx,by,bx+r,by,r);ctx.closePath();ctx.fill();
+      ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(bx+pw/2-4,by+ph);ctx.lineTo(bx+pw/2+4,by+ph);ctx.closePath();ctx.fill();
+      ctx.globalAlpha=1;ctx.fillStyle='#fff';ctx.fillText(txt,bx+10,by+15);
+    } else if(a.type==='draw'&&a.points?.length>1){
+      ctx.beginPath();ctx.moveTo(a.points[0].x,a.points[0].y);a.points.forEach(p=>ctx.lineTo(p.x,p.y));ctx.stroke();
+    } else if(a.type==='area'&&a.points?.length>2){
+      ctx.globalAlpha=.12;ctx.beginPath();ctx.moveTo(a.points[0].x,a.points[0].y);a.points.forEach(p=>ctx.lineTo(p.x,p.y));ctx.closePath();ctx.fill();ctx.globalAlpha=1;ctx.stroke();
+      if(a.medida){const cx=a.points.reduce((s,p)=>s+p.x,0)/a.points.length,cy=a.points.reduce((s,p)=>s+p.y,0)/a.points.length;ctx.font='bold 11px sans-serif';ctx.fillStyle='#fff';ctx.shadowColor=a.cor;ctx.shadowBlur=4;ctx.fillText(a.medida,cx-a.medida.length*3,cy);ctx.shadowBlur=0;}
+    } else if(a.type==='angle'&&a.vertices){
+      const[v1,vertex,v2]=a.vertices;
+      ctx.beginPath();ctx.moveTo(v1.x,v1.y);ctx.lineTo(vertex.x,vertex.y);ctx.lineTo(v2.x,v2.y);ctx.stroke();
+      [v1,vertex,v2].forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,4,0,Math.PI*2);ctx.fill();});
+      if(a.medida){ctx.font='bold 12px sans-serif';ctx.fillStyle='#fff';ctx.shadowColor=a.cor;ctx.shadowBlur=4;ctx.fillText(a.medida,vertex.x+10,vertex.y-8);ctx.shadowBlur=0;}
+    } else if(a.x1!=null){
+      const s={x:a.x1,y:a.y1},e={x:a.x2,y:a.y2};
+      drawShapeOnCtx(ctx,a.type,s,e);
+      if(a.medida){const mx=(s.x+e.x)/2,my=(s.y+e.y)/2-8;ctx.font='bold 11px sans-serif';ctx.fillStyle='#fff';ctx.shadowColor=a.cor||'#a855f7';ctx.shadowBlur=5;ctx.fillText(a.medida,mx,my);ctx.shadowBlur=0;}
+    }
+  });
+}
+
+function renderAnnotsList(){
+  const c=document.getElementById('ann-count');if(c)c.textContent=annotations.length;
+  const lista=document.getElementById('annots-lista');
+  const icons={text:'💬',draw:'✏️',line:'╱',arrow:'➤',rect:'▭',ellipse:'⭕',measure:'📏',angle:'∠',area:'⬟'};
+  if(!annotations.length){lista.innerHTML='<div style="color:var(--t3);font-size:11px;text-align:center;padding:10px">Clique na imagem para anotar</div>';return;}
+  lista.innerHTML=annotations.map(a=>`<div class="annot-row"><div class="annot-dot" style="background:${a.cor||'#a855f7'}"></div><div class="annot-txt">${icons[a.type]||'•'} ${a.texto||a.medida||a.type}</div><button class="annot-del" onclick="removeAnnot(${a.id})">×</button></div>`).join('');
+}
+
+function renderMedsList(){
+  const lista=document.getElementById('meds-lista');
+  const meds=annotations.filter(a=>a.medida);
+  if(!meds.length){lista.innerHTML='<div style="color:var(--t3);font-size:11px;text-align:center;padding:10px">Nenhuma medição</div>';return;}
+  const icons={measure:'📏',rect:'▭',ellipse:'⭕',line:'╱',angle:'∠',area:'⬟'};
+  lista.innerHTML=meds.map(m=>`<div class="med-row"><span class="med-ico">${icons[m.type]||'📐'}</span><div class="med-label">${m.texto||m.type}</div><span class="med-val">${m.medida}</span><button class="med-del" onclick="removeAnnot(${m.id})">×</button></div>`).join('');
+}
+
+// Popup texto
+function confirmPop(){const t=document.getElementById('popup-txt').value.trim();if(!t){cancelPop();return;}annotations.push({id:Date.now(),type:'text',x:popPos.x,y:popPos.y,texto:t,cor:color});cancelPop();renderAnnotations();renderAnnotsList();autoSave();}
+function cancelPop(){document.getElementById('txt-popup').style.display='none';}
+document.getElementById('popup-txt').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();confirmPop();}if(e.key==='Escape')cancelPop();});
+function removeAnnot(id){annotations=annotations.filter(a=>a.id!==id);measurements=measurements.filter(a=>a.id!==id);renderAnnotations();renderAnnotsList();renderMedsList();autoSave();}
+function undo(){if(annotations.length){const last=annotations.pop();measurements=measurements.filter(m=>m.id!==last.id);renderAnnotations();renderAnnotsList();renderMedsList();autoSave();}}
+function clearAll(){if(annotations.length&&!confirm('Limpar todas as anotações?'))return;annotations=[];measurements=[];renderAnnotations();renderAnnotsList();renderMedsList();autoSave();}
+const autoSave=async()=>{if(cur)await sb.from('kh_exames').update({anotacoes:annotations}).eq('id',cur.id).catch(()=>{});};
+
+// ─── UPLOAD ──────────────────────────────────────────────────
+function drop(e){e.preventDefault();document.getElementById('fi').parentElement.querySelector('.uzone').classList.remove('drag');upload({files:e.dataTransfer.files});}
+async function upload(input){const files=Array.from(input.files||[]);if(!files.length)return;pendingFiles=files;document.getElementById('mu-nome').value=files[0].name.replace(/\.[^.]+$/,'');document.getElementById('modal-up').style.display='flex';}
+async function confirmarUpload(){
+  const pacId=document.getElementById('mu-pac').value;
+  const nome=document.getElementById('mu-nome').value||pendingFiles[0]?.name||'Exame';
+  const tipo=document.getElementById('mu-tipo').value;
+  const origem=document.getElementById('mu-origem').value;
+  document.getElementById('modal-up').style.display='none';
+  for(let i=0;i<pendingFiles.length;i++){
+    const file=pendingFiles[i];
+    const path=`${CID}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;
+    const{data:up,error:upErr}=await sb.storage.from('exames').upload(path,file,{contentType:file.type||'application/octet-stream',upsert:false});
+    if(upErr){toast('Erro upload: '+upErr.message,'err');continue;}
+    const{data:ud}=sb.storage.from('exames').getPublicUrl(up.path);
+    await sb.from('kh_exames').insert({clinica_id:CID,paciente_id:pacId||null,nome:pendingFiles.length>1&&i>0?`${nome} (${i+1})`:nome,tipo,url:ud?.publicUrl||'',tamanho_bytes:file.size,anotacoes:[],marcacoes:[],origem});
+    toast(`✅ ${file.name} enviado!`);
+  }
+  pendingFiles=[];
+  await loadExames(document.getElementById('pac-sel').value||null);
+}
+
+// ─── LAUDO & SHARE ───────────────────────────────────────────
+async function salvarLaudo(){
+  if(!cur){toast('Selecione um exame','err');return;}
+  const laudoTxt = document.getElementById('laudo-txt').value;
+  const laudadoPor = document.getElementById('laudo-prof').value;
+  const laudadoEm = new Date().toISOString();
+  const{error}=await sb.from('kh_exames').update({laudo:laudoTxt,laudado_por:laudadoPor,laudado_em:laudadoEm,anotacoes:annotations}).eq('id',cur.id);
+  if(error){toast('Erro: '+error.message,'err');return;}
+  // Atualiza o objeto cur imediatamente para refletir na UI
+  cur.laudo = laudoTxt;
+  cur.laudado_por = laudadoPor;
+  cur.laudado_em = laudadoEm;
+  cur.anotacoes = [...annotations];
+  renderInfo(cur); // atualiza painel de info (badge "Pendente" → "✓ Laudo")
+  renderTimeline(); // atualiza badge na timeline strip
+  toast('✅ Laudo e medições salvos!');
+  await loadExames(document.getElementById('pac-sel').value||null);
+}
+async function gerarLink(){
+  if(!cur)return;
+  await sb.from('kh_exames').update({compartilhado_paciente:true,compartilhado_em:new Date().toISOString()}).eq('id',cur.id);
+  const link=`https://saude.kronexa.com.br/portal-paciente.html?exame=${cur.id}`;
+  document.getElementById('share-url-val').textContent=link;document.getElementById('share-url-wrap').style.display='block';toast('✅ Link gerado!');
+}
+async function compartilhar(){setRTab('laudo',document.querySelectorAll('.rt-tab')[0]);await gerarLink();}
+function copiarLink(){navigator.clipboard.writeText(document.getElementById('share-url-val').textContent).then(()=>toast('Link copiado!'));}
+function enviarWpp(){if(!cur?.kh_pacientes?.telefone){toast('Sem telefone','err');return;}const tel='55'+cur.kh_pacientes.telefone.replace(/\D/g,'');const link=`https://saude.kronexa.com.br/portal-paciente.html?exame=${cur.id}`;window.open(`https://wa.me/${tel}?text=${encodeURIComponent(`Seu exame "${cur.nome}" está disponível:\n${link}`)}`);}
+
+// ─── PRONTUÁRIO & FINALIZAR ──────────────────────────────────
+async function loadProntuarios(pacId){
+  if(!pacId)return;
+  const{data}=await sb.from('kh_prontuarios').select('id,data_atendimento,diagnostico').eq('paciente_id',pacId).order('data_atendimento',{ascending:false}).limit(15).catch(()=>({data:[]}));
+  const sel=document.getElementById('pront-select');if(!sel)return;
+  sel.innerHTML='<option value="">Selecionar...</option>';
+  (data||[]).forEach(p=>{sel.add(new Option(`${new Date(p.data_atendimento).toLocaleDateString('pt-BR')} — ${p.diagnostico||'Consulta'}`,p.id));});
+}
+function abrirFinalizar(){
+  if(!cur){toast('Selecione um exame','err');return;}
+  const checks=[
+    {label:'Laudo',ok:!!document.getElementById('laudo-txt').value},
+    {label:'Laudado por',ok:!!document.getElementById('laudo-prof').value},
+    {label:'Anotações/Medições',ok:annotations.length>0},
+  ];
+  document.getElementById('final-checks').innerHTML=checks.map(c=>`<div style="display:flex;align-items:center;gap:8px;font-size:12px;padding:5px 8px;border-radius:6px;background:rgba(0,0,0,.02);color:${c.ok?'var(--g)':'var(--o)'}">${c.ok?'✅':'⚠️'} ${c.label}</div>`).join('');
+  document.getElementById('modal-final').style.display='flex';
+}
+async function confirmarFinalizar(){
+  document.getElementById('modal-final').style.display='none';
+  const acao=document.getElementById('acao-final').value;
+  const upd={laudo:document.getElementById('laudo-txt').value,laudado_por:document.getElementById('laudo-prof').value,laudado_em:new Date().toISOString(),anotacoes:annotations};
+  if(acao==='compartilhar'){upd.compartilhado_paciente=true;upd.compartilhado_em=new Date().toISOString();}
+  await sb.from('kh_exames').update(upd).eq('id',cur.id);
+  if(acao==='compartilhar')toast('✅ Salvo e compartilhado!');else toast('✅ Exame finalizado!');
+  // Reset
+  cur=null;annotations=[];measurements=[];currentPatientId=null;timelineExames=[];
+  document.getElementById('empty-view').style.display='flex';
+  document.getElementById('main-img').style.display='none';document.getElementById('pdf-frame').style.display='none';
+  document.getElementById('annot-canvas').style.display='none';document.getElementById('draw-canvas').style.display='none';
+  document.getElementById('hb-laudo').style.display='none';document.getElementById('hb-share').style.display='none';
+  document.getElementById('share-box').style.display='none';document.getElementById('btn-final').style.display='none';
+  document.getElementById('zoom-hud').style.display='none';
+  document.getElementById('timeline-strip').style.display='none';
+  document.getElementById('timeline-strip').innerHTML='';
+  renderAnnotsList();renderMedsList();
+  await loadExames(document.getElementById('pac-sel').value||null);
+}
+
+// Teclado
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
+  if(e.code==='Space'){e.preventDefault();setTool('hand');}
+  if(e.key==='t')setTool('text');if(e.key==='d')setTool('draw');if(e.key==='m')setTool('measure');
+  if(e.key==='l')setTool('line');if(e.key==='a')setTool('arrow');if(e.key==='r')setTool('rect');
+  if(e.key==='e')setTool('ellipse');if(e.key==='g')setTool('angle');if(e.key==='p')setTool('area');
+  if(e.key==='+'||e.key==='=')zoom(1.2);if(e.key==='-')zoom(0.8);if(e.key==='0')resetView();
+  if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();undo();}
+});
+
+init();
+
+// ─── MODO 3D (Three.js) ──────────────────────────────────────────
+let scene3D,camera3D,renderer3D,controls3D,volumeMesh,surgTool='entry';
+let entryPoint=null,targetPoint=null,segmentationData=null;
+let currentView='2d';
+
+function init3D(){
+  if(scene3D)return;
+  const container=document.getElementById('view-3d');
+  const w=container.clientWidth||800, h=container.clientHeight||600;
+  scene3D=new THREE.Scene(); scene3D.background=new THREE.Color(0x111122);
+  camera3D=new THREE.PerspectiveCamera(45,w/h,0.1,10); camera3D.position.set(1.5,1.5,2.5);
+  camera3D.lookAt(0,0,0);
+  renderer3D=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
+  renderer3D.setSize(w,h); renderer3D.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  container.appendChild(renderer3D.domElement);
+  try{
+    controls3D=new THREE.OrbitControls(camera3D,renderer3D.domElement);
+    controls3D.enableDamping=true; controls3D.dampingFactor=0.1;
+  }catch(e){console.log('OrbitControls not available, using static view');}
+  // Iluminação forte
+  scene3D.add(new THREE.AmbientLight(0x666688,3));
+  const dl=new THREE.DirectionalLight(0xffffff,3); dl.position.set(1,1,1); scene3D.add(dl);
+  const dl2=new THREE.DirectionalLight(0x8888ff,2); dl2.position.set(-1,-1,-1); scene3D.add(dl2);
+  // Grid de referência
+  const grid=new THREE.GridHelper(2,20,0x444466,0x222244); grid.position.y=-0.8; scene3D.add(grid);
+  // Eixos coloridos
+  addAxis(0xff0000,new THREE.Vector3(1,0,0)); // X - vermelho
+  addAxis(0x00ff00,new THREE.Vector3(0,1,0)); // Y - verde
+  addAxis(0x0000ff,new THREE.Vector3(0,0,1)); // Z - azul
+  animate3D();
+}
+
+function addAxis(color,dir){
+  const geo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0),dir.clone().multiplyScalar(1.5)]);
+  scene3D.add(new THREE.Line(geo,new THREE.LineBasicMaterial({color})));
+}
+
+function animate3D(){
+  if(!renderer3D)return;
+  requestAnimationFrame(animate3D);
+  if(controls3D)controls3D.update();
+  renderer3D.render(scene3D,camera3D);
+}
+
+function setView(mode){
+  currentView=mode;
+  document.querySelectorAll('.vt-btn').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('.vt-btn').forEach(b=>{if(b.textContent.includes(mode.toUpperCase()))b.classList.add('on')});
+  const v3d=document.getElementById('view-3d');
+  const st=document.getElementById('surg-tools');
+  const sl=document.getElementById('seg-legend');
+  const img=document.getElementById('main-img');
+  const ac=document.getElementById('annot-canvas');
+  const dc=document.getElementById('draw-canvas');
+
+  if(mode==='3d'){
+    v3d.style.display='block'; st.style.display='flex'; sl.style.display=segmentationData?'block':'none';
+    img.style.display='none'; ac.style.display='none'; dc.style.display='none';
+    document.getElementById('loader').style.display='none';
+    document.getElementById('empty-view').style.display='none';
+    if(!scene3D)init3D();
+    buildVolumeFromImage();
+  }else{
+    v3d.style.display='none'; st.style.display='none'; sl.style.display='none';
+    img.style.display='block'; ac.style.display='block'; dc.style.display='block';
+  }
+}
+
+function buildVolumeFromImage(){
+  if(!scene3D||!cur?.url)return;
+  // Remover geometria anterior
+  scene3D.children.filter(c=>c.userData?.isVolume).forEach(c=>scene3D.remove(c));
+  // Carregar textura da imagem
+  const loader=new THREE.TextureLoader();
+  loader.crossOrigin='anonymous';
+  loader.load(cur.url,
+    // Sucesso
+    function(texture){
+      const aspect=texture.image?texture.image.width/texture.image.height:1;
+      const w=aspect>1?1.4:1.4/aspect;
+      const h=aspect>1?1.4/aspect:1.4;
+      const geo=new THREE.BoxGeometry(w,h,w*0.3);
+      const mat=new THREE.MeshPhongMaterial({map:texture,color:0xffffff,shininess:30});
+      const box=new THREE.Mesh(geo,mat);
+      box.userData={isVolume:true}; box.name='volume'; box.castShadow=true;
+      scene3D.add(box); volumeMesh=box;
+      // Wireframe overlays para mostrar profundidade
+      const edgeGeo=new THREE.EdgesGeometry(geo);
+      const edgeLine=new THREE.LineSegments(edgeGeo,new THREE.LineBasicMaterial({color:0x6C3FE8,transparent:true,opacity:0.4}));
+      edgeLine.userData={isVolume:true}; scene3D.add(edgeLine);
+    },
+    // Progresso
+    function(xhr){document.getElementById('loader').style.display='flex';},
+    // Erro
+    function(err){
+      console.error('Texture load error:',err);
+      // Fallback: criar volume com cor sólida
+      const geo=new THREE.BoxGeometry(1,1,0.4);
+      const mat=new THREE.MeshPhongMaterial({color:0x6C3FE8,transparent:true,opacity:0.6,wireframe:false});
+      const box=new THREE.Mesh(geo,mat); box.userData={isVolume:true}; scene3D.add(box);
+      // Wireframe
+      const wGeo=new THREE.EdgesGeometry(geo);
+      scene3D.add(new THREE.LineSegments(wGeo,new THREE.LineBasicMaterial({color:0x00E5FF,transparent:true,opacity:0.6})).userData={isVolume:true});
+    }
+  );
+}
+
+// ─── Ferramentas Cirúrgicas ──────────────────────────────────────
+function setSurgTool(tool){
+  surgTool=tool;
+  document.querySelectorAll('.st-btn').forEach(b=>b.classList.remove('on'));
+  if(event?.target)event.target.classList.add('on');
+  const nomes={entry:'Ponto de Entrada',target:'Ponto Alvo',trajectory:'Trajetoria',clip:'Plano de Corte'};
+  toast('🔧 '+ (nomes[tool]||tool));
+}
+
+function reset3DView(){
+  entryPoint=null; targetPoint=null; segmentationData=null;
+  document.getElementById('seg-legend').style.display='none';
+  document.querySelectorAll('.st-btn').forEach(b=>b.classList.remove('on'));
+  camera3D.position.set(1.5,1.5,2.5); camera3D.lookAt(0,0,0);
+  if(controls3D)controls3D.target.set(0,0,0);
+  // Limpar segmentação
+  scene3D.children.filter(c=>c.name?.startsWith('seg-')||c.name==='traj-line').forEach(c=>scene3D.remove(c));
+  toast('🔄 Vista 3D resetada');
+}
+
+// ─── IA Segmentação ──────────────────────────────────────────────
+async function segmentarIA(){
+  if(!cur?.url){toast('Abra uma imagem primeiro',true);return;}
+  toast('🤖 Analisando com IA...');
+  document.getElementById('seg-legend').style.display='block';
+  try{
+    const geminiKey=localStorage.getItem('KRONEXA_GEMINI_KEY')||localStorage.getItem('KRONEXA_GROQ_KEY')||'';
+    const prompt=`Medical image analysis. Identify structures and return ONLY JSON: {"ossos":[{"nome":"...","bbox":{"x":0,"y":0,"w":0,"h":0}}],"vasos":[{"nome":"...","bbox":{"x":0,"y":0,"w":0,"h":0}}],"orgaos":[{"nome":"...","bbox":{"x":0,"y":0,"w":0,"h":0}}],"anomalias":[{"nome":"...","bbox":{"x":0,"y":0,"w":0,"h":0},"severidade":"..."}],"trajetoria_sugerida":{"ponto_entrada":{"x":0,"y":0,"z":-0.5},"ponto_alvo":{"x":0,"y":0,"z":0.3},"profundidade_mm":0,"angulo_graus":0,"estruturas_evitar":[]}}`;
+    const imgResp=await fetch(cur.url); const blob=await imgResp.blob();
+    const reader=new FileReader(); reader.readAsDataURL(blob);
+    const base64img=await new Promise(r=>{reader.onload=()=>r(reader.result.split(',')[1])});
+    const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{inline_data:{mime_type:blob.type||'image/jpeg',data:base64img}},{text:prompt}]}],generationConfig:{temperature:0.1,maxOutputTokens:2000}})});
+    const d=await r.json();
+    if(d.error){toast('Erro IA: '+d.error.message,true);return;}
+    const txt=d.candidates?.[0]?.content?.parts?.[0]?.text||'{}';
+    segmentationData=JSON.parse(txt.replace(/```json|```/g,'').trim());
+    renderSegmentationOverlay();
+    toast('✅ Segmentação IA concluída!');
+  }catch(e){toast('Erro IA: '+e.message,true); console.error(e);}
+}
+
+function renderSegmentationOverlay(){
+  if(!scene3D||!segmentationData)return;
+  scene3D.children.filter(c=>c.name?.startsWith('seg-')||c.name==='traj-line').forEach(c=>scene3D.remove(c));
+  const cores={vasos:0xff6b6b,ossos:0xffd93d,orgaos:0x6bcb77,anomalias:0x4d96ff};
+  Object.entries(cores).forEach(([tipo,cor])=>{
+    (segmentationData[tipo]||[]).forEach((s,i)=>{
+      const geo=new THREE.SphereGeometry(0.04,8,8);
+      const sphere=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:cor,transparent:true,opacity:0.8}));
+      sphere.position.set((s.bbox?.x||0)/600-0.5,-(s.bbox?.y||0)/600+0.5,(i-2)*0.04);
+      sphere.name='seg-'+tipo; sphere.userData={tipo,nome:s.nome};
+      scene3D.add(sphere);
+    });
+  });
+  if(segmentationData.trajetoria_sugerida){
+    const t=segmentationData.trajetoria_sugerida;
+    entryPoint={x:(t.ponto_entrada?.x||0)/500-0.5,y:-(t.ponto_entrada?.y||0)/500+0.5,z:t.ponto_entrada?.z||-0.5};
+    targetPoint={x:(t.ponto_alvo?.x||0)/500-0.5,y:-(t.ponto_alvo?.y||0)/500+0.5,z:t.ponto_alvo?.z||0.3};
+    renderTrajectory();
+    toast(`📏 Trajetoria IA: ${t.profundidade_mm||'?'}mm`);
+  }
+}
+
+function renderTrajectory(){
+  if(!scene3D||!entryPoint||!targetPoint)return;
+  scene3D.children.filter(c=>c.name==='traj-line'||c.name?.startsWith('traj-')).forEach(c=>scene3D.remove(c));
+  const ep=new THREE.Vector3(entryPoint.x,entryPoint.y,entryPoint.z);
+  const tp=new THREE.Vector3(targetPoint.x,targetPoint.y,targetPoint.z);
+  const geo=new THREE.BufferGeometry().setFromPoints([ep,tp]);
+  scene3D.add(new THREE.Line(geo,new THREE.LineBasicMaterial({color:0x00ff00})).name='traj-line');
+  [{p:ep,c:0x00ff00,n:'entry'},{p:tp,c:0xff0000,n:'target'}].forEach(({p,c,n})=>{
+    const sg=new THREE.SphereGeometry(0.05,12,12);
+    const m=new THREE.Mesh(sg,new THREE.MeshBasicMaterial({color:c}));
+    m.position.copy(p); m.name='traj-'+n; scene3D.add(m);
+  });
+  const dist=ep.distanceTo(tp);
+  document.getElementById('seg-legend').innerHTML+='<div style="margin-top:4px;color:#0f0">📏 Trajetória: '+(dist*100).toFixed(1)+'mm</div>';
+}
+
+// Wrapper: mostrar toggle 3D ao abrir imagem + limpar histórico cross-patient
+const origOpenExame=openExame;
+openExame=function(e){
+  origOpenExame(e);
+  const ex=e&&typeof e==='string'?JSON.parse(e):e;
+  document.getElementById('view-toggle').style.display=ex?.url?'flex':'none';
+  if(currentView==='3d'){setView('2d');setTimeout(()=>setView('3d'),100);}
+};
+
+// Otimização de imagens - usar transformação nativa Supabase + cache
+function thumbUrl(url, w=400) {
+  if (!url) return '';
+  if (url.includes('supabase.co/storage')) {
+    try {
+      // Usar parâmetros de transformação nativos do Supabase Storage
+      const sep = url.includes('?') ? '&' : '?';
+      // width, quality, e cache-buster com timestamp do dia (evita cache excessivo mas reaproveita no mesmo dia)
+      const cacheKey = new Date().toISOString().slice(0,10).replace(/-/g,'');
+      return `${url}${sep}width=${w}&quality=75&cache=${cacheKey}`;
+    } catch(e) { return url; }
+  }
+  return url;
+}
+</script>
+</body>
+</html>

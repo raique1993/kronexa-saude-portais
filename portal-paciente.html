@@ -1,0 +1,735 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Meus Exames — Kronexa</title>
+<script>if(location.protocol!=="https:"&&location.hostname!=="localhost")location.replace("https://"+location.host+location.pathname+location.search);</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{--p:#0D9488;--c:#0284C7;--g:#059669;--r:#DC2626;--o:#D97706;--bg:#F8FAFC;--bg2:#FFFFFF;--bg3:#F1F5F9;--t1:#0F172A;--t2:#475569;--t3:#94A3B8;--b:#E2E8F0}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--t1);font-family:-apple-system,'SF Pro Text',sans-serif;display:grid;grid-template-rows:56px 1fr}
+
+/* ── HEADER ── */
+.hd{background:var(--bg2);border-bottom:1px solid var(--b);display:flex;align-items:center;padding:0 16px;gap:12px}
+.logo{font-size:14px;font-weight:900}.logo span{color:var(--p)}
+.hd-nav{display:flex;gap:2px;margin-left:20px}
+.hd-nav button{padding:8px 16px;border:none;background:transparent;color:var(--t2);font-size:12px;font-weight:600;cursor:pointer;border-radius:8px;transition:.15s}
+.hd-nav button:hover{background:rgba(13,148,136,.12);color:var(--t1)}
+.hd-nav button.on{background:rgba(13,148,136,.22);color:var(--p)}
+.hd-right{margin-left:auto;display:flex;gap:8px;align-items:center}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--p);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;cursor:pointer}
+.notif-badge{position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:var(--r);font-size:9px;display:flex;align-items:center;justify-content:center;font-weight:800}
+.notif-wrap{position:relative;cursor:pointer;font-size:20px}
+
+/* ── LAYOUT ── */
+.layout{display:grid;grid-template-columns:280px 1fr;overflow:hidden;height:100%}
+
+/* ── SIDEBAR ── */
+.sidebar{background:var(--bg2);border-right:1px solid var(--b);overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px}
+.patient-card{background:linear-gradient(135deg,rgba(13,148,136,.18),rgba(0,229,255,.08));border:1px solid rgba(13,148,136,.25);border-radius:12px;padding:14px;text-align:center}
+.patient-avatar{width:60px;height:60px;border-radius:50%;background:var(--p);margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:28px}
+.patient-name{font-size:15px;font-weight:700;margin-bottom:2px}
+.patient-id{font-size:9px;color:var(--t3)}
+.quick-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.qs-card{background:rgba(0,0,0,.04);border-radius:8px;padding:10px;text-align:center}
+.qs-card .num{font-size:22px;font-weight:900;color:var(--c)}
+.qs-card .lbl{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px}
+.qs-card .num.warn{color:var(--o)}
+.qs-card .num.good{color:var(--g)}
+
+.exam-filter{display:flex;gap:4px}
+.exam-filter button{flex:1;padding:7px 4px;border:1px solid var(--b);border-radius:6px;background:transparent;color:var(--t2);cursor:pointer;font-size:10px;font-weight:600;transition:.12s}
+.exam-filter button:hover{border-color:var(--p);color:var(--t1)}
+.exam-filter button.on{background:var(--p);border-color:var(--p);color:#fff}
+
+.exam-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:4px}
+.ei{padding:10px 12px;border-radius:10px;cursor:pointer;border:1px solid transparent;transition:.15s;background:rgba(0,0,0,.03)}
+.ei:hover{border-color:rgba(13,148,136,.35);background:rgba(13,148,136,.08)}
+.ei.on{border-color:rgba(13,148,136,.5);background:rgba(13,148,136,.15);box-shadow:0 0 12px rgba(13,148,136,.10)}
+.ei-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px}
+.ei-type{font-size:9px;font-weight:800;padding:2px 6px;border-radius:100px;background:rgba(13,148,136,.18);color:var(--p)}
+.ei-type.landed{background:rgba(34,197,94,.12);color:var(--g)}
+.ei-type.pending{background:rgba(234,179,8,.12);color:var(--o)}
+.ei-name{font-size:12px;font-weight:600;margin-bottom:3px}
+.ei-date{font-size:9px;color:var(--t3)}
+.ei-preview{width:100%;height:40px;background:#F1F5F9;border-radius:6px;overflow:hidden;margin-top:5px;display:flex;align-items:center;justify-content:center}
+.ei-preview img{width:100%;height:100%;object-fit:contain}
+
+/* ── MAIN CONTENT ── */
+.main{overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:16px}
+
+/* View Switcher */
+.view-switch{display:flex;gap:8px}
+.vs-btn{padding:10px 20px;border:1px solid var(--b);border-radius:10px;background:rgba(0,0,0,.04);color:var(--t2);cursor:pointer;font-size:13px;font-weight:600;transition:.15s;display:flex;align-items:center;gap:6px}
+.vs-btn:hover{border-color:var(--p);color:var(--t1)}
+.vs-btn.on{background:var(--p);border-color:var(--p);color:#fff}
+
+/* Exame Viewer */
+.exam-viewer{background:var(--bg2);border:1px solid var(--b);border-radius:14px;overflow:hidden;min-height:300px}
+.ev-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;color:var(--t3);gap:10px}
+.ev-empty .ico{font-size:60px;opacity:.3}
+.ev-empty h3{font-size:16px;font-weight:700;color:var(--t2)}
+.ev-empty p{font-size:12px}
+
+.ev-content{display:none;flex-direction:column}
+.ev-content.on{display:flex}
+.ev-toolbar{display:flex;gap:4px;padding:8px;background:rgba(0,0,0,.04);border-bottom:1px solid var(--b);flex-wrap:wrap}
+.ev-tb{padding:6px 12px;border:1px solid var(--b);border-radius:6px;background:transparent;color:var(--t2);cursor:pointer;font-size:11px;transition:.12s;display:flex;align-items:center;gap:4px}
+.ev-tb:hover{background:rgba(13,148,136,.12);border-color:var(--p);color:var(--t1)}
+.ev-tb.on{background:var(--p);border-color:var(--p);color:#fff}
+.ev-tb.warn{color:var(--r);border-color:rgba(244,63,94,.2)}
+.ev-body{display:grid;grid-template-columns:1fr 340px;min-height:400px}
+.ev-image-area{background:#F1F5F9;display:flex;align-items:center;justify-content:center;position:relative;min-height:400px;overflow:hidden}
+.ev-image-area img{max-width:100%;max-height:100%;object-fit:contain;transition:.2s}
+.ev-image-area canvas{position:absolute;pointer-events:none}
+.ev-sidebar{border-left:1px solid var(--b);padding:16px;overflow-y:auto;max-height:400px;display:flex;flex-direction:column;gap:10px}
+.ev-sidebar h4{font-size:12px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.laudo-text{font-size:12px;line-height:1.7;color:var(--t2);background:rgba(0,0,0,.04);padding:12px;border-radius:8px;white-space:pre-wrap}
+.measurement-item{display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.03);font-size:11px}
+.measurement-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.measurement-label{flex:1;color:var(--t2)}
+.measurement-value{font-weight:700;color:var(--c);white-space:nowrap}
+.annotation-card{background:rgba(0,0,0,.04);border-radius:8px;padding:8px 10px;font-size:11px;color:var(--t2);line-height:1.5}
+.annotation-card .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px}
+
+/* Comparação lado a lado */
+.compare-view{display:none;grid-template-columns:1fr 1fr;gap:4px;min-height:400px}
+.compare-view.on{display:grid}
+.compare-panel{background:#F1F5F9;display:flex;flex-direction:column;position:relative}
+.compare-panel img{max-width:100%;max-height:100%;object-fit:contain;flex:1}
+.compare-panel .label{position:absolute;top:8px;left:8px;background:rgba(255,255,255,.95);padding:3px 8px;border-radius:5px;font-size:10px;font-weight:700;color:var(--c)}
+.compare-slider{position:absolute;top:0;bottom:0;width:2px;background:var(--p);left:50%;z-index:5;pointer-events:none}
+
+/* Timeline */
+.timeline-view{display:none;flex-direction:column;gap:0}
+.timeline-view.on{display:flex}
+.tl-item{display:grid;grid-template-columns:24px 1fr;gap:10px;padding:12px 0;position:relative}
+.tl-dot-line{display:flex;flex-direction:column;align-items:center}
+.tl-dot-line .dot{width:12px;height:12px;border-radius:50%;background:var(--p);flex-shrink:0;z-index:1}
+.tl-dot-line .line{width:2px;flex:1;background:var(--b);margin-top:-2px;margin-bottom:-2px}
+.tl-dot-line .line.end{background:transparent}
+.tl-content{background:var(--bg2);border:1px solid var(--b);border-radius:10px;padding:12px;margin-bottom:6px}
+.tl-content .tl-date{font-size:10px;color:var(--c);font-weight:700;margin-bottom:4px}
+.tl-content .tl-title{font-size:13px;font-weight:700;margin-bottom:4px}
+.tl-content .tl-desc{font-size:11px;color:var(--t2);line-height:1.5}
+.tl-badges{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap}
+.tl-badge{padding:2px 8px;border-radius:100px;font-size:9px;font-weight:700}
+.tl-badge.diag{background:rgba(244,63,94,.1);color:var(--r)}
+.tl-badge.med{background:rgba(0,229,255,.1);color:var(--c)}
+.tl-badge.ok{background:rgba(34,197,94,.1);color:var(--g)}
+
+/* 3D Preview */
+.view-3d-mini{width:100%;height:200px;background:#F1F5F9;border-radius:8px;overflow:hidden;display:none}
+.view-3d-mini.on{display:block}
+
+/* Evolução chart */
+.evolution-chart{background:var(--bg2);border:1px solid var(--b);border-radius:12px;padding:16px;display:none}
+.evolution-chart.on{display:block}
+.evolution-chart h4{font-size:12px;font-weight:700;color:var(--t3);margin-bottom:10px}
+
+/* Loading & Toast */
+.loader{display:flex;flex-direction:column;align-items:center;gap:10px;padding:40px;color:var(--t2)}
+.spinner{width:32px;height:32px;border:2px solid rgba(13,148,136,.25);border-top-color:var(--p);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:10px 22px;border-radius:100px;font-size:12px;font-weight:700;z-index:99;display:none;pointer-events:none}
+.toast.ok{background:rgba(34,197,94,.9);color:#000}
+.toast.err{background:rgba(244,63,94,.9);color:#fff}
+.modal-overlay{position:fixed;inset:0;background:rgba(255,255,255,.95);z-index:50;display:none;align-items:center;justify-content:center}
+.modal-overlay.on{display:flex}
+.modal-box{background:var(--bg2);border:1px solid var(--b);border-radius:16px;padding:24px;max-width:500px;width:95%;max-height:80vh;overflow-y:auto}
+.modal-box h3{font-size:16px;font-weight:800;margin-bottom:12px}
+.btn{padding:10px 18px;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;transition:.15s}
+.btn-p{background:var(--p);color:#fff}.btn-c{background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.2);color:var(--c)}
+.btn-g{background:var(--g);color:#000}.btn-r{background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.2);color:var(--r)}
+.fi{width:100%;padding:10px;background:var(--bg3);border:1px solid var(--b);border-radius:8px;color:var(--t1);font-size:12px;outline:none;margin-bottom:8px}
+.fi:focus{border-color:var(--p)}
+
+/* Chat Sofia */
+.chat-fab{position:fixed;bottom:24px;right:24px;width:56px;height:56px;border-radius:50%;background:var(--p);border:none;color:var(--t1);font-size:26px;cursor:pointer;box-shadow:0 4px 24px rgba(13,148,136,.3);z-index:40;transition:.2s}
+.chat-fab:hover{transform:scale(1.08);box-shadow:0 6px 32px rgba(13,148,136,.4)}
+.chat-panel{position:fixed;bottom:90px;right:24px;width:360px;height:480px;background:var(--bg2);border:1px solid var(--b);border-radius:16px;display:none;flex-direction:column;z-index:40;box-shadow:0 8px 40px rgba(0,0,0,.6);overflow:hidden}
+.chat-panel.on{display:flex}
+.chat-hd{background:var(--p);padding:12px 16px;display:flex;align-items:center;justify-content:space-between}
+.chat-hd span{font-weight:700;font-size:13px}
+.chat-close{background:none;border:none;color:var(--t1);font-size:18px;cursor:pointer}
+.chat-msgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+.chat-msg{max-width:85%;padding:8px 12px;border-radius:12px;font-size:11px;line-height:1.5;animation:msgIn .2s ease}
+@keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.chat-msg.bot{background:rgba(13,148,136,.18);color:var(--t1);align-self:flex-start;border-bottom-left-radius:4px}
+.chat-msg.user{background:var(--p);color:var(--t1);align-self:flex-end;border-bottom-right-radius:4px}
+.chat-input-area{display:flex;gap:6px;padding:8px;border-top:1px solid var(--b)}
+.chat-input-area input{flex:1;padding:8px 12px;background:var(--bg3);border:1px solid var(--b);border-radius:20px;color:var(--t1);font-size:11px;outline:none}
+.chat-input-area input:focus{border-color:var(--p)}
+.chat-input-area button{width:36px;height:36px;border-radius:50%;border:none;background:var(--p);color:var(--t1);cursor:pointer;font-size:16px;flex-shrink:0}
+@media(max-width:768px){body{grid-template-columns:1fr;grid-template-rows:auto auto 1fr}.sidebar{position:fixed;z-index:50;display:none}.sidebar.open{display:flex;top:0;left:0;width:85vw;max-width:280px;height:100vh}.main{padding:8px}.grid-2,.grid-3{grid-template-columns:1fr}.exam-grid{grid-template-columns:1fr}.timeline{flex-direction:column;gap:12px}}
+</style>
+</head>
+<body>
+
+<header class="hd">
+  <div class="logo">KRO<span>NEXA</span> <span style="font-size:10px;color:var(--t3);font-weight:400">| Meu Portal</span></div>
+  <div class="hd-nav">
+    <button onclick="switchTab('exames',this)" class="on" id="tab-exames">🔬 Meus Exames</button>
+    <button onclick="switchTab('consultas',this)" id="tab-consultas">📅 Consultas</button>
+    <button onclick="switchTab('medicacoes',this)" id="tab-medicacoes">💊 Medicamentos</button>
+    <button onclick="switchTab('evolucao',this)" id="tab-evolucao">📈 Evolução</button>
+  </div>
+  <div class="hd-right">
+    <button class="vs-btn" onclick="window.open('portal-agendamento.html','_blank')" style="font-size:10px;padding:6px 10px">📅 Agendar</button>
+    <button class="vs-btn" onclick="window.open('portal-dicom-3d.html','_blank')" style="font-size:10px;padding:6px 10px">🧬 3D</button>
+    <div class="notif-wrap" onclick="showNotifications()">🔔<span class="notif-badge" id="notif-count" style="display:none">0</span></div>
+    <div class="avatar" id="avatar-initials">P</div>
+    <span id="hd-name" style="font-size:12px;font-weight:600">Paciente</span>
+  </div>
+</header>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="patient-card">
+      <div class="patient-avatar" id="sidebar-avatar">P</div>
+      <div class="patient-name" id="sidebar-name">Carregando...</div>
+      <div class="patient-id" id="sidebar-id">—</div>
+    </div>
+    <div class="quick-stats">
+      <div class="qs-card"><div class="num" id="stat-exames">0</div><div class="lbl">Exames</div></div>
+      <div class="qs-card"><div class="num good" id="stat-laudados">0</div><div class="lbl">Laudados</div></div>
+      <div class="qs-card"><div class="num warn" id="stat-pendentes">0</div><div class="lbl">Pendentes</div></div>
+      <div class="qs-card"><div class="num" id="stat-consultas">0</div><div class="lbl">Consultas</div></div>
+    </div>
+    <div class="exam-filter">
+      <button class="on" onclick="filterExams('all',this)">Todos</button>
+      <button onclick="filterExams('laudado',this)">✓ Laudados</button>
+      <button onclick="filterExams('pendente',this)">⌛ Pendentes</button>
+    </div>
+    <div class="exam-list" id="exam-list"></div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main" id="main-content">
+    <!-- Tab: Exames -->
+    <div id="view-exames" class="view-panel on">
+      <div class="view-switch">
+        <button class="vs-btn on" onclick="switchExamView('single',this)">🔬 Visualização</button>
+        <button class="vs-btn" onclick="switchExamView('compare',this)">⚖️ Comparar</button>
+        <button class="vs-btn" onclick="switchExamView('3d',this)">🧊 Visualizar em 3D</button>
+        <button class="vs-btn" onclick="downloadSelected()">📥 Download</button>
+        <button class="vs-btn" onclick="shareSelected()">📤 Compartilhar</button>
+      </div>
+      <div class="exam-viewer" id="exam-viewer">
+        <div class="ev-content on" id="ev-single">
+          <div class="ev-toolbar" id="ev-toolbar">
+            <button class="ev-tb" onclick="adjustExam('zoomIn')">🔍 Zoom +</button>
+            <button class="ev-tb" onclick="adjustExam('zoomOut')">🔎 Zoom −</button>
+            <button class="ev-tb" onclick="adjustExam('brightness+')">☀️ Brilho +</button>
+            <button class="ev-tb" onclick="adjustExam('brightness-')">🌙 Brilho −</button>
+            <button class="ev-tb" onclick="adjustExam('contrast+')">◑ Contraste +</button>
+            <button class="ev-tb" onclick="adjustExam('invert')">◐ Inverter</button>
+            <button class="ev-tb" onclick="adjustExam('reset')">↺ Reset</button>
+            <button class="ev-tb" onclick="toggleAnnotations()" id="btn-annot">✏️ Anotações</button>
+          </div>
+          <div class="ev-body">
+            <div class="ev-image-area" id="ev-image-area">
+              <div class="ev-empty" id="ev-empty-single">
+                <div class="ico">🔬</div>
+                <h3>Selecione um exame</h3>
+                <p>Escolha na lista à esquerda para visualizar</p>
+              </div>
+              <img id="ev-img" style="display:none" crossorigin="anonymous">
+              <canvas id="ev-annot-canvas" style="display:none"></canvas>
+            </div>
+            <div class="ev-sidebar" id="ev-sidebar">
+              <h4>📝 Laudo</h4>
+              <div class="laudo-text" id="ev-laudo">Selecione um exame para ver o laudo</div>
+              <h4>📐 Medições do Médico</h4>
+              <div id="ev-measurements"><span style="color:var(--t3);font-size:11px">Nenhuma medição</span></div>
+              <h4>💬 Anotações</h4>
+              <div id="ev-annotations"><span style="color:var(--t3);font-size:11px">Nenhuma anotação</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="compare-view" id="ev-compare">
+          <div class="compare-panel"><div class="label">Exame A</div><img id="cmp-img-a"></div>
+          <div class="compare-panel"><div class="label">Exame B</div><img id="cmp-img-b"></div>
+        </div>
+        <div class="view-3d-mini" id="ev-3d"></div>
+      </div>
+    </div>
+
+    <!-- Tab: Consultas (Timeline) -->
+    <div id="view-consultas" class="view-panel" style="display:none">
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <button class="vs-btn on" onclick="loadConsultasTimeline()">📅 Linha do Tempo</button>
+        <button class="vs-btn" onclick="window.open('portal-agendamento.html','_blank')">📅 Agendar Nova Consulta</button>
+      </div>
+      <div class="timeline-view on" id="consultas-timeline"></div>
+    </div>
+
+    <!-- Tab: Medicamentos -->
+    <div id="view-medicacoes" class="view-panel" style="display:none">
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <button class="vs-btn on">💊 Medicamentos Ativos</button>
+        <button class="vs-btn">📋 Histórico</button>
+      </div>
+      <div id="meds-list" style="display:flex;flex-direction:column;gap:8px">
+        <span style="color:var(--t3);font-size:13px;text-align:center;padding:40px">Nenhum medicamento ativo no momento</span>
+      </div>
+    </div>
+
+    <!-- Tab: Evolução -->
+    <div id="view-evolucao" class="view-panel" style="display:none">
+      <div class="evolution-chart on">
+        <h4>📈 Progressão de Exames</h4>
+        <canvas id="chart-evolucao" style="max-height:300px"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Chat FAB Sofia -->
+<button class="chat-fab" onclick="toggleChat()" title="Falar com a Sofia">💬</button>
+<div class="chat-panel" id="chat-panel">
+  <div class="chat-hd">
+    <span>💬 Sofia — Sua Assistente</span>
+    <button class="chat-close" onclick="toggleChat()">✕</button>
+  </div>
+  <div class="chat-msgs" id="chat-msgs">
+    <div class="chat-msg bot">Olá! Sou a Sofia, sua assistente de saúde. Posso te ajudar a ver seus exames, agendar consultas ou tirar dúvidas. Como posso ajudar?</div>
+  </div>
+  <div class="chat-input-area">
+    <input type="text" id="chat-input" placeholder="Digite sua mensagem..." onkeydown="if(event.key==='Enter')sendChat()">
+    <button onclick="sendChat()">➤</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="modal-overlay" id="share-modal">
+  <div class="modal-box">
+    <h3>📤 Compartilhar Exame</h3>
+    <div id="share-content"></div>
+    <button class="btn btn-p" style="margin-top:10px;width:100%" onclick="copyShareLink()">📋 Copiar Link</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// SUPABASE
+// ═══════════════════════════════════════════════
+const SB='https://tcjynyfusqkqtdohnyzq.supabase.co', KEY='sb_publishable_gNJhc4WCS9MnnmDAL2T6Vg_AQ71_Vid', CID='c1d2e3f4-0001-0000-0000-000000000001';
+const sb=supabase.createClient(SB,KEY);
+
+// ═══════════════════════════════════════════════
+// ESTADO
+// ═══════════════════════════════════════════════
+let patientId=null, patientData=null, exames=[], selectedExam=null;
+let currentFilter='all', currentTab='exames', currentExamView='single';
+let imgZoom=1, imgBrightness=100, imgContrast=100, imgInverted=false;
+let showAnnotations=true, compareExams=[];
+let evolutionChart=null;
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+async function init(){
+  const params=new URLSearchParams(location.search);
+  const exameId=params.get('exame');
+  const token=params.get('token');
+
+  if(token){
+    // Autenticação por token (link compartilhado)
+    const{data}=await sb.from('kh_exames').select('*,kh_pacientes(*)').eq('id',exameId).single();
+    if(data){
+      patientId=data.paciente_id;
+      patientData=data.kh_pacientes;
+      loadPatientData();
+      await loadExames();
+      if(exameId)selectExam(exameId);
+    }
+  }else{
+    // Tentar sessão anônima ou localStorage
+    const savedPacId=localStorage.getItem('KRONEXA_PAC_ID');
+    if(savedPacId){
+      patientId=savedPacId;
+      const{data}=await sb.from('kh_pacientes').select('*').eq('id',patientId).single();
+      if(data){patientData=data;loadPatientData();}
+      await loadExames();
+    }else{
+      // Demo mode
+      document.getElementById('sidebar-name').textContent='Modo Demonstração';
+      document.getElementById('sidebar-avatar').textContent='D';
+      document.getElementById('hd-name').textContent='Demo';
+      document.getElementById('sidebar-id').textContent='Carregue um link de exame';
+    }
+  }
+}
+init();
+
+function loadPatientData(){
+  if(!patientData)return;
+  document.getElementById('sidebar-name').textContent=patientData.nome||'Paciente';
+  document.getElementById('sidebar-avatar').textContent=(patientData.nome||'P')[0].toUpperCase();
+  document.getElementById('avatar-initials').textContent=(patientData.nome||'P')[0].toUpperCase();
+  document.getElementById('hd-name').textContent=patientData.nome||'Paciente';
+  document.getElementById('sidebar-id').textContent='ID: '+(patientData.id||'—').substring(0,8);
+}
+
+async function loadExames(){
+  if(!patientId)return;
+  const{data}=await sb.from('kh_exames').select('*').eq('paciente_id',patientId).eq('clinica_id',CID).order('criado_em',{ascending:false});
+  exames=data||[];
+  renderExamList();
+  updateStats();
+}
+
+function updateStats(){
+  document.getElementById('stat-exames').textContent=exames.length;
+  document.getElementById('stat-laudados').textContent=exames.filter(e=>e.laudo).length;
+  document.getElementById('stat-pendentes').textContent=exames.filter(e=>!e.laudo).length;
+  // Carregar consultas do prontuário
+  if(patientId){
+    sb.from('kh_prontuarios').select('id',{count:'exact'}).eq('paciente_id',patientId).then(({count})=>{
+      document.getElementById('stat-consultas').textContent=count||0;
+    });
+  }
+}
+
+function renderExamList(){
+  const list=document.getElementById('exam-list');
+  let filtered=exames;
+  if(currentFilter==='laudado')filtered=exames.filter(e=>e.laudo);
+  if(currentFilter==='pendente')filtered=exames.filter(e=>!e.laudo);
+
+  if(!filtered.length){
+    list.innerHTML='<div style="color:var(--t3);font-size:11px;text-align:center;padding:20px">Nenhum exame encontrado</div>';
+    return;
+  }
+  list.innerHTML=filtered.map(e=>{
+    const isLaudado=!!e.laudo;
+    const dt=new Date(e.criado_em).toLocaleDateString('pt-BR');
+    return`<div class="ei ${selectedExam?.id===e.id?'on':''}" onclick="selectExam('${e.id}')">
+      <div class="ei-header"><span class="ei-type ${isLaudado?'lauded':'pending'}">${isLaudado?'✓ Laudado':'⌛ Pendente'}</span></div>
+      <div class="ei-name">${e.nome||'Exame'}</div>
+      <div class="ei-date">${dt} · ${e.tipo||'imagem'}</div>
+      ${e.url&&e.tipo!=='pdf'?`<div class="ei-preview"><img src="${thumbUrl(e.url,200)}" crossorigin="anonymous" loading="lazy" onerror="this.style.display='none'"></div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function filterExams(f,btn){
+  currentFilter=f;
+  document.querySelectorAll('.exam-filter button').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderExamList();
+}
+
+function selectExam(id){
+  selectedExam=exames.find(e=>e.id===id);
+  if(!selectedExam)return;
+  renderExamList(); // update highlights
+  renderExamViewer();
+}
+
+function renderExamViewer(){
+  const e=selectedExam;
+  if(!e)return;
+
+  document.getElementById('ev-empty-single').style.display='none';
+  const img=document.getElementById('ev-img');
+  img.style.display='block';
+  document.getElementById('ev-annot-canvas').style.display='block';
+
+  // Reset adjustments
+  imgZoom=1;imgBrightness=100;imgContrast=100;imgInverted=false;
+  applyImageAdjustments();
+
+  if(e.url&&e.tipo!=='pdf'){
+    img.src=e.url;
+    img.onload=()=>renderAnnotationsOnCanvas();
+  }
+
+  // Laudo
+  document.getElementById('ev-laudo').textContent=e.laudo||'Aguardando laudo médico...';
+  if(!e.laudo)document.getElementById('ev-laudo').style.color='var(--t3)';
+  else document.getElementById('ev-laudo').style.color='var(--t2)';
+
+  // Measurements
+  const annots=Array.isArray(e.anotacoes)?e.anotacoes:[];
+  const meds=annots.filter(a=>a.medida);
+  if(meds.length){
+    document.getElementById('ev-measurements').innerHTML=meds.map(m=>`
+      <div class="measurement-item">
+        <div class="measurement-dot" style="background:${m.cor||'#a855f7'}"></div>
+        <div class="measurement-label">${m.texto||m.type}</div>
+        <div class="measurement-value">${m.medida}</div>
+      </div>`).join('');
+  }else{
+    document.getElementById('ev-measurements').innerHTML='<span style="color:var(--t3);font-size:11px">Nenhuma medição</span>';
+  }
+
+  // Annotations
+  const annotsNoMeasure=annots.filter(a=>!a.medida);
+  if(annotsNoMeasure.length){
+    document.getElementById('ev-annotations').innerHTML=annotsNoMeasure.map(a=>`
+      <div class="annotation-card"><span class="dot" style="background:${a.cor||'#a855f7'}"></span>${a.texto||a.type}</div>`).join('');
+  }else{
+    document.getElementById('ev-annotations').innerHTML='<span style="color:var(--t3);font-size:11px">Nenhuma anotação</span>';
+  }
+}
+
+function renderAnnotationsOnCanvas(){
+  const canvas=document.getElementById('ev-annot-canvas');
+  const img=document.getElementById('ev-img');
+  if(!img.naturalWidth||!showAnnotations)return;
+  const rect=img.getBoundingClientRect();
+  const area=document.getElementById('ev-image-area');
+  const areaRect=area.getBoundingClientRect();
+  canvas.width=rect.width;canvas.height=rect.height;
+  canvas.style.left=(rect.left-areaRect.left)+'px';
+  canvas.style.top=(rect.top-areaRect.top)+'px';
+  canvas.style.width=rect.width+'px';canvas.style.height=rect.height+'px';
+
+  const ctx=canvas.getContext('2d');
+  const annots=Array.isArray(selectedExam?.anotacoes)?selectedExam.anotacoes:[];
+
+  // Scale annotations from original image coords to display coords
+  const scaleX=rect.width/img.naturalWidth;
+  const scaleY=rect.height/img.naturalHeight;
+
+  annots.forEach(a=>{
+    ctx.strokeStyle=a.cor||'#a855f7';ctx.fillStyle=a.cor||'#a855f7';ctx.lineWidth=a.size||2;
+    if(a.type==='text'&&a.x!=null){
+      ctx.font='bold 12px sans-serif';
+      const txt=(a.texto||'').substring(0,30);
+      const x=a.x*scaleX,y=a.y*scaleY;
+      ctx.fillStyle='#fff';ctx.shadowColor=a.cor||'#a855f7';ctx.shadowBlur=4;
+      ctx.fillText(txt,x,y-6);ctx.shadowBlur=0;
+    }else if(a.type==='measure'||a.type==='line'){
+      if(a.x1!=null&&a.x2!=null){
+        ctx.beginPath();ctx.moveTo(a.x1*scaleX,a.y1*scaleY);ctx.lineTo(a.x2*scaleX,a.y2*scaleY);ctx.stroke();
+        if(a.medida){
+          const mx=(a.x1+a.x2)/2*scaleX,my=(a.y1+a.y2)/2*scaleY-6;
+          ctx.fillStyle='#fff';ctx.shadowColor=a.cor;ctx.shadowBlur=4;ctx.fillText(a.medida,mx,my);ctx.shadowBlur=0;
+        }
+      }
+    }else if(a.type==='rect'){
+      ctx.strokeRect(a.x1*scaleX,a.y1*scaleY,(a.x2-a.x1)*scaleX,(a.y2-a.y1)*scaleY);
+    }else if(a.type==='ellipse'){
+      ctx.beginPath();ctx.ellipse((a.x1+a.x2)/2*scaleX,(a.y1+a.y2)/2*scaleY,Math.abs(a.x2-a.x1)/2*scaleX,Math.abs(a.y2-a.y1)/2*scaleY,0,0,Math.PI*2);ctx.stroke();
+    }
+  });
+}
+
+function applyImageAdjustments(){
+  const img=document.getElementById('ev-img');
+  let filter='';
+  filter+=`brightness(${imgBrightness}%) `;
+  filter+=`contrast(${imgContrast}%) `;
+  if(imgInverted)filter+='invert(100%) ';
+  img.style.filter=filter;
+  img.style.transform=`scale(${imgZoom})`;
+}
+
+function adjustExam(action){
+  switch(action){
+    case'zoomIn':imgZoom=Math.min(3,imgZoom+0.15);break;
+    case'zoomOut':imgZoom=Math.max(0.3,imgZoom-0.15);break;
+    case'brightness+':imgBrightness=Math.min(200,imgBrightness+10);break;
+    case'brightness-':imgBrightness=Math.max(20,imgBrightness-10);break;
+    case'contrast+':imgContrast=Math.min(200,imgContrast+10);break;
+    case'invert':imgInverted=!imgInverted;break;
+    case'reset':imgZoom=1;imgBrightness=100;imgContrast=100;imgInverted=false;break;
+  }
+  applyImageAdjustments();
+}
+
+function toggleAnnotations(){
+  showAnnotations=!showAnnotations;
+  const btn=document.getElementById('btn-annot');
+  btn.classList.toggle('on',showAnnotations);
+  document.getElementById('ev-annot-canvas').style.display=showAnnotations?'block':'none';
+  if(showAnnotations)renderAnnotationsOnCanvas();
+}
+
+function switchExamView(view,btn){
+  currentExamView=view;
+  document.querySelectorAll('.view-switch .vs-btn').forEach(b=>b.classList.remove('on'));
+  if(btn)btn.classList.add('on');
+  document.querySelectorAll('.ev-content').forEach(e=>e.classList.remove('on'));
+  document.getElementById('ev-compare').classList.remove('on');
+  document.getElementById('ev-3d').classList.remove('on');
+
+  if(view==='single')document.getElementById('ev-single').classList.add('on');
+  else if(view==='compare'){document.getElementById('ev-compare').classList.add('on');setupCompare();}
+  else if(view==='3d'){document.getElementById('ev-3d').classList.add('on');open3DView();}
+}
+
+function setupCompare(){
+  if(exames.length>=2){
+    const a=exames[0],b=exames[1];
+    if(a.url)document.getElementById('cmp-img-a').src=a.url;
+    if(b.url)document.getElementById('cmp-img-b').src=b.url;
+  }
+}
+
+function open3DView(){
+  if(selectedExam){
+    window.open(`portal-dicom-3d.html?exame=${selectedExam.id}`,'_blank');
+  }
+}
+
+function downloadSelected(){
+  if(!selectedExam?.url)return toast('Nenhum exame selecionado','err');
+  window.open(selectedExam.url,'_blank');
+}
+
+function shareSelected(){
+  if(!selectedExam)return toast('Selecione um exame','err');
+  const link=`https://saude.kronexa.com.br/portal-paciente.html?exame=${selectedExam.id}`;
+  document.getElementById('share-content').innerHTML=`
+    <p style="font-size:12px;color:var(--t2);margin-bottom:8px">Compartilhe este link para acesso ao exame:</p>
+    <div style="background:var(--bg3);padding:10px;border-radius:8px;font-size:11px;color:var(--c);word-break:break-all">${link}</div>
+  `;
+  document.getElementById('share-modal').classList.add('on');
+}
+
+function copyShareLink(){
+  const link=document.getElementById('share-content')?.textContent?.trim();
+  if(link)navigator.clipboard.writeText(link).then(()=>toast('Link copiado!'));
+  document.getElementById('share-modal').classList.remove('on');
+}
+
+document.getElementById('share-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('on')});
+
+// ═══════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════
+function switchTab(tab,btn){
+  currentTab=tab;
+  document.querySelectorAll('.hd-nav button').forEach(b=>b.classList.remove('on'));
+  if(btn)btn.classList.add('on');
+  document.querySelectorAll('#view-exames,#view-consultas,#view-medicacoes,#view-evolucao').forEach(v=>v.style.display='none');
+  document.getElementById('view-'+tab).style.display='block';
+
+  if(tab==='consultas')loadConsultasTimeline();
+  if(tab==='evolucao')loadEvolutionChart();
+}
+
+async function loadConsultasTimeline(){
+  if(!patientId)return;
+  const{data}=await sb.from('kh_prontuarios').select('*').eq('paciente_id',patientId).order('data_atendimento',{ascending:false}).limit(30);
+  const tl=document.getElementById('consultas-timeline');
+  if(!data?.length){tl.innerHTML='<div style="color:var(--t3);text-align:center;padding:40px">Nenhuma consulta registrada</div>';return;}
+  tl.innerHTML=data.map((c,i)=>
+    `<div class="tl-item">
+      <div class="tl-dot-line"><div class="dot" style="background:${i===0?'var(--c)':'var(--p)'}"></div><div class="line${i===data.length-1?' end':''}"></div></div>
+      <div class="tl-content">
+        <div class="tl-date">${new Date(c.data_atendimento).toLocaleDateString('pt-BR',{day:'numeric',month:'long',year:'numeric'})}</div>
+        <div class="tl-title">Consulta ${c.diagnostico?'— '+c.diagnostico:''}</div>
+        <div class="tl-desc">${c.conduta||c.queixa||'Sem detalhes registrados'}</div>
+        <div class="tl-badges">
+          ${c.diagnostico?`<span class="tl-badge diag">🏥 ${c.diagnostico}</span>`:''}
+          ${c.medicamentos?.length?`<span class="tl-badge med">💊 ${c.medicamentos.length} medicamento(s)</span>`:''}
+          ${c.retorno?`<span class="tl-badge ok">📅 Retorno: ${new Date(c.retorno).toLocaleDateString('pt-BR')}</span>`:''}
+        </div>
+      </div>
+    </div>`
+  ).join('');
+}
+
+async function loadEvolutionChart(){
+  if(!patientId)return;
+  const{data}=await sb.from('kh_exames').select('criado_em,laudo').eq('paciente_id',patientId).order('criado_em',{ascending:true});
+  if(!data?.length)return;
+
+  const ctx=document.getElementById('chart-evolucao').getContext('2d');
+  if(evolutionChart)evolutionChart.destroy();
+
+  const laudados=data.filter(e=>e.laudo).length;
+  evolutionChart=new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:data.map(e=>new Date(e.criado_em).toLocaleDateString('pt-BR',{month:'short',year:'2-digit'})),
+      datasets:[
+        {label:'Exames',data:data.map((_,i)=>i+1),borderColor:'#0D9488',backgroundColor:'rgba(13,148,136,.12)',fill:true,tension:.3},
+        {label:'Laudados',data:data.map((_,i)=>data.slice(0,i+1).filter(e=>e.laudo).length),borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,.1)',fill:true,tension:.3}
+      ]
+    },
+    options:{
+      responsive:true,
+      plugins:{legend:{labels:{color:'#8888AA',font:{size:10}}}},
+      scales:{
+        x:{ticks:{color:'#404060',font:{size:9}},grid:{color:'rgba(255,255,255,.04)'}},
+        y:{ticks:{color:'#404060',font:{size:9}},grid:{color:'rgba(255,255,255,.04)'}}
+      }
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════
+// SOFIA CHAT
+// ═══════════════════════════════════════════════
+function toggleChat(){
+  document.getElementById('chat-panel').classList.toggle('on');
+}
+async function sendChat(){
+  const input=document.getElementById('chat-input');
+  const msg=input.value.trim();
+  if(!msg)return;
+  addChatMsg(msg,'user');
+  input.value='';
+
+  // IA Sofia responde
+  try{
+    const geminiKey=localStorage.getItem('KRONEXA_GEMINI_KEY')||'';
+    const resp=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contents:[{parts:[{text:`Você é Sofia, assistente de saúde da Kronexa. Responda em português de forma acolhedora e profissional. Contexto: paciente ${patientData?.nome||'usuário'}, está no portal do paciente vendo exames. Mensagem: ${msg}`}]}],generationConfig:{temperature:0.3,maxOutputTokens:500}})
+    });
+    const d=await resp.json();
+    const reply=d.candidates?.[0]?.content?.parts?.[0]?.text||'Desculpe, estou com dificuldade no momento. Tente novamente.';
+    addChatMsg(reply,'bot');
+  }catch(e){
+    addChatMsg('Desculpe, ocorreu um erro. Tente novamente mais tarde.','bot');
+  }
+}
+function addChatMsg(msg,type){
+  const msgs=document.getElementById('chat-msgs');
+  const div=document.createElement('div');
+  div.className='chat-msg '+type;div.textContent=msg;
+  msgs.appendChild(div);
+  msgs.scrollTop=msgs.scrollHeight;
+}
+
+// ═══════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════
+function toast(msg,type='ok'){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast '+type;t.style.display='block';
+  setTimeout(()=>t.style.display='none',3000);
+}
+function thumbUrl(url,w=400){
+  if(!url)return'';
+  if(url.includes('supabase.co')){
+    const sep=url.includes('?')?'&':'?';
+    return`${url}${sep}width=${w}&quality=75`;
+  }
+  return url;
+}
+function showNotifications(){
+  toast('🔔 Nenhuma notificação nova');
+}
+window.addEventListener('resize',()=>{if(selectedExam)renderAnnotationsOnCanvas();});
+
+// Keyboard navigation
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT')return;
+  if(e.key==='ArrowLeft'){const idx=exames.findIndex(ex=>ex.id===selectedExam?.id);if(idx<exames.length-1)selectExam(exames[idx+1].id);}
+  if(e.key==='ArrowRight'){const idx=exames.findIndex(ex=>ex.id===selectedExam?.id);if(idx>0)selectExam(exames[idx-1].id);}
+});
+</script>
+</body>
+</html>

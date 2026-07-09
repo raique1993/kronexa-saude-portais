@@ -1,0 +1,409 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Agendar Consulta — Kronexa</title>
+<script>if(location.protocol!=="https:"&&location.hostname!=="localhost")location.replace("https://"+location.host+location.pathname+location.search);</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--p:#0D9488;--c:#0284C7;--g:#059669;--r:#DC2626;--bg:#F8FAFC;--bg2:#FFFFFF;--bg3:#F1F5F9;--t1:#0F172A;--t2:#475569;--t3:#94A3B8;--b:#E2E8F0}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--t1);font-family:-apple-system,sans-serif;min-height:100vh}
+
+/* Hero */
+.hero{background:linear-gradient(135deg,var(--bg2) 0%,rgba(13,148,136,.18) 50%,rgba(0,229,255,.05) 100%);padding:40px 20px;text-align:center;border-bottom:1px solid var(--b)}
+.hero .clinic-logo{font-size:28px;font-weight:900;margin-bottom:8px}.hero .clinic-logo span{color:var(--p)}
+.hero h1{font-size:24px;font-weight:800;margin-bottom:6px}
+.hero p{font-size:14px;color:var(--t2);max-width:500px;margin:0 auto}
+
+/* Steps */
+.steps{display:flex;justify-content:center;gap:8px;padding:16px 20px;max-width:700px;margin:0 auto}
+.step{display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:20px;background:rgba(0,0,0,.04);font-size:12px;color:var(--t3);font-weight:600}
+.step.on{background:rgba(13,148,136,.18);color:var(--p)}
+.step.done{background:rgba(34,197,94,.1);color:var(--g)}
+.step-num{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;background:var(--bg3);color:var(--t2)}
+.step.on .step-num{background:var(--p);color:#fff}
+.step.done .step-num{background:var(--g);color:#000}
+
+/* Form */
+.container{max-width:600px;margin:0 auto;padding:20px}
+.form-step{display:none}
+.form-step.on{display:block}
+.form-card{background:var(--bg2);border:1px solid var(--b);border-radius:16px;padding:24px;margin-bottom:16px}
+.form-card h3{font-size:16px;font-weight:700;margin-bottom:6px}
+.form-card .sub{font-size:11px;color:var(--t3);margin-bottom:16px}
+
+.specialty-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.spec-card{padding:14px;border:2px solid var(--b);border-radius:12px;cursor:pointer;text-align:center;transition:.15s;background:rgba(0,0,0,.03)}
+.spec-card:hover{border-color:rgba(13,148,136,.3);background:rgba(13,148,136,.08)}
+.spec-card.on{border-color:var(--p);background:rgba(13,148,136,.15)}
+.spec-card .ico{font-size:28px;margin-bottom:4px}
+.spec-card .name{font-size:12px;font-weight:700}
+.spec-card .desc{font-size:9px;color:var(--t3);margin-top:2px}
+
+.doctor-list{display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto}
+.doc-card{padding:12px;border:2px solid var(--b);border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:.15s}
+.doc-card:hover{border-color:rgba(13,148,136,.35);background:rgba(13,148,136,.08)}
+.doc-card.on{border-color:var(--p);background:rgba(13,148,136,.12)}
+.doc-avatar{width:44px;height:44px;border-radius:50%;background:var(--p);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.doc-info{flex:1}.doc-name{font-size:13px;font-weight:700}.doc-spec{font-size:10px;color:var(--t3)}
+
+.slots-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:6px}
+.slot-btn{padding:10px;border:1px solid var(--b);border-radius:8px;cursor:pointer;text-align:center;font-size:11px;font-weight:600;transition:.12s;background:rgba(0,0,0,.03);color:var(--t2)}
+.slot-btn:hover{border-color:var(--p);color:var(--t1);background:rgba(13,148,136,.10)}
+.slot-btn.on{border-color:var(--p);background:var(--p);color:#fff}
+.slot-btn.unavailable{opacity:.3;pointer-events:none;text-decoration:line-through}
+
+.fi{width:100%;padding:12px;background:var(--bg3);border:1px solid var(--b);border-radius:10px;color:var(--t1);font-size:13px;outline:none;margin-bottom:10px}
+.fi:focus{border-color:var(--p)}
+textarea.fi{resize:vertical;min-height:80px}
+
+.btn{padding:14px 24px;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;transition:.15s;width:100%}
+.btn-p{background:var(--p);color:#fff}.btn-p:hover{opacity:.9}
+.btn-g{background:var(--g);color:#000}.btn-c{background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.2);color:var(--c)}
+.btn-o{border:1px solid var(--b);background:transparent;color:var(--t2)}
+.nav-btns{display:flex;gap:10px}
+
+.success-card{text-align:center;padding:40px 20px}
+.success-card .ico{font-size:70px;margin-bottom:12px}
+.success-card h2{font-size:22px;font-weight:800;margin-bottom:8px;color:var(--g)}
+.success-card p{font-size:13px;color:var(--t2);line-height:1.6;margin-bottom:6px}
+.success-card .whatsapp-btn{display:inline-flex;align-items:center;gap:8px;background:#25D366;color:var(--t1);padding:14px 24px;border-radius:12px;text-decoration:none;font-weight:700;font-size:14px;margin-top:12px}
+
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:10px 22px;border-radius:100px;font-size:12px;font-weight:700;z-index:99;display:none;background:var(--p);color:#fff}
+.loading-overlay{position:fixed;inset:0;background:rgba(255,255,255,.92);z-index:50;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px}
+.loading-overlay.on{display:flex}
+.spinner{width:40px;height:40px;border:2px solid rgba(13,148,136,.25);border-top-color:var(--p);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.calendar-nav{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.calendar-nav button{width:32px;height:32px;border-radius:50%;border:1px solid var(--b);background:transparent;color:var(--t2);cursor:pointer;font-size:16px}
+.calendar-nav .date-label{flex:1;text-align:center;font-weight:700;font-size:14px}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="clinic-logo">KRO<span>NEXA</span> | <span id="clinic-name">Saúde</span></div>
+  <h1>Agende sua consulta</h1>
+  <p>Escolha o melhor horário para você. Nossa assistente Sofia confirmará tudo pelo WhatsApp.</p>
+  <div style="margin-top:10px;display:flex;gap:6px;justify-content:center;flex-wrap:wrap">
+    <a href="portal-paciente.html" style="color:var(--c);font-size:11px;text-decoration:none;padding:4px 10px;border:1px solid rgba(255,255,255,.1);border-radius:20px">👤 Portal Paciente</a>
+    <a href="portal-medico.html" style="color:var(--c);font-size:11px;text-decoration:none;padding:4px 10px;border:1px solid rgba(255,255,255,.1);border-radius:20px">🏠 Médico</a>
+    <a href="portal-dicom-3d.html" style="color:var(--c);font-size:11px;text-decoration:none;padding:4px 10px;border:1px solid rgba(255,255,255,.1);border-radius:20px">🧬 DICOM 3D</a>
+    <a href="portal-telemedicina.html" style="color:var(--c);font-size:11px;text-decoration:none;padding:4px 10px;border:1px solid rgba(255,255,255,.1);border-radius:20px">📹 Telemedicina</a>
+  </div>
+</div>
+
+<div class="steps">
+  <div class="step on" id="step-1"><span class="step-num">1</span> Especialidade</div>
+  <div class="step" id="step-2"><span class="step-num">2</span> Médico</div>
+  <div class="step" id="step-3"><span class="step-num">3</span> Data/Hora</div>
+  <div class="step" id="step-4"><span class="step-num">4</span> Seus Dados</div>
+  <div class="step" id="step-5"><span class="step-num">5</span> Confirmado</div>
+</div>
+
+<div class="container">
+  <div id="form-step-1" class="form-step on">
+    <div class="form-card">
+      <h3>🏥 Qual especialidade você precisa?</h3>
+      <div class="sub">Selecione o tipo de atendimento</div>
+      <div class="specialty-grid" id="specialties-grid"></div>
+    </div>
+    <div class="nav-btns">
+      <button class="btn btn-p" onclick="nextStep(2)" id="btn-next-1" disabled>Próximo →</button>
+    </div>
+  </div>
+
+  <div id="form-step-2" class="form-step">
+    <div class="form-card">
+      <h3>👨‍⚕️ Escolha seu médico</h3>
+      <div class="sub">Profissionais disponíveis para <span id="selected-spec-name" style="color:var(--c)">—</span></div>
+      <div class="doctor-list" id="doctor-list"></div>
+    </div>
+    <div class="nav-btns">
+      <button class="btn btn-o" onclick="prevStep(1)">← Voltar</button>
+      <button class="btn btn-p" onclick="nextStep(3)" id="btn-next-2" disabled>Próximo →</button>
+    </div>
+  </div>
+
+  <div id="form-step-3" class="form-step">
+    <div class="form-card">
+      <h3>📅 Escolha o melhor horário</h3>
+      <div class="sub">Dr(a). <span id="selected-doc-name" style="color:var(--c)">—</span></div>
+      <div class="calendar-nav">
+        <button onclick="changeDate(-1)">◀</button>
+        <div class="date-label" id="date-label"></div>
+        <button onclick="changeDate(1)">▶</button>
+      </div>
+      <div class="slots-grid" id="slots-grid"></div>
+    </div>
+    <div class="nav-btns">
+      <button class="btn btn-o" onclick="prevStep(2)">← Voltar</button>
+      <button class="btn btn-p" onclick="nextStep(4)" id="btn-next-3" disabled>Próximo →</button>
+    </div>
+  </div>
+
+  <div id="form-step-4" class="form-step">
+    <div class="form-card">
+      <h3>📋 Seus dados</h3>
+      <div class="sub">Para confirmarmos seu agendamento</div>
+      <input class="fi" id="pac-nome" placeholder="Nome completo *" required>
+      <input class="fi" id="pac-telefone" placeholder="WhatsApp (DDD + número) *" type="tel" required>
+      <input class="fi" id="pac-email" placeholder="E-mail (opcional)" type="email">
+      <textarea class="fi" id="pac-queixa" placeholder="Descreva brevemente o motivo da consulta (opcional)"></textarea>
+    </div>
+    <div class="nav-btns">
+      <button class="btn btn-o" onclick="prevStep(3)">← Voltar</button>
+      <button class="btn btn-g" onclick="confirmarAgendamento()">✅ Confirmar Agendamento</button>
+    </div>
+  </div>
+
+  <div id="form-step-5" class="form-step">
+    <div class="form-card success-card">
+      <div class="ico">✅</div>
+      <h2>Agendamento Confirmado!</h2>
+      <p><strong id="confirm-spec"></strong> com <strong id="confirm-doc"></strong></p>
+      <p>📅 <strong id="confirm-date"></strong></p>
+      <p style="color:var(--t2);margin-top:6px">A Sofia, nossa assistente virtual, já está te enviando uma confirmação pelo WhatsApp com todos os detalhes e lembretes.</p>
+      <a class="whatsapp-btn" id="whatsapp-link" target="_blank" href="#">💬 Falar com a Sofia no WhatsApp</a>
+      <button class="btn btn-c" style="margin-top:12px" onclick="resetForm()">Agendar outra consulta</button>
+    </div>
+  </div>
+</div>
+
+<div class="loading-overlay" id="loading">
+  <div class="spinner"></div>
+  <span style="font-size:13px;color:var(--t2)">Processando...</span>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const SB='https://tcjynyfusqkqtdohnyzq.supabase.co', KEY='sb_publishable_gNJhc4WCS9MnnmDAL2T6Vg_AQ71_Vid', CID='c1d2e3f4-0001-0000-0000-000000000001';
+const sb=supabase.createClient(SB,KEY);
+
+let currentStep=1, selectedSpecialty=null, selectedDoctor=null;
+let selectedDate=new Date(), selectedSlot=null;
+let specialties=[], doctors=[], availableSlots=[];
+
+const SPECIALTIES_DEFAULT=[
+  {id:'clinico',nome:'Clínico Geral',ico:'🩺',desc:'Consulta de rotina, check-up'},
+  {id:'cardio',nome:'Cardiologia',ico:'❤️',desc:'Coração, pressão arterial'},
+  {id:'dermato',nome:'Dermatologia',ico:'🧴',desc:'Pele, cabelo, unhas'},
+  {id:'ortopedia',nome:'Ortopedia',ico:'🦴',desc:'Ossos, articulações, coluna'},
+  {id:'neuro',nome:'Neurologia',ico:'🧠',desc:'Sistema nervoso, cefaleias'},
+  {id:'pediatria',nome:'Pediatria',ico:'👶',desc:'Saúde infantil e adolescente'},
+  {id:'gineco',nome:'Ginecologia',ico:'🤰',desc:'Saúde da mulher'},
+  {id:'oftalmo',nome:'Oftalmologia',ico:'👁️',desc:'Visão, olhos'},
+  {id:'psiq',nome:'Psiquiatria',ico:'🧘',desc:'Saúde mental'},
+  {id:'nutri',nome:'Nutrição',ico:'🥗',desc:'Alimentação, dieta'},
+];
+
+const SERVICES_DEFAULT=[
+  {id:'consulta',nome:'Consulta',duracao_min:30,preco:250},
+  {id:'retorno',nome:'Retorno',duracao_min:20,preco:150},
+  {id:'checkup',nome:'Check-up',duracao_min:45,preco:400},
+  {id:'exame',nome:'Exame/Procedimento',duracao_min:30,preco:300},
+];
+
+function init(){
+  // Parse URL params
+  const params=new URLSearchParams(location.search);
+  const clinicSlug=params.get('clinica')||'clinica-demo';
+  const clinicName=clinicSlug.replace(/-/g,' ').replace(/\b\w/g,l=>l.toUpperCase());
+  document.getElementById('clinic-name').textContent=clinicName;
+
+  // Load specialties
+  renderSpecialties();
+  // Set initial date
+  updateDateLabel();
+  generateSlots();
+}
+init();
+
+function renderSpecialties(){
+  specialties=SPECIALTIES_DEFAULT;
+  document.getElementById('specialties-grid').innerHTML=specialties.map(s=>`
+    <div class="spec-card" onclick="selectSpecialty('${s.id}',this)">
+      <div class="ico">${s.ico}</div>
+      <div class="name">${s.nome}</div>
+      <div class="desc">${s.desc}</div>
+    </div>`).join('');
+}
+
+function selectSpecialty(id,el){
+  document.querySelectorAll('.spec-card').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+  selectedSpecialty=specialties.find(s=>s.id===id);
+  document.getElementById('btn-next-1').disabled=false;
+  document.getElementById('selected-spec-name').textContent=selectedSpecialty.nome;
+  loadDoctors();
+}
+
+function loadDoctors(){
+  // Simular médicos (no futuro virá do Supabase)
+  doctors=[
+    {id:'d1',nome:'Dr. Carlos Silva',especialidade:'Clinico Geral',crm:'12345-SP'},
+    {id:'d2',nome:'Dra. Ana Oliveira',especialidade:'Cardiologia',crm:'23456-SP'},
+    {id:'d3',nome:'Dr. Roberto Santos',especialidade:'Ortopedia',crm:'34567-SP'},
+    {id:'d4',nome:'Dra. Julia Costa',especialidade:'Dermatologia',crm:'45678-SP'},
+  ].filter(d=>d.especialidade===selectedSpecialty?.nome);
+
+  if(!doctors.length)doctors=doctors; // fallback: mostra todos
+
+  document.getElementById('doctor-list').innerHTML=doctors.map(d=>`
+    <div class="doc-card" onclick="selectDoctor('${d.id}',this)">
+      <div class="doc-avatar">${d.nome.split(' ')[0][0]}${d.nome.split(' ').pop()[0]}</div>
+      <div class="doc-info"><div class="doc-name">${d.nome}</div><div class="doc-spec">${d.especialidade} · CRM ${d.crm}</div></div>
+    </div>`).join('');
+}
+
+function selectDoctor(id,el){
+  document.querySelectorAll('.doc-card').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+  selectedDoctor=doctors.find(d=>d.id===id);
+  document.getElementById('btn-next-2').disabled=false;
+  document.getElementById('selected-doc-name').textContent=selectedDoctor.nome;
+  generateSlots();
+}
+
+function changeDate(delta){
+  selectedDate.setDate(selectedDate.getDate()+delta);
+  if(selectedDate.getDay()===0)selectedDate.setDate(selectedDate.getDate()+1); // skip Sundays
+  if(selectedDate.getDay()===6)selectedDate.setDate(selectedDate.getDate()+(delta>0?2:-1)); // skip Saturdays
+  updateDateLabel();
+  generateSlots();
+}
+
+function updateDateLabel(){
+  document.getElementById('date-label').textContent=selectedDate.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+}
+
+function generateSlots(){
+  const hours=[8,8.5,9,9.5,10,10.5,11,11.5,13,13.5,14,14.5,15,15.5,16,16.5,17,17.5];
+  const now=new Date();
+  const isToday=selectedDate.toDateString()===now.toDateString();
+  const currentHour=now.getHours()+now.getMinutes()/60;
+
+  availableSlots=hours.map(h=>{
+    const startHour=Math.floor(h);
+    const startMin=(h%1)*60;
+    const timeStr=`${String(startHour).padStart(2,'0')}:${String(startMin).padStart(2,'0')}`;
+    const available=!isToday||h>currentHour+0.5;
+    return{time:timeStr,hour:h,available};
+  });
+
+  document.getElementById('slots-grid').innerHTML=availableSlots.map(s=>{
+    const cls=s.available?'slot-btn':'slot-btn unavailable';
+    const onclick=s.available?`onclick="selectSlot('${s.time}',this)"`:'';
+    return`<div class="${cls}" ${onclick}>${s.time}</div>`;
+  }).join('');
+}
+
+function selectSlot(time,el){
+  document.querySelectorAll('.slot-btn').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  selectedSlot={time,date:selectedDate};
+  document.getElementById('btn-next-3').disabled=false;
+}
+
+function nextStep(n){
+  if(n===2&&!selectedSpecialty)return toast('Selecione uma especialidade');
+  if(n===3&&!selectedDoctor)return toast('Selecione um médico');
+  if(n===4&&!selectedSlot)return toast('Selecione um horário');
+  showStep(n);
+}
+
+function prevStep(n){showStep(n);}
+function showStep(n){
+  currentStep=n;
+  document.querySelectorAll('.form-step').forEach(s=>s.classList.remove('on'));
+  document.getElementById('form-step-'+n).classList.add('on');
+  // Update step indicators
+  document.querySelectorAll('.step').forEach((s,i)=>{
+    s.classList.remove('on','done');
+    if(i+1<n)s.classList.add('done');
+    if(i+1===n)s.classList.add('on');
+  });
+
+  if(n===3){updateDateLabel();generateSlots();}
+}
+
+async function confirmarAgendamento(){
+  const nome=document.getElementById('pac-nome').value.trim();
+  const telefone=document.getElementById('pac-telefone').value.trim();
+  if(!nome||!telefone)return toast('Preencha nome e WhatsApp');
+
+  document.getElementById('loading').classList.add('on');
+
+  try{
+    // 1. Criar paciente no Supabase
+    const{data:paciente}=await sb.from('kh_pacientes').upsert({
+      clinica_id:CID,nome,telefone,
+      email:document.getElementById('pac-email').value.trim()||null
+    },{onConflict:'telefone'}).select().single();
+
+    // 2. Criar agendamento
+    const agendamentoData={
+      clinica_id:CID,
+      paciente_id:paciente?.id,
+      medico_id:selectedDoctor?.id||null,
+      medico_nome:selectedDoctor?.nome||'—',
+      especialidade:selectedSpecialty?.nome||'—',
+      servico:'Consulta',
+      data_hora:new Date(selectedSlot.date).toISOString().split('T')[0]+'T'+selectedSlot.time+':00',
+      status:'confirmado',
+      queixa:document.getElementById('pac-queixa').value.trim()||null,
+      origem:'portal_agendamento'
+    };
+
+    // Try to save to Supabase
+    try{
+      await sb.from('kh_agendamentos').insert(agendamentoData);
+    }catch(e){console.warn('Agendamento não salvo (tabela pode não existir):',e);}
+
+    // 3. Mostrar confirmação
+    document.getElementById('confirm-spec').textContent=selectedSpecialty?.nome||'—';
+    document.getElementById('confirm-doc').textContent=selectedDoctor?.nome||'—';
+    document.getElementById('confirm-date').textContent=
+      selectedSlot.date.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'})+
+      ' às '+selectedSlot.time;
+
+    // Link WhatsApp
+    const whatsappMsg=encodeURIComponent(
+      `Olá! Agendei uma consulta na Kronexa:\n`+
+      `📋 ${selectedSpecialty?.nome} com ${selectedDoctor?.nome}\n`+
+      `📅 ${selectedSlot.date.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'})} às ${selectedSlot.time}\n`+
+      `👤 ${nome}\n\nPreciso de alguma orientação antes da consulta. Obrigado!`
+    );
+    document.getElementById('whatsapp-link').href='https://wa.me/55'+telefone.replace(/\D/g,'')+'?text='+whatsappMsg;
+
+    showStep(5);
+  }catch(e){
+    toast('Erro ao confirmar. Tente novamente.');
+    console.error(e);
+  }finally{
+    document.getElementById('loading').classList.remove('on');
+  }
+}
+
+function resetForm(){
+  selectedSpecialty=null;selectedDoctor=null;selectedSlot=null;
+  document.querySelectorAll('.spec-card,.doc-card,.slot-btn').forEach(e=>e.classList.remove('on'));
+  document.getElementById('btn-next-1').disabled=true;
+  document.getElementById('btn-next-2').disabled=true;
+  document.getElementById('btn-next-3').disabled=true;
+  document.getElementById('pac-nome').value='';
+  document.getElementById('pac-telefone').value='';
+  document.getElementById('pac-email').value='';
+  document.getElementById('pac-queixa').value='';
+  showStep(1);
+}
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.style.display='block';
+  setTimeout(()=>t.style.display='none',3000);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+{
+  "name": "Kronexa — Sua Saúde Digital",
+  "short_name": "Kronexa",
+  "description": "Portal do paciente Kronexa — Exames, consultas e sua assistente de saúde IA 24h",
+  "start_url": "/portal-paciente.html",
+  "display": "standalone",
+  "background_color": "#080A16",
+  "theme_color": "#6C3FE8",
+  "orientation": "portrait-primary",
+  "categories": ["health", "medical", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshot-exames.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Seus exames"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Meus Exames",
+      "short_name": "Exames",
+      "description": "Ver seus exames médicos",
+      "url": "/portal-paciente.html?tab=exames",
+      "icons": [{ "src": "/icon-exames.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Agendar Consulta",
+      "short_name": "Agendar",
+      "description": "Agendar uma nova consulta",
+      "url": "/portal-agendamento.html",
+      "icons": [{ "src": "/icon-agenda.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Falar com Sofia",
+      "short_name": "Sofia",
+      "description": "Conversar com a assistente IA",
+      "url": "/portal-paciente.html?chat=open",
+      "icons": [{ "src": "/icon-sofia.png", "sizes": "96x96" }]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "display_override": ["standalone", "minimal-ui"],
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "scope": "/",
+  "id": "kronexa-paciente-v1",
+  "edge_side_panel": {
+    "preferred_width": 400
+  }
+}

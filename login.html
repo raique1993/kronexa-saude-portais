@@ -1,0 +1,155 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kronexa — Login</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--p:#0D9488;--ph:#4C1FB3;--g:#16a34a;--r:#dc2626;--t1:#1F2937;--t2:#6B7280;--t3:#9CA3AF;--border:#E5E7EB}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#F8FAFC;color:var(--t1);font-family:-apple-system,'Segoe UI',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.login-box{background:#FFF;border:1px solid var(--border);border-radius:20px;padding:40px 36px;width:100%;max-width:440px;box-shadow:0 4px 24px rgba(0,0,0,.06)}
+.logo{font-size:26px;font-weight:800;text-align:center;margin-bottom:2px;color:var(--t1);letter-spacing:-.5px}
+.logo span{color:var(--p)}
+.sub{font-size:13px;color:var(--t2);text-align:center;margin-bottom:28px;font-weight:400}
+.tabs{display:flex;gap:2px;margin-bottom:24px;background:#F1F5F9;border-radius:10px;padding:4px}
+.tab{flex:1;padding:10px;text-align:center;border-radius:7px;cursor:pointer;font-size:13px;font-weight:600;color:var(--t2);transition:.15s;border:none;background:transparent}
+.tab.on{background:#FFF;color:var(--p);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.fi{width:100%;padding:11px 14px;background:#FFF;border:1.5px solid var(--border);border-radius:10px;color:var(--t1);font-size:14px;outline:none;margin-bottom:10px;transition:.15s}
+.fi:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(91,47,216,.08)}
+.fi::placeholder{color:var(--t3)}
+select.fi{-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%239CA3AF' viewBox='0 0 16 16'><path d='M8 11L3 6h10z'/></svg>");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px}
+.btn{width:100%;padding:13px;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;transition:.15s;margin-top:4px;letter-spacing:.2px}
+.btn-p{background:var(--p);color:#fff}.btn-p:hover{background:var(--ph)}
+.btn-g{background:var(--g);color:#fff}.btn-g:hover{background:#15803d}
+.link{font-size:12px;color:var(--p);cursor:pointer;text-align:center;display:block;margin-top:14px;text-decoration:none;font-weight:500}
+.link:hover{text-decoration:underline}
+.error{background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;padding:12px;font-size:13px;color:var(--r);margin-bottom:12px;display:none;line-height:1.5}
+.info{background:#F0F9FF;border:1px solid #BAE6FD;border-radius:10px;padding:12px;font-size:13px;color:#0369A1;margin-top:16px;display:none;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="login-box">
+  <div class="logo">KRO<span>NEXA</span></div>
+  <div class="sub">Sua secretária IA 24h no WhatsApp</div>
+
+  <div class="tabs">
+    <button class="tab on" onclick="showTab('login')">Entrar</button>
+    <button class="tab" onclick="showTab('register')">Criar Conta</button>
+  </div>
+
+  <div id="error-msg" class="error"></div>
+
+  <!-- LOGIN -->
+  <form id="form-login" onsubmit="handleLogin(event)">
+    <input class="fi" type="email" id="login-email" placeholder="Email" required>
+    <input class="fi" type="password" id="login-pass" placeholder="Senha" required>
+    <button class="btn btn-p" type="submit">Entrar</button>
+  </form>
+
+  <!-- REGISTER -->
+  <form id="form-register" style="display:none" onsubmit="handleRegister(event)">
+    <input class="fi" type="text" id="reg-nome" placeholder="Nome da clínica / empresa" required>
+    <input class="fi" type="email" id="reg-email" placeholder="Email" required>
+    <input class="fi" type="password" id="reg-pass" placeholder="Senha (mín 6 caracteres)" minlength="6" required>
+    <input class="fi" id="reg-tel" placeholder="WhatsApp (com DDD)" required>
+    <select class="fi" id="reg-segmento" required>
+      <option value="">Segmento de saúde...</option>
+      <option>Clínica Médica</option><option>Odontologia</option><option>Clínica Estética</option>
+      <option>Veterinária</option><option>Fisioterapia</option><option>Psicologia</option>
+      <option>Nutrição</option><option>Dermatologia</option><option>Cardiologia</option>
+      <option>Ortopedia</option><option>Pediatria</option><option>Ginecologia</option><option>Outro</option>
+    </select>
+    <button class="btn btn-g" type="submit">Criar Conta Gratuita</button>
+  </form>
+
+  <a class="link" onclick="resetPassword()">Esqueci minha senha</a>
+
+  <div id="info-msg" class="info"></div>
+</div>
+
+<script>
+// ═══ SUPABASE AUTH ═══
+const SB='https://tcjynyfusqkqtdohnyzq.supabase.co', KEY='sb_publishable_gNJhc4WCS9MnnmDAL2T6Vg_AQ71_Vid';
+const sb=supabase.createClient(SB,KEY);
+
+let currentTab='login';
+function showTab(t){currentTab=t;document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));event.target.classList.add('on');document.getElementById('form-login').style.display=t==='login'?'block':'none';document.getElementById('form-register').style.display=t==='register'?'block':'none';hideError()}
+function showError(m){const e=document.getElementById('error-msg');e.textContent=m;e.style.display='block'}
+function hideError(){document.getElementById('error-msg').style.display='none'}
+
+// ═══ LOGIN ═══
+async function handleLogin(e){
+  e.preventDefault(); hideError();
+  const email=document.getElementById('login-email').value.trim();
+  const pass=document.getElementById('login-pass').value;
+  const{data,error}=await sb.auth.signInWithPassword({email,password:pass});
+  if(error){showError(error.message);return;}
+  // Salvar dados da clínica
+  await carregarClinica(data.user.id);
+  redirecionar();
+}
+
+// ═══ REGISTER ═══
+async function handleRegister(e){
+  e.preventDefault(); hideError();
+  const email=document.getElementById('reg-email').value.trim();
+  const pass=document.getElementById('reg-pass').value;
+  const nome=document.getElementById('reg-nome').value.trim();
+  const tel=document.getElementById('reg-tel').value.trim();
+  const seg=document.getElementById('reg-segmento').value;
+
+  const{data,error}=await sb.auth.signUp({email,password:pass,options:{data:{nome_clinica:nome,telefone:tel,segmento:seg}}});
+  if(error){showError(error.message);return;}
+
+  if(data?.user?.identities?.length===0){
+    showError('Email já cadastrado. Faça login.');
+  }else{
+    document.getElementById('info-msg').style.display='block';
+    document.getElementById('info-msg').innerHTML='✅ Conta criada! Verifique seu email para confirmar.<br><br>Enquanto isso, você já pode usar o sistema.';
+    // Criar registro da clínica
+    try{
+      const{data:clinica}=await sb.from('kh_clinicas').insert({id:data.user.id,nome:nome,telefone:tel,segmento:seg}).select('id').single();
+      if(clinica){localStorage.setItem('KRONEXA_CID',clinica.id);localStorage.setItem('KRONEXA_USER',JSON.stringify(data.user))}
+    }catch(ex){}
+    setTimeout(redirecionar,1500);
+  }
+}
+
+// ═══ CARREGAR DADOS DA CLÍNICA ═══
+async function carregarClinica(userId){
+  const{data}=await sb.from('kh_clinicas').select('*').eq('id',userId).single();
+  if(data){
+    localStorage.setItem('KRONEXA_CID',data.id);
+    localStorage.setItem('KRONEXA_CLINICA',JSON.stringify(data));
+  }else{
+    // Fallback: usa o CID demo
+    localStorage.setItem('KRONEXA_CID','c1d2e3f4-0001-0000-0000-000000000001');
+  }
+  localStorage.setItem('KRONEXA_USER',JSON.stringify({id:userId}));
+}
+
+// ═══ REDIRECIONAR ═══
+function redirecionar(){window.location.href='portal-medico.html'}
+
+// ═══ RESET SENHA ═══
+async function resetPassword(){
+  const email=prompt('Digite seu email para redefinir a senha:');
+  if(!email)return;
+  const{error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:'https://saude.kronexa.com.br/login.html'});
+  if(error)showError(error.message);
+  else alert('✅ Email enviado! Verifique sua caixa de entrada.');
+}
+
+// ═══ VERIFICAR SESSÃO ═══
+async function checkSession(){
+  const{data:{session}}=await sb.auth.getSession();
+  if(session?.user){
+    await carregarClinica(session.user.id);
+    redirecionar();
+  }
+}
+checkSession();
+</script>
+</body>
+</html>

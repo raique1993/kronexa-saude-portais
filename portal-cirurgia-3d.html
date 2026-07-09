@@ -1,0 +1,482 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Planejamento Cirúrgico 3D — Kronexa</title>
+<script>if(location.protocol!=="https:"&&location.hostname!=="localhost")location.replace("https://"+location.host+location.pathname+location.search);</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script type="importmap">
+{ "imports": { "three": "https://unpkg.com/three@0.157.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.157.0/examples/jsm/" } }
+</script>
+<style>
+:root{--p:#0D9488;--c:#0284C7;--g:#059669;--r:#DC2626;--o:#D97706;--bg:#F8FAFC;--bg2:#FFFFFF;--bg3:#F1F5F9;--t1:#0F172A;--t2:#475569;--t3:#94A3B8;--b:#E2E8F0}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--t1);font-family:-apple-system,sans-serif;height:100vh;display:grid;grid-template-rows:48px 1fr;overflow:hidden}
+.hd{background:var(--bg2);border-bottom:1px solid var(--b);display:flex;align-items:center;padding:0 14px;gap:10px}
+.logo{font-size:13px;font-weight:900}.logo span{color:var(--p)}
+.tag{font-size:9px;font-weight:700;padding:2px 7px;border-radius:100px;background:rgba(13,148,136,.12);color:var(--p)}
+.hd-btn{height:28px;padding:0 12px;border:1px solid var(--b);background:rgba(0,0,0,.02);color:var(--t2);border-radius:7px;font-size:11px;cursor:pointer;transition:.15s;display:flex;align-items:center;gap:5px}
+.hd-btn:hover{background:rgba(13,148,136,.12);color:var(--t1);border-color:var(--p)}
+.hd-btn.on{background:var(--p);border-color:var(--p);color:#fff}
+.layout{display:grid;grid-template-columns:240px 1fr 300px;overflow:hidden}
+/* Sidebar esquerda */
+.left{background:var(--bg2);border-right:1px solid var(--b);overflow-y:auto;padding:8px}
+.left-hd{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1px;padding:6px 4px;margin-bottom:4px}
+.upload-zone{border:2px dashed rgba(255,255,255,.12);border-radius:10px;padding:16px;text-align:center;cursor:pointer;transition:.2s;margin-bottom:8px}
+.upload-zone:hover{border-color:var(--p);background:rgba(13,148,136,.06)}
+.upload-zone .ico{font-size:28px;margin-bottom:4px}
+.upload-zone p{font-size:10px;color:var(--t3)}
+.fi{width:100%;padding:7px 9px;background:var(--bg3);border:1px solid var(--b);border-radius:7px;color:var(--t1);font-size:11px;outline:none;margin-bottom:6px}
+.fi:focus{border-color:var(--p)}
+textarea.fi{resize:vertical;min-height:70px;line-height:1.5}
+.exam-list-item{padding:7px 8px;border-radius:6px;cursor:pointer;margin-bottom:3px;font-size:10px;border:1px solid transparent;transition:.12s}
+.exam-list-item:hover{border-color:rgba(13,148,136,.35);background:rgba(13,148,136,.08)}
+.exam-list-item.on{border-color:var(--p);background:rgba(13,148,136,.15)}
+/* Área central 3D */
+.center{position:relative;background:#F1F5F9;overflow:hidden;cursor:grab}
+.center:active{cursor:grabbing}
+#viewer-3d{width:100%;height:100%}
+#viewer-3d canvas{display:block}
+.overlay-info{position:absolute;top:10px;left:10px;background:rgba(255,255,255,.92);border-radius:8px;padding:8px 12px;font-size:10px;pointer-events:none}
+.overlay-info span{color:var(--c)}
+/* Painel direito */
+.right{background:var(--bg2);border-left:1px solid var(--b);overflow-y:auto;padding:10px}
+.right-sec{margin-bottom:12px}
+.right-sec h3{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.tool-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px}
+.tool-btn{padding:7px 5px;border:1px solid var(--b);border-radius:6px;background:rgba(255,255,255,.02);color:var(--t2);cursor:pointer;font-size:10px;text-align:center;transition:.15s}
+.tool-btn:hover{background:rgba(13,148,136,.18);border-color:var(--p);color:var(--t1)}
+.tool-btn.on{background:rgba(13,148,136,.30);border-color:var(--p);color:var(--p)}
+.step-card{background:var(--bg3);border-radius:8px;padding:8px 10px;margin-bottom:4px;font-size:10px;border-left:3px solid var(--p)}
+.step-card .step-num{font-weight:900;color:var(--p);font-size:14px}
+.alert-urgent{background:rgba(244,63,94,.08);border:1px solid rgba(244,63,94,.2);border-radius:8px;padding:10px;font-size:10px;color:var(--r);line-height:1.5}
+.btn{padding:8px 14px;border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;transition:.15s;width:100%}
+.btn-p{background:var(--p);color:#fff}.btn-p:hover{opacity:.9}
+.btn-g{background:var(--g);color:#000}.btn-c{background:var(--c);color:#000}
+.toast{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);padding:9px 20px;border-radius:100px;font-size:12px;font-weight:700;z-index:99;display:none;background:var(--p);color:#fff}
+input[type=file]{display:none}
+</style>
+</head>
+<body>
+
+<header class="hd">
+  <div class="logo">KRO<span>NEXA</span></div>
+  <span class="tag">CIRURGIA 3D</span>
+  <span style="font-size:11px;color:var(--t2)">Planejamento Cirúrgico Assistido por IA</span>
+  <button class="hd-btn" style="margin-left:auto;background:rgba(0,229,255,.12);border-color:rgba(0,229,255,.3);color:#00E5FF;font-weight:700" onclick="window.open('portal-dicom-3d.html','_blank')">🧬 DICOM 3D Real (GPU Ray Casting)</button>
+	  <button class="hd-btn" onclick="window.open('portal-exames.html','_blank')">📷 Exames 2D</button>
+  <button class="hd-btn" onclick="window.location.href='portal-medico.html'">← Médico</button>
+</header>
+
+<div class="layout">
+  <!-- ESQUERDA: Upload + Lista -->
+  <div class="left">
+    <div class="left-hd">📁 Exames</div>
+    <div class="upload-zone" onclick="document.getElementById('file-input').click()">
+      <div class="ico">📤</div>
+      <p><b>Upload DICOM/CT/RM</b></p>
+      <p>ou arraste exames aqui</p>
+    </div>
+    <input type="file" id="file-input" accept="image/*,.dcm,.zip" multiple onchange="handleUpload(this)">
+    <div class="left-hd">🔍 Filtro</div>
+    <select class="fi" id="pac-sel-3d" onchange="loadExames3D()"><option value="">Todos pacientes</option></select>
+    <div id="exame-list-3d"></div>
+  </div>
+
+  <!-- CENTRO: Renderizador 3D -->
+  <div class="center" id="center-3d">
+    <div id="viewer-3d"></div>
+    <div class="overlay-info" id="overlay-info">
+      <div><span id="oi-modalidade">—</span> · <span id="oi-dims">—</span></div>
+      <div>HU: <span id="oi-hu">—</span> · Zoom: <span id="oi-zoom">100%</span></div>
+    </div>
+    <!-- Marcadores cirúrgicos -->
+    <div id="surgical-markers"></div>
+  </div>
+
+  <!-- DIREITA: Ferramentas + IA -->
+  <div class="right">
+    <div class="right-sec">
+      <h3>🔪 Ferramentas Cirúrgicas</h3>
+      <div class="tool-grid">
+        <button class="tool-btn on" onclick="setMode('navigate')">🖐 Navegar</button>
+        <button class="tool-btn" onclick="setMode('entry')">🎯 Entrada</button>
+        <button class="tool-btn" onclick="setMode('target')">🎯 Alvo</button>
+        <button class="tool-btn" onclick="setMode('measure')">📏 Medir</button>
+        <button class="tool-btn" onclick="setMode('angle')">📐 Ângulo</button>
+        <button class="tool-btn" onclick="setMode('clip')">✂️ Corte</button>
+        <button class="tool-btn" onclick="setMode('annotate')">✏️ Anotar</button>
+        <button class="tool-btn" onclick="resetAll()">🔄 Reset</button>
+      </div>
+    </div>
+
+    <div class="right-sec">
+      <h3>🤖 IA Cirúrgica</h3>
+      <button class="btn btn-c" onclick="analisarAnatomiaIA()" style="margin-bottom:4px">🔬 Analisar Anatomia</button>
+      <button class="btn btn-c" onclick="gerarPlanoCirurgico()" style="margin-bottom:4px">📋 Gerar Plano Cirúrgico</button>
+      <button class="btn btn-c" onclick="simularAbordagem()">🎬 Simular Abordagem</button>
+    </div>
+
+    <div class="right-sec">
+      <h3>📋 Visualização</h3>
+      <div class="tool-grid">
+        <button class="tool-btn" onclick="setPreset('bone')">🦴 Osso</button>
+        <button class="tool-btn" onclick="setPreset('soft')">🫁 Tecido Mole</button>
+        <button class="tool-btn" onclick="setPreset('vessel')">🩸 Vasos</button>
+        <button class="tool-btn" onclick="setPreset('lung')">🫁 Pulmão</button>
+      </div>
+    </div>
+
+    <div class="right-sec">
+      <h3>📝 Guia Cirúrgico</h3>
+      <div id="surgical-guide"><span style="color:var(--t3);font-size:10px">Carregue um exame e clique em "Gerar Plano Cirúrgico"</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ═══ SUPABASE ═══
+const SB='https://tcjynyfusqkqtdohnyzq.supabase.co', KEY='sb_publishable_gNJhc4WCS9MnnmDAL2T6Vg_AQ71_Vid', CID='c1d2e3f4-0001-0000-0000-000000000001';
+const sb=supabase.createClient(SB,KEY);
+
+// ═══ ESTADO 3D ═══
+let scene,camera,renderer,controls,volumeGroup,mode='navigate';
+let entryPoint=null,targetPoint=null,measurements=[];
+let currentExam=null, surgicalPlan=null;
+window.currentExam=null;
+
+// ═══ INIT ═══
+const container=document.getElementById('viewer-3d');
+const w=container.clientWidth||800, h=container.clientHeight||600;
+
+scene=new THREE.Scene(); scene.background=new THREE.Color(0x0a0a1a);
+camera=new THREE.PerspectiveCamera(50,w/h,0.1,100); camera.position.set(2,1.5,3); camera.lookAt(0,0,0);
+renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
+renderer.setSize(w,h); renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+container.appendChild(renderer.domElement);
+
+controls=new OrbitControls(camera,renderer.domElement);
+controls.enableDamping=true; controls.dampingFactor=0.08; controls.target.set(0,0,0);
+
+// Iluminação profissional
+scene.add(new THREE.AmbientLight(0x446688,5));
+const key=new THREE.DirectionalLight(0xffffff,3); key.position.set(5,8,5); scene.add(key);
+const fill=new THREE.DirectionalLight(0x8899cc,2); fill.position.set(-3,-2,-3); scene.add(fill);
+const rim=new THREE.DirectionalLight(0xaaccff,2); rim.position.set(0,0,5); scene.add(rim);
+
+// Grid cirúrgico
+const grid=new THREE.PolarGridHelper(2,32,24,64,0x334466,0x222244); grid.position.y=-1.5; scene.add(grid);
+
+// Eixos anatômicos
+function addAxis(dir,color){
+  const pts=[new THREE.Vector3(0,0,0),dir.clone().multiplyScalar(2)];
+  scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color,transparent:true,opacity:.5})));
+  const cone=new THREE.ConeGeometry(.05,.15,8);
+  const cm=new THREE.Mesh(cone,new THREE.MeshBasicMaterial({color}));
+  cm.position.copy(dir.clone().multiplyScalar(2)); cm.lookAt(dir); scene.add(cm);
+}
+addAxis(new THREE.Vector3(1,0,0),0xff4444);
+addAxis(new THREE.Vector3(0,1,0),0x44ff44);
+addAxis(new THREE.Vector3(0,0,1),0x4444ff);
+
+// Volume placeholder
+volumeGroup=new THREE.Group(); scene.add(volumeGroup);
+buildVolume(null);
+
+// ═══ ANIMATION LOOP ═══
+function animate(){
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene,camera);
+  const el=document.getElementById('oi-zoom');
+  if(el)el.textContent=Math.round(camera.zoom*100)+'%';
+}
+animate();
+
+// ═══ RESIZE ═══
+window.addEventListener('resize',()=>{
+  const c=document.getElementById('viewer-3d');
+  if(!c)return;
+  camera.aspect=c.clientWidth/Math.max(c.clientHeight,1); camera.updateProjectionMatrix();
+  renderer.setSize(c.clientWidth,c.clientHeight);
+});
+
+// Expor ao window (módulo ES)
+window.loadExames3D=loadExames3D;
+window.abrirExame3D=abrirExame3D;
+window.handleUpload=handleUpload;
+window.setMode=setMode;
+window.setPreset=setPreset;
+window.analisarAnatomiaIA=analisarAnatomiaIA;
+window.gerarPlanoCirurgico=gerarPlanoCirurgico;
+window.simularAbordagem=simularAbordagem;
+window.resetAll=resetAll;
+window.toast=toast;
+
+// ═══ CARREGAR EXAMES ═══
+async function loadExames3D(){
+  const pacId=document.getElementById('pac-sel-3d').value;
+  let q=sb.from('kh_exames').select('*,kh_pacientes(nome,telefone)').eq('clinica_id',CID).order('criado_em',{ascending:false}).limit(30);
+  if(pacId)q=q.eq('paciente_id',pacId);
+  const{data}=await q;
+  // Carregar pacientes pro filtro
+  const{data:pacientes}=await sb.from('kh_pacientes').select('id,nome').eq('clinica_id',CID).order('nome');
+  const sel=document.getElementById('pac-sel-3d');
+  sel.innerHTML='<option value="">Todos pacientes</option>'+(pacientes||[]).map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
+  const lista=document.getElementById('exame-list-3d');
+  if(!data?.length){lista.innerHTML='<div style="color:var(--t3);font-size:10px;padding:8px;text-align:center">Nenhum exame encontrado</div>';return;}
+  lista.innerHTML=data.map(e=>`<div class="exam-list-item ${currentExam?.id===e.id?'on':''}" onclick="abrirExame3D('${e.id}')">
+    <div style="font-weight:700">${e.tipo==='pdf'?'📄':'🖼️'} ${e.nome||'Exame'}</div>
+    <div style="color:var(--t3)">${e.kh_pacientes?.nome||'—'} · ${new Date(e.criado_em).toLocaleDateString('pt-BR')} ${e.laudo?'· ✅':''}</div>
+  </div>`).join('');
+}
+
+// ═══ ABRIR EXAME NO 3D ═══
+async function abrirExame3D(id){
+  toast('🔍 Carregando...');
+  const{data}=await sb.from('kh_exames').select('*,kh_pacientes(nome)').eq('id',id).single();
+  if(!data){toast('Exame não encontrado');return;}
+  currentExam=data;
+  document.querySelectorAll('.exam-list-item').forEach(el=>el.classList.remove('on'));
+  document.querySelectorAll('.exam-list-item').forEach(el=>{if(el.textContent.includes(data.nome))el.classList.add('on')});
+  document.getElementById('oi-modalidade').textContent=data.tipo||'imagem';
+  // Carregar textura para o volume
+  const loader=new THREE.TextureLoader(); loader.crossOrigin='anonymous';
+  loader.load(data.url,tex=>{
+    document.getElementById('oi-dims').textContent=tex.image.width+'x'+tex.image.height;
+    buildVolume(tex);
+    toast('✅ Exame carregado em 3D');
+  },undefined,()=>{
+    // Fallback: criar volume geométrico
+    buildVolume(null);
+    toast('⚠️ Visualização 3D limitada (imagem indisponível)');
+  });
+  document.getElementById('surgical-guide').innerHTML='<span style="color:var(--t3);font-size:10px">Clique em "Gerar Plano Cirúrgico" para análise IA</span>';
+}
+
+// ═══ CONSTRUIR VOLUME 3D ═══
+function buildVolume(texture){
+  volumeGroup.clear();
+  if(texture){
+    // Criar multiplas slices empilhadas para simular volume
+    const aspect=texture.image.width/texture.image.height;
+    const slices=8;
+    for(let i=0;i<slices;i++){
+      const z=(i-slices/2)*0.035;
+      const geo=new THREE.PlaneGeometry(1.4*aspect,1.4);
+      const mat=new THREE.MeshPhongMaterial({map:texture,transparent:true,opacity:0.12,side:THREE.DoubleSide,color:0xffffff});
+      const slice=new THREE.Mesh(geo,mat); slice.position.z=z; volumeGroup.add(slice);
+    }
+    // Caixa wireframe
+    const boxGeo=new THREE.BoxGeometry(1.4*aspect,1.4,slices*0.035);
+    const edges=new THREE.EdgesGeometry(boxGeo);
+    volumeGroup.add(new THREE.LineSegments(edges,new THREE.LineBasicMaterial({color:0x6C3FE8,transparent:true,opacity:.5})));
+  }else{
+    // Volume anatômico genérico para demonstração
+    // Corpo principal (tronco)
+    const bodyGeo=new THREE.CylinderGeometry(.6,.7,1.8,32,8,true);
+    const bodyMat=new THREE.MeshPhongMaterial({color:0xffccaa,transparent:true,opacity:.25,side:THREE.DoubleSide});
+    volumeGroup.add(new THREE.Mesh(bodyGeo,bodyMat));
+    // Estrutura óssea simulada (coluna)
+    for(let i=0;i<6;i++){
+      const vGeo=new THREE.CylinderGeometry(.12,.14,.22,16);
+      const vMesh=new THREE.Mesh(vGeo,new THREE.MeshPhongMaterial({color:0xffffcc,transparent:true,opacity:.5}));
+      vMesh.position.y=-.7+i*.28; volumeGroup.add(vMesh);
+    }
+    // Wireframe
+    const edges=new THREE.EdgesGeometry(new THREE.CylinderGeometry(.6,.7,1.8,32,8,true));
+    volumeGroup.add(new THREE.LineSegments(edges,new THREE.LineBasicMaterial({color:0x6C3FE8,transparent:true,opacity:.4})));
+    // Coração simulado
+    const heartGeo=new THREE.SphereGeometry(.18,16,16); heartGeo.scale(1,1.2,.8);
+    const heart=new THREE.Mesh(heartGeo,new THREE.MeshPhongMaterial({color:0xff3333,transparent:true,opacity:.4}));
+    heart.position.set(.15,.15,.2); volumeGroup.add(heart);
+    // Pulmões simulados
+    [-1,1].forEach(side=>{
+      const lungGeo=new THREE.SphereGeometry(.22,12,12); lungGeo.scale(.7,1,.5);
+      const lung=new THREE.Mesh(lungGeo,new THREE.MeshPhongMaterial({color:0xff8899,transparent:true,opacity:.3}));
+      lung.position.set(side*.25,.1,-.1); volumeGroup.add(lung);
+    });
+  }
+  camera.position.set(2.5,1.8,3); camera.lookAt(0,0,0);
+  if(controls)controls.target.set(0,0,0);
+}
+
+// ═══ MODOS DE FERRAMENTA ═══
+function setMode(m){
+  mode=m; document.querySelectorAll('.tool-btn').forEach(b=>b.classList.remove('on'));
+  if(event?.target)event.target.classList.add('on');
+  toast('🔧 '+{navigate:'Navegação',entry:'Ponto de Entrada',target:'Ponto Alvo',measure:'Medir Distância',angle:'Medir Ângulo',clip:'Plano de Corte',annotate:'Anotação'}[m]);
+  if(controls){controls.enabled=m==='navigate';}
+}
+
+// ═══ PRESETS DE VISUALIZAÇÃO ═══
+function setPreset(p){
+  currentPreset=presets[p];
+  toast('🎨 '+{bone:'Osso',soft:'Tecido Mole',vessel:'Vasos',lung:'Pulmão'}[p]);
+}
+
+// ═══ IA: ANALISAR ANATOMIA ═══
+async function analisarAnatomiaIA(){
+  if(!currentExam?.url){toast('Carregue um exame primeiro');return;}
+  toast('🤖 IA analisando anatomia...');
+  try{
+    const geminiKey=localStorage.getItem('KRONEXA_GEMINI_KEY')||localStorage.getItem('KRONEXA_GROQ_KEY')||'';
+    const prompt=`You are a surgical planning AI. Analyze this medical image and provide a detailed anatomical report in Portuguese (Brazil). Return JSON:
+{
+  "modalidade": "CT/MRI/X-Ray/etc",
+  "regiao": "anatomic region",
+  "estruturas_identificadas": [
+    {"nome": "structure name", "tipo": "osso|vaso|orgao|musculo|tumor|anomalia", "localizacao": "description", "tamanho_mm": 0, "relevancia_cirurgica": "alta|media|baixa", "notas": "surgical relevance"}
+  ],
+  "anomalias": [{"nome": "...", "severidade": "leve|moderada|grave|critica", "descricao": "..."}],
+  "riscos_cirurgicos": ["risk 1", "risk 2"],
+  "estruturas_criticas_evitar": ["artery X", "nerve Y"]
+}`;
+    const blob=await (await fetch(currentExam.url)).blob();
+    const b64=await new Promise(r=>{const rd=new FileReader();rd.onload=()=>r(rd.result.split(',')[1]);rd.readAsDataURL(blob)});
+    const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{inline_data:{mime_type:blob.type||'image/jpeg',data:b64}},{text:prompt}]}],generationConfig:{temperature:0.1,maxOutputTokens:3000}})});
+    const d=await r.json(); if(d.error){toast('Erro IA: '+d.error.message);return;}
+    const anat=JSON.parse((d.candidates?.[0]?.content?.parts?.[0]?.text||'{}').replace(/```json|```/g,'').trim());
+    renderAnatomiaReport(anat);
+    toast('✅ Anatomia analisada!');
+  }catch(e){toast('Erro: '+e.message);}
+}
+
+function renderAnatomiaReport(anat){
+  const tipos={osso:'🦴',vaso:'🩸',orgao:'🫁',musculo:'💪',tumor:'🔴',anomalia:'⚠️'};
+  let html=`<div class="right-sec"><h3>🔬 Anatomia — ${anat.regiao||'Analisada'}</h3>`;
+  html+=`<div style="font-size:10px;color:var(--c);margin-bottom:6px">Modalidade: ${anat.modalidade||'—'}</div>`;
+  (anat.estruturas_identificadas||[]).forEach(e=>{
+    html+=`<div class="step-card" style="border-left-color:${e.relevancia_cirurgica==='alta'?'var(--r)':'var(--c)'}"><b>${tipos[e.tipo]||'•'} ${e.nome}</b><br><span style="color:var(--t2)">${e.localizacao||''} · ${e.tamanho_mm||'?'}mm · ${e.notas||''}</span></div>`;
+  });
+  if(anat.anomalias?.length)html+=`<div class="alert-urgent">⚠️ Anomalias: ${anat.anomalias.map(a=>a.nome+' ('+a.severidade+')').join(', ')}</div>`;
+  if(anat.estruturas_criticas_evitar?.length)html+=`<div style="font-size:10px;margin-top:4px">🚫 Evitar: ${anat.estruturas_criticas_evitar.join(', ')}</div>`;
+  html+='</div>';
+  document.getElementById('surgical-guide').innerHTML=html;
+}
+
+// ═══ IA: GERAR PLANO CIRÚRGICO ═══
+async function gerarPlanoCirurgico(){
+  if(!currentExam){toast('Carregue um exame primeiro');return;}
+  toast('📋 IA gerando plano cirúrgico...');
+  try{
+    const geminiKey=localStorage.getItem('KRONEXA_GEMINI_KEY')||localStorage.getItem('KRONEXA_GROQ_KEY')||'';
+    const prompt=`You are a senior surgeon creating a preoperative plan. Based on this medical image, create a detailed surgical plan in Portuguese (Brazil). Return JSON:
+{
+  "diagnostico": "clinical diagnosis",
+  "procedimento_recomendado": "recommended procedure",
+  "classificacao_risco": "baixo|medio|alto|critico",
+  "posicionamento_paciente": "supino/prono/lateral/etc",
+  "abordagem": "anterior/posterior/lateral/etc",
+  "passos_cirurgicos": [
+    {"numero":1,"titulo":"step title","descricao":"detailed description","instrumentos":["scalpel","forceps"],"cuidados":"precautions","tempo_estimado_min":15,"imagem_referencia":"description of what to look for"}
+  ],
+  "estruturas_proteger": ["artery","nerve"],
+  "complicacoes_possiveis": [{"complicacao":"...","probabilidade":"baixa|media|alta","prevencao":"..."}],
+  "pos_operatorio": {"internacao_dias":0,"cuidados":["..."],"retorno_dias":7,"restricoes":["..."]},
+  "alternativas": ["alternative approach 1"]
+}`;
+    const blob=await (await fetch(currentExam.url)).blob();
+    const b64=await new Promise(r=>{const rd=new FileReader();rd.onload=()=>r(rd.result.split(',')[1]);rd.readAsDataURL(blob)});
+    const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{inline_data:{mime_type:blob.type||'image/jpeg',data:b64}},{text:prompt}]}],generationConfig:{temperature:0.1,maxOutputTokens:4000}})});
+    const d=await r.json(); if(d.error){toast('Erro IA: '+d.error.message);return;}
+    surgicalPlan=JSON.parse((d.candidates?.[0]?.content?.parts?.[0]?.text||'{}').replace(/```json|```/g,'').trim());
+    renderPlanoCirurgico(surgicalPlan);
+    toast('✅ Plano cirúrgico gerado!');
+  }catch(e){toast('Erro: '+e.message);}
+}
+
+function renderPlanoCirurgico(plano){
+  let html='<div class="right-sec"><h3>📋 Plano Cirúrgico</h3>';
+  html+=`<div style="font-size:10px;margin-bottom:4px"><b>${plano.procedimento_recomendado||'—'}</b></div>`;
+  html+=`<div style="font-size:10px;color:var(--t2);margin-bottom:8px">Risco: <span style="color:${plano.classificacao_risco==='alto'||plano.classificacao_risco==='critico'?'var(--r)':'var(--g)'}">${plano.classificacao_risco||'—'}</span> · Abordagem: ${plano.abordagem||'—'} · Posição: ${plano.posicionamento_paciente||'—'}</div>`;
+  (plano.passos_cirurgicos||[]).forEach(p=>{
+    html+=`<div class="step-card"><span class="step-num">${p.numero}.</span> <b>${p.titulo||''}</b><br><span style="color:var(--t2)">${p.descricao||''}</span><br><span style="color:var(--t3);font-size:9px">🕐 ${p.tempo_estimado_min||'?'}min · 🔧 ${(p.instrumentos||[]).join(', ')}</span></div>`;
+  });
+  if(plano.complicacoes_possiveis?.length)html+=`<div class="alert-urgent">⚠️ Complicações: ${plano.complicacoes_possiveis.map(c=>c.complicacao).join(', ')}</div>`;
+  html+='</div>';
+  document.getElementById('surgical-guide').innerHTML=html;
+}
+
+// ═══ IA: SIMULAR ABORDAGEM ═══
+async function simularAbordagem(){
+  if(!currentExam){toast('Carregue um exame primeiro');return;}
+  toast('🎬 Gerando simulação...');
+  try{
+    const geminiKey=localStorage.getItem('KRONEXA_GEMINI_KEY')||localStorage.getItem('KRONEXA_GROQ_KEY')||'';
+    const prompt=`You are a surgical simulator AI. For this medical image, create a step-by-step surgical walkthrough in Portuguese. Focus on WHAT THE SURGEON SEES at each step. Return JSON:
+{
+  "titulo": "Surgical Walkthrough",
+  "visao_geral": "overview of the procedure",
+  "passos_visuais": [
+    {"passo":1,"titulo":"...","o_que_ve":"describe what surgeon sees at this step - anatomy, landmarks, colors, textures","acao":"what to do","cuidado_critico":"critical warning if any","angulo_visao":"anterior/posterior/etc"}
+  ],
+  "pontos_referencia": [{"nome":"landmark name","descricao":"how to identify it"}],
+  "checklist_seguranca": ["check 1","check 2"]
+}`;
+    const blob=await (await fetch(currentExam.url)).blob();
+    const b64=await new Promise(r=>{const rd=new FileReader();rd.onload=()=>r(rd.result.split(',')[1]);rd.readAsDataURL(blob)});
+    const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{inline_data:{mime_type:blob.type||'image/jpeg',data:b64}},{text:prompt}]}],generationConfig:{temperature:0.1,maxOutputTokens:4000}})});
+    const d=await r.json(); if(d.error){toast('Erro IA: '+d.error.message);return;}
+    const sim=JSON.parse((d.candidates?.[0]?.content?.parts?.[0]?.text||'{}').replace(/```json|```/g,'').trim());
+    renderSimulacao(sim);
+    toast('✅ Simulação pronta!');
+  }catch(e){toast('Erro: '+e.message);}
+}
+
+function renderSimulacao(sim){
+  let html='<div class="right-sec"><h3>🎬 Simulação: '+sim.titulo+'</h3>';
+  html+=`<div style="font-size:10px;color:var(--t2);margin-bottom:8px">${sim.visao_geral||''}</div>`;
+  (sim.passos_visuais||[]).forEach(p=>{
+    html+=`<div class="step-card" style="border-left-color:var(--c)"><b>Passo ${p.passo}: ${p.titulo||''}</b><br><span style="color:var(--t2)">👁 ${p.o_que_ve||''}</span><br><span style="color:var(--c)">▶ ${p.acao||''}</span>${p.cuidado_critico?`<br><span style="color:var(--r)">⚠️ ${p.cuidado_critico}</span>`:''}</div>`;
+  });
+  if(sim.pontos_referencia?.length)html+=`<div style="font-size:10px;margin-top:4px"><b>📍 Pontos de Referência:</b> ${sim.pontos_referencia.map(p=>p.nome).join(', ')}</div>`;
+  if(sim.checklist_seguranca?.length)html+=`<div style="font-size:10px;margin-top:4px"><b>✅ Checklist:</b> ${sim.checklist_seguranca.join(' · ')}</div>`;
+  html+='</div>';
+  document.getElementById('surgical-guide').innerHTML=html;
+}
+
+// ═══ UPLOAD ═══
+function handleUpload(input){
+  const files=Array.from(input.files||[]); if(!files.length)return;
+  toast('📤 Enviando '+files.length+' arquivo(s)...');
+  files.forEach(async f=>{
+    const path=`${CID}/3d_${Date.now()}_${f.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;
+    const{data:up}=await sb.storage.from('exames').upload(path,f,{contentType:f.type,upsert:false});
+    if(up){const{data:ud}=sb.storage.from('exames').getPublicUrl(up.path);
+      await sb.from('kh_exames').insert({clinica_id:CID,nome:f.name.replace(/\.[^.]+$/,''),tipo:f.type.startsWith('image')?'imagem':'pdf',url:ud?.publicUrl||'',tamanho_bytes:f.size,anotacoes:[],origem:'upload_3d'});
+    }
+  });
+  setTimeout(()=>{loadExames3D();toast('✅ Upload concluído!')},1500);
+}
+
+// ═══ RESET ═══
+function resetAll(){
+  entryPoint=null; targetPoint=null; measurements=[]; surgicalPlan=null;
+  volumeGroup.clear(); buildVolume(null);
+  document.getElementById('surgical-guide').innerHTML='<span style="color:var(--t3);font-size:10px">Carregue um exame e clique em "Gerar Plano Cirúrgico"</span>';
+  camera.position.set(2.5,1.8,3); camera.lookAt(0,0,0);
+  setMode('navigate');
+  toast('🔄 Tudo resetado');
+}
+
+// ═══ TOAST ═══
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',3000);}
+
+// ═══ DRAG & DROP ═══
+const center=document.getElementById('center-3d');
+center.addEventListener('dragover',e=>{e.preventDefault();center.style.border='2px solid var(--p)'});
+center.addEventListener('dragleave',()=>center.style.border='');
+center.addEventListener('drop',e=>{e.preventDefault();center.style.border='';const dt=new DataTransfer();Array.from(e.dataTransfer.files).forEach(f=>dt.items.add(f));document.getElementById('file-input').files=dt.files;handleUpload(document.getElementById('file-input'))});
+
+// Iniciar
+loadExames3D();
+buildVolume(null);
+</script>
+</body>
+</html>

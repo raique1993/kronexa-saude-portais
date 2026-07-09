@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<script>if(location.protocol!=="https:"&&location.hostname!=="localhost")location.replace("https://"+location.host+location.pathname+location.search);</script>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Configurar clínica — Kronexa</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--p:#0D9488;--c:#0284C7;--g:#059669;--r:#DC2626;--bg:#F8FAFC;--bg2:#FFFFFF;--bg3:#F1F5F9;--t1:#0F172A;--t2:#475569;--t3:#94A3B8;--b:#E2E8F0}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--t1);font-family:-apple-system,sans-serif;min-height:100vh;padding:20px}
+.container{max-width:680px;margin:0 auto}
+.box{background:var(--bg2);border:1px solid var(--b);border-radius:20px;padding:36px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.logo{font-size:20px;font-weight:900;text-align:center;margin-bottom:4px;color:var(--t1)}.logo span{color:var(--p)}
+.step-bar{display:flex;gap:4px;margin:20px 0}
+.step{flex:1;height:3px;border-radius:100px;background:var(--b)}.step.done{background:var(--p)}.step.current{background:var(--c)}
+h2{font-size:18px;font-weight:800;margin-bottom:4px;color:var(--t1)}
+.sh{font-size:13px;color:var(--t3);margin-bottom:20px}
+label{font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;display:block;margin-bottom:3px;letter-spacing:.3px}
+.fi{width:100%;padding:10px 13px;background:var(--bg2);border:1.5px solid var(--b);border-radius:9px;color:var(--t1);font-size:13px;outline:none;margin-bottom:10px;font-family:inherit}
+.fi:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(13,148,136,.08)}
+textarea.fi{resize:vertical;min-height:70px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:500px){.form-row{grid-template-columns:1fr}}
+.btn{width:100%;padding:12px;background:var(--p);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;margin-top:6px;transition:.15s;font-family:inherit}
+.btn:hover{opacity:.9}
+.btn-o{background:transparent;border:1px solid var(--b);color:var(--t2);margin-top:4px}
+.btn-o:hover{background:var(--bg3)}
+.panel{display:none}.panel.on{display:block}
+
+/* Service cards */
+.svc-list{display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto;margin-bottom:12px}
+.svc-row{display:flex;gap:8px;align-items:center}
+.svc-row input{flex:1}
+.svc-row .svc-price{width:100px}
+.svc-row button{background:var(--r);color:#fff;border:none;border-radius:6px;padding:6px 10px;cursor:pointer;font-size:11px;font-weight:700}
+.btn-add{background:var(--bg3);color:var(--p);border:1px dashed var(--p);border-radius:9px;padding:10px;text-align:center;cursor:pointer;font-size:12px;font-weight:600;width:100%}
+.btn-add:hover{background:rgba(13,148,136,.05)}
+
+/* Tags */
+.tag-row{display:flex;gap:4px;flex-wrap:wrap}
+.tag-opt{padding:6px 14px;border:1px solid var(--b);border-radius:100px;font-size:12px;cursor:pointer;transition:.15s;font-weight:500}
+.tag-opt:hover,.tag-opt.on{border-color:var(--p);background:rgba(13,148,136,.08);color:var(--p)}
+
+/* WhatsApp */
+.qr-box{text-align:center;padding:20px;background:var(--bg3);border-radius:12px;margin:12px 0}
+.qr-box img{width:160px;height:160px;border-radius:12px}
+.info-box{background:rgba(2,132,199,.06);border:1px solid rgba(2,132,199,.15);border-radius:10px;padding:14px;font-size:12px;color:var(--c);margin-top:12px;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="box">
+    <div class="logo">KRO<span>NEXA</span> <span style="font-size:11px;color:var(--t3);font-weight:400">| Configuração</span></div>
+    <div class="step-bar">
+      <div class="step done" id="s1"></div><div class="step current" id="s2"></div><div class="step" id="s3"></div><div class="step" id="s4"></div>
+    </div>
+
+    <!-- STEP 1: Dados básicos -->
+    <div class="panel on" id="p1">
+      <h2>👋 Vamos começar</h2>
+      <p class="sh">Conte um pouco sobre sua clínica para a IA personalizar o atendimento</p>
+      <label>Nome da clínica</label>
+      <input class="fi" id="nome" placeholder="Ex: Clínica Bem Estar" required>
+      <label>Especialidade principal</label>
+      <select class="fi" id="segmento">
+        <option value="">Selecione...</option>
+        <option>Clínica Médica</option><option>Odontologia</option><option>Clínica Estética</option>
+        <option>Dermatologia</option><option>Cardiologia</option><option>Ortopedia</option>
+        <option>Pediatria</option><option>Ginecologia</option><option>Oftalmologia</option>
+        <option>Fisioterapia</option><option>Psicologia</option><option>Nutrição</option>
+        <option>Veterinária</option><option>Exames Laboratoriais</option><option>Outro</option>
+      </select>
+      <div class="form-row">
+        <div><label>WhatsApp (com DDD)</label><input class="fi" id="tel" placeholder="11999999999" required></div>
+        <div><label>CNPJ (opcional)</label><input class="fi" id="cnpj" placeholder="00.000.000/0000-00"></div>
+      </div>
+      <div class="form-row">
+        <div><label>Estado</label><select class="fi" id="uf"><option value="">UF</option><option>SP</option><option>RJ</option><option>MG</option><option>RS</option><option>PR</option><option>SC</option><option>BA</option><option>PE</option><option>CE</option><option>DF</option><option>GO</option><option>outro</option></select></div>
+        <div><label>Cidade</label><input class="fi" id="cidade" placeholder="São Paulo"></div>
+      </div>
+      <label>Endereço completo</label>
+      <input class="fi" id="endereco" placeholder="Rua, número, bairro, CEP">
+      <button class="btn" onclick="nextStep(1)">Próximo →</button>
+    </div>
+
+    <!-- STEP 2: Serviços e Preços -->
+    <div class="panel" id="p2">
+      <h2>💼 Seus Serviços e Preços</h2>
+      <p class="sh">Cadastre os procedimentos que sua clínica realiza. A IA vai usar isso para agendar e negociar.</p>
+      <div class="svc-list" id="svc-list">
+        <div class="svc-row"><input class="fi" placeholder="Nome do serviço" value="Consulta" style="margin:0"><input class="fi svc-price" placeholder="R$" value="200" style="margin:0"></div>
+        <div class="svc-row"><input class="fi" placeholder="Nome do serviço" value="Retorno" style="margin:0"><input class="fi svc-price" placeholder="R$" value="120" style="margin:0"></div>
+        <div class="svc-row"><input class="fi" placeholder="Nome do serviço" value="Limpeza" style="margin:0"><input class="fi svc-price" placeholder="R$" value="150" style="margin:0"></div>
+      </div>
+      <button class="btn-add" onclick="addSvc()">+ Adicionar serviço</button>
+      <div style="display:flex;gap:10px;margin-top:12px">
+        <button class="btn btn-o" onclick="nextStep(-1)">← Voltar</button>
+        <button class="btn" onclick="nextStep(2)">Próximo →</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: Exames e Procedimentos -->
+    <div class="panel" id="p3">
+      <h2>🔬 Exames e Procedimentos</h2>
+      <p class="sh">Que tipos de exames sua clínica realiza ou solicita?</p>
+      <label>Exames realizados na clínica</label>
+      <div class="tag-row" id="exames-tags">
+        <div class="tag-opt" onclick="this.classList.toggle('on')">Radiografia</div>
+        <div class="tag-opt" onclick="this.classList.toggle('on')">Ultrassonografia</div>
+        <div class="tag-opt" onclick="this.classList.toggle('on')">Tomografia</div>
+        <div class="tag-opt" onclick="this.classList.toggle('on')">Ressonância</div>
+        <div class="tag-opt" onclick="this.classList.toggle('on')">Exames de sangue</div>
+        <div class="tag-opt" onclick="this.classList.toggle('on')">Eletrocardiograma</div>
+        <div class="tag-opt" onclick="this.classList.toggle('on')">Endoscopia</div>
+        <div class="tag-opt" onclick="this.classList.toggle('on')">Mamografia</div>
+        <div class="tag-opt" onclick="this.classList.toggle('on')">Densitometria</div>
+        <div class="tag-opt" onclick="this.classList.toggle('on')">Teste ergométrico</div>
+        <div class="tag-opt" onclick="this.classList.toggle('on')">Holter</div>
+        <div class="tag-opt" onclick="this.classList.toggle('on')">Papanicolau</div>
+      </div>
+      <label style="margin-top:14px">Convênios atendidos</label>
+      <div class="tag-row" id="convenios-tags">
+        <div class="tag-opt" onclick="this.classList.toggle('on')">Unimed</div>
+        <div class="tag-opt" onclick="this.classList.toggle('on')">Bradesco Saúde</div>
+        <div class="tag-opt" onclick="this.classList.toggle('on')">Amil</div>
+        <div class="tag-opt" onclick="this.classList.toggle('on')">SulAmérica</div>
+        <div class="tag-opt" onclick="this.classList.toggle('on')">Particular</div>
+        <div class="tag-opt" onclick="this.classList.toggle('on')">Porto Seguro</div>
+        <div class="tag-opt" onclick="this.classList.toggle('on')">NotreDame</div>
+        <div class="tag-opt" onclick="this.classList.toggle('on')'>Hapvida</div>
+        <div class="tag-opt" onclick="this.classList.toggle('on')">Intermédica</div>
+      </div>
+      <label style="margin-top:14px">Diferenciais da clínica</label>
+      <textarea class="fi" id="diferenciais" placeholder="Ex: Atendimento humanizado, equipamentos de última geração, estacionamento gratuito, horário estendido..."></textarea>
+      <div style="display:flex;gap:10px;margin-top:12px">
+        <button class="btn btn-o" onclick="nextStep(-1)">← Voltar</button>
+        <button class="btn" onclick="nextStep(3)">Próximo →</button>
+      </div>
+    </div>
+
+    <!-- STEP 4: Profissionais + Finalizar -->
+    <div class="panel" id="p4">
+      <h2>👨‍⚕️ Profissionais</h2>
+      <p class="sh">Adicione os profissionais que atendem na clínica</p>
+      <div id="prof-list">
+        <div class="form-row" style="margin-bottom:8px">
+          <input class="fi" placeholder="Nome completo" id="p1-nome" style="margin:0">
+          <input class="fi" placeholder="CRM/Registro" id="p1-crm" style="margin:0">
+        </div>
+        <div class="form-row">
+          <input class="fi" placeholder="Especialidade" id="p1-esp" style="margin:0">
+          <input class="fi" placeholder="Email (opcional)" id="p1-email" style="margin:0">
+        </div>
+      </div>
+      <button class="btn-add" onclick="addProf()">+ Adicionar profissional</button>
+
+      <div class="info-box" style="margin-top:16px">
+        <strong>📱 O que acontece depois?</strong><br>
+        Sua clínica será configurada com <strong>7 dias grátis</strong> de acesso completo. Você poderá:<br>
+        • Conectar o WhatsApp da clínica<br>
+        • Começar a usar a Secretária IA Sofia<br>
+        • Acessar todos os módulos: DICOM 3D, Telemedicina, Marketing IA, etc.
+      </div>
+      <div style="display:flex;gap:10px;margin-top:12px">
+        <button class="btn btn-o" onclick="nextStep(-1)">← Voltar</button>
+        <button class="btn" onclick="finalizar()" style="background:var(--g)">✅ Finalizar Configuração</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SB='https://tcjynyfusqkqtdohnyzq.supabase.co';
+const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjanlueWZ1c3FrcXRkb2hueXpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTYyNzA4MDAsImV4cCI6MjAzMTg0NjgwMH0.VCxDJ1ZAhlsSXZ6gVXPSXpJoRlZXKqnvVNCDahRYXFQ';
+const sb=supabase.createClient(SB,KEY);
+let currentStep=1;
+let profCount=1;
+
+// Load user data from localStorage
+const userData=JSON.parse(localStorage.getItem('KRONEXA_USER')||'{}');
+if(userData.email)document.getElementById('nome').value=userData.user_metadata?.nome_clinica||'';
+document.getElementById('tel').value=userData.user_metadata?.telefone||'';
+document.getElementById('segmento').value=userData.user_metadata?.segmento||'';
+
+function updateSteps(){
+  for(let i=1;i<=4;i++){
+    const el=document.getElementById('s'+i);
+    el.className='step'+(i<currentStep?' done':i===currentStep?' current':'');
+  }
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.getElementById('p'+currentStep).classList.add('on');
+}
+
+function nextStep(from){
+  currentStep=Math.max(1,Math.min(4,from<0?currentStep-1:from+1));
+  updateSteps();
+}
+
+function addSvc(){
+  const div=document.createElement('div');div.className='svc-row';
+  div.innerHTML='<input class="fi" placeholder="Nome do serviço" style="margin:0"><input class="fi svc-price" placeholder="R$" style="margin:0"><button onclick="this.parentElement.remove()">✕</button>';
+  document.getElementById('svc-list').appendChild(div);
+}
+
+function addProf(){
+  profCount++;
+  const div=document.createElement('div');
+  div.innerHTML=`<div class="form-row" style="margin-bottom:8px"><input class="fi" placeholder="Nome completo" id="p${profCount}-nome" style="margin:0"><input class="fi" placeholder="CRM/Registro" id="p${profCount}-crm" style="margin:0"></div><div class="form-row"><input class="fi" placeholder="Especialidade" id="p${profCount}-esp" style="margin:0"><input class="fi" placeholder="Email" id="p${profCount}-email" style="margin:0"></div>`;
+  document.getElementById('prof-list').appendChild(div);
+}
+
+async function finalizar(){
+  const btn=event.target;btn.disabled=true;btn.textContent='⏳ Salvando...';
+  const userId=localStorage.getItem('KRONEXA_CID');
+
+  // Collect services
+  const svcs=[];
+  document.querySelectorAll('#svc-list .svc-row').forEach(row=>{
+    const inputs=row.querySelectorAll('input');
+    if(inputs[0].value.trim())svcs.push({nome:inputs[0].value.trim(),preco:parseFloat(inputs[1].value)||0});
+  });
+
+  // Collect selected exams
+  const exames=[];
+  document.querySelectorAll('#exames-tags .on').forEach(t=>exames.push(t.textContent));
+
+  // Collect convenios
+  const convenios=[];
+  document.querySelectorAll('#convenios-tags .on').forEach(t=>convenios.push(t.textContent));
+
+  // Collect professionals
+  const profs=[];
+  for(let i=1;i<=profCount;i++){
+    const nome=document.getElementById('p'+i+'-nome')?.value?.trim();
+    const crm=document.getElementById('p'+i+'-crm')?.value?.trim();
+    const esp=document.getElementById('p'+i+'-esp')?.value?.trim();
+    const email=document.getElementById('p'+i+'-email')?.value?.trim();
+    if(nome)profs.push({nome,crm,especialidade:esp,email});
+  }
+
+  const data={
+    nome:document.getElementById('nome').value.trim(),
+    segmento:document.getElementById('segmento').value,
+    telefone:document.getElementById('tel').value.trim(),
+    cnpj:document.getElementById('cnpj').value.trim(),
+    estado:document.getElementById('uf').value,
+    cidade:document.getElementById('cidade').value.trim(),
+    endereco:document.getElementById('endereco').value.trim(),
+    servicos:svcs,
+    exames:exames,
+    convenios:convenios,
+    profissionais:profs,
+    diferenciais:document.getElementById('diferenciais').value.trim(),
+    configurado_em:new Date().toISOString()
+  };
+
+  try{
+    if(userId){
+      await sb.from('kh_clinicas').update({
+        nome:data.nome,segmento:data.segmento,telefone:data.telefone,
+        cnpj:data.cnpj,cidade_uf:(data.cidade||'')+'/'+(data.estado||''),
+        endereco:data.endereco,metadados:data,updated_at:new Date().toISOString()
+      }).eq('id',userId);
+    }
+
+    // Save services
+    for(const s of svcs){
+      await sb.from('kh_servicos').insert({
+        clinica_id:userId||'00000000-0000-0000-0000-000000000001',
+        nome:s.nome,preco:s.preco,duracao:30,ativo:true
+      }).catch(()=>{});
+    }
+
+    // Save professionals
+    for(const p of profs){
+      await sb.from('kh_profissionais').insert({
+        clinica_id:userId||'00000000-0000-0000-0000-000000000001',
+        nome:p.nome,crm_numero:p.crm,especialidade:p.especialidade,email:p.email
+      }).catch(()=>{});
+    }
+
+    // Save social config for Marketing IA
+    await sb.from('ks_social_config').upsert({
+      tenant_id:userId||'00000000-0000-0000-0000-000000000001',
+      produto:'social',nicho:data.segmento,tom_voz:'profissional',
+      diferenciais:data.diferenciais
+    }).catch(()=>{});
+
+    localStorage.setItem('KRONEXA_ONBOARDING','done');
+    window.location.href='portal-dashboard.html';
+  }catch(e){
+    btn.disabled=false;btn.textContent='✅ Finalizar Configuração';
+    alert('Erro ao salvar: '+e.message+'\n\nMas não se preocupe, você já pode usar o sistema.');
+    window.location.href='portal-dashboard.html';
+  }
+}
+
+updateSteps();
+</script>
+</body>
+</html>
